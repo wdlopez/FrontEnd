@@ -1,14 +1,16 @@
-const Input = ({ type = "text", name, placeholder, value, onChange, className }) => {
+import React, { forwardRef } from 'react';
+
+// 1. Envolvemos todo el componente dentro de forwardRef(...)
+const Input = forwardRef(({ type = "text", className, ...props }, ref) => {
   return (
-    <input
+    <input ref={ref}
       type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${className || ''}`}
+      {...props} 
     />
   );
-};
-export default Input;
+});
 
+Input.displayName = 'Input';
+
+export default Input;

@@ -1,40 +1,64 @@
-import { useState } from 'react';
-import Button from '../../atoms/Button'; // Usando el que ya tienes
+import { useForm } from 'react-hook-form';
+import Button from '../../atoms/Button';
 import FormField from '../../molecules/FormField';
 
 const LoginForm = ({ onSubmit, isLoading }) => {
-  const [formData, setFormData] = useState({
-    user_nickname: '', // Asegúrate que coincida con el DTO del backend
-    user_pss: ''
-  });
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors } 
+  } = useForm();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
+  const onFormSubmit = (data) => {
+    onSubmit(data);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-sm">
-      <FormField 
-        label="Usuario" 
-        name="user_nickname" 
-        placeholder="Ingrese su usuario" 
-        onChange={handleChange} 
-      />
-      <FormField 
-        label="Contraseña" 
-        name="user_pss" 
-        type="password" 
-        placeholder="Ingrese su contraseña" 
-        onChange={handleChange} 
-      />
+    <form 
+      onSubmit={handleSubmit(onFormSubmit)} 
+      className="w-full max-w-sm flex flex-col gap-4" // Flex y gap para separación vertical
+    >
+      {/* Campo Usuario */}
+      <div className="w-full">
+        <FormField 
+          label="Usuario" 
+          placeholder="Ingrese su usuario" 
+          // Aquí conectamos react-hook-form
+          {...register("username", { 
+            required: "El usuario es obligatorio" 
+          })}
+        />
+        {/* Mensaje de error */}
+        {errors.username && (
+          <span className="text-red-500 text-xs italic mt-1 ml-1">
+            {errors.username.message}
+          </span>
+        )}
+      </div>
+
+      {/* Campo Contraseña */}
+      <div className="w-full">
+        <FormField 
+          label="Contraseña" 
+          type="password" 
+          placeholder="Ingrese su contraseña" 
+          {...register("password", { 
+            required: "La contraseña es obligatoria",
+            minLength: {
+              value: 6,
+              message: "Debe tener al menos 6 caracteres"
+            }
+          })}
+        />
+        {errors.password && (
+          <span className="text-red-500 text-xs italic mt-1 ml-1">
+            {errors.password.message}
+          </span>
+        )}
+      </div>
       
       <div className="mt-6">
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? 'Cargando...' : 'Acceder'}
         </Button>
       </div>

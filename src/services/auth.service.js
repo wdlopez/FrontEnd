@@ -9,7 +9,7 @@ const AuthService = {
     // IMPORTANTE: Revisa en tu SignInRequestDto del backend si los campos son 
     // user_nickname y user_pss o username y password.
     // Asumiré que mantienes los nombres del frontend anterior, pero adáptalos si el backend cambió.
-    const response = await api.post('/auth/sign-in', credentials); 
+    const response = await api.post('/auth/signin', credentials); 
     return response.data;
   },
 
