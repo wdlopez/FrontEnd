@@ -3,16 +3,27 @@ import api from '../config/api';
 const AuthService = {
   /**
    * Realiza el login contra el microservicio Contratos-Autenticacion
-   * @param {Object} credentials - { user_nickname, user_pss } (Ajustar según tu DTO de backend)
+   * @param {Object} credentials
    */
+
+  //Crud para iniciar sesion
   login: async (credentials) => {
-    // IMPORTANTE: Revisa en tu SignInRequestDto del backend si los campos son 
-    // user_nickname y user_pss o username y password.
-    // Asumiré que mantienes los nombres del frontend anterior, pero adáptalos si el backend cambió.
     const response = await api.post('/auth/signin', credentials); 
+    return response.data.data;
+  },
+  /**
+   * Crud para registra un nuevo usuario
+   * @param {Object} userData
+   */
+  register: async (userData) => {
+    const response = await api.post('/auth/sign-up', userData); 
     return response.data;
   },
 
+  /**
+   * Crud para solicitar cambio de contraseña
+   * @param {Object} data
+   */
   forgotPassword: async (data) => {
     const response = await api.post('/auth/forgot-password', data);
     return response.data;

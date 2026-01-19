@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Asegúrate de instalar react-router-dom
 import LoginForm from '../../components/organisms/Forms/LoginForm';
-import AuthService from '../../services/auth.service';
+import { useAuth } from '../../context/AuthContext'; // Importamos el hook
 // Importa tus imágenes aquí desde ../assets/images/
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // Usamos la función del contexto
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -13,23 +14,18 @@ const LoginPage = () => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Llamada al Microservicio
-      const response = await AuthService.login(credentials);
-      console.log("Respuesta Backend:", response);
-
-      // 2. Lógica de Token y Redirección (Adaptada de tu código anterior)
-      // Asumiendo que el backend devuelve { accessToken, user: { role: ... } }
-      if (response && response.accessToken) {
-        localStorage.setItem('token', response.accessToken);
-        
-        // Validación de rol simplificada (ajustar según respuesta real del backend)
-        // Nota: En tu backend veo roles.guard.ts, asegúrate de qué devuelve el login
-        navigate('/home'); 
-      }
+      const success = await login(credentials); // Delegamos al Contexto
       
+      if (success) {
+        navigate('/home'); // O a /dashboard
+      } else {
+        setError("No se pudo iniciar sesión. Verifique sus credenciales.");
+      }
     } catch (err) {
       console.error(err);
-      setError("Credenciales inválidas o error de conexión");
+      // Extraemos el mensaje de error del backend si existe
+      const msg = err.response?.data?.message || "Credenciales inválidas o error de conexión";
+      setError(msg);
     } finally {
       setLoading(false);
     }

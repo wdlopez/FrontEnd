@@ -1,3 +1,309 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans text-letterGray;
+    /* Aplica Roboto como fuente predeterminada */
+  }
+
+  p {
+    @apply text-sm;
+    /* Reduce el tamaño de todas las etiquetas <p> */
+  }
+
+  span {
+    @apply text-sm;
+  }
+}
+
+@layer utilities {
+  .rmdp-custom-container {
+    @apply bg-white dark:bg-dark3 rounded-lg shadow-lg;
+  }
+
+  .rmdp-custom-input {
+    @apply w-full border-2 border-primary bg-lightBlue text-titleBlue rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary dark:bg-dark3 dark:border-secondary dark:text-lightBlue;
+  }
+
+  /* Header del calendario (mes / año) */
+  .rmdp-custom-container .rmdp__header,
+  .rmdp-custom-container .rmdp-header {
+    @apply bg-primary text-white;
+  }
+
+  /* Nombres de los días de la semana (L, M, X…) */
+  .rmdp-custom-container .rmdp__weekday,
+  .rmdp-custom-container .rmdp-week-day {
+    @apply text-secondary;
+  }
+
+  /* Celdas de cada día (sin estado) */
+  .rmdp-custom-container .rmdp__day,
+  .rmdp-custom-container .rmdp-day {
+    @apply text-titleBlue;
+  }
+
+  /* Día seleccionado */
+  .rmdp-custom-container .rmdp__day--selected,
+  .rmdp-custom-container .rmdp-day_selected {
+    @apply bg-primary text-white;
+  }
+
+  /* Hover sobre cada celda */
+  .rmdp-custom-container .rmdp__day:hover,
+  .rmdp-custom-container .rmdp-day:hover {
+    @apply bg-darkBlue;
+  }
+
+  /* Flechas de mes anterior / siguiente */
+  .rmdp-custom-container .rmdp__arrow,
+  .rmdp-custom-container .rmdp-arrow {
+    @apply text-white hover:text-secondary;
+  }
+
+  /* Panel lateral (“DatePanel”) */
+  .rmdp-custom-container .rmdp__date-panel,
+  .rmdp-custom-container .rmdp-date_panel {
+    @apply border-l-2 border-secondary bg-lightBlue dark:bg-dark3;
+  }
+
+  /* Botón de cerrar panel (si lo usas) */
+  .rmdp-custom-container .rmdp__close-button,
+  .rmdp-custom-container .rmdp-close-button {
+    @apply text-titleBlue hover:text-secondary;
+  }
+
+  /* icons */
+  span.material-icons,
+  span.material-icons-outlined,
+  span.material-icons-round,
+  span.material-icons-sharp,
+  span.material-icons-two-tone {
+    @apply text-xs leading-none !important;
+  }
+
+  .titlte-box {
+    @apply px-2 py-3 my-1 rounded-lg bg-white text-titleBlue dark:text-customGray1 dark:bg-customGray2
+  }
+
+  .box {
+    @apply p-1 rounded-lg bg-white mt-2 shadow-md dark:bg-customGray2
+  }
+
+  .btn {
+    @apply px-4 py-1 font-medium rounded-md flex items-center justify-center transition-colors;
+  }
+
+  /* Primary */
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-[#084b9a] dark:bg-[#084b9a] dark:hover:bg-[#063878];
+  }
+
+  /* Secondary */
+  .btn-secondary {
+    @apply bg-[#4178BE] text-white hover:bg-[#315f9a] dark:bg-[#315f9a] dark:hover:bg-[#234d75];
+  }
+
+  /* Tertiary */
+  .btn-tertiary {
+    @apply bg-[#F0C200] text-black hover:bg-[#c9a000] dark:bg-[#c9a000] dark:text-white dark:hover:bg-[#a08000];
+  }
+
+  /* Error */
+  .btn-error {
+    @apply bg-[#FF5C5C] text-white hover:bg-[#cc4a4a] dark:bg-[#cc4a4a] dark:hover:bg-[#a03a3a];
+  }
+
+  .btn-gray1 {
+    @apply bg-customGray2 text-white hover:bg-customGray2 dark:bg-customGray2 dark:hover:bg-customGray1
+  }
+
+  .btn-gray2 {
+    @apply bg-customGray1 text-customGray2 hover:bg-customGray1 dark:bg-customGray1 dark:hover:bg-customGray2
+  }
+
+  .btn-icon {
+    @apply px-1 py-1 rounded-md flex items-center justify-center transition-colors;
+  }
+
+  /* Primary */
+  .btn-icon-primary {
+    @apply hover:bg-[#0B5CC6] text-primary hover:text-white dark:border-white dark:text-gray-300 dark:hover:bg-gray-300 dark:hover:text-black;
+  }
+
+  /* Secondary */
+  .btn-icon-secondary {
+    @apply hover:bg-[#4178BE] text-customBlue hover:text-white dark:border-white dark:text-gray-300 dark:hover:bg-gray-300 dark:hover:text-black;
+  }
+
+  /* Tertiary */
+  .btn-icon-tertiary {
+    @apply hover:bg-[#F0C200] text-tertiary hover:text-white dark:border-white dark:text-gray-300 dark:hover:bg-gray-300 dark:hover:text-black;
+  }
+
+  /* Error */
+  .btn-icon-error {
+    @apply hover:bg-[#FF5C5C] text-colorError hover:text-white dark:border-white dark:text-gray-300 dark:hover:bg-gray-300 dark:hover:text-black;
+  }
+
+  /* form */
+  /* .form-compact {
+    @apply gap-3 !important;
+  }
+  .field-compact {
+    @apply gap-0.5 !important;
+  }
+  .input-compact {
+    @apply px-2 py-2 text-xs leading-tight !important;
+  }
+  .checkbox-compact label {
+    @apply text-xs leading-tight !important;
+  } */
+
+
+
+  /* Estilo general del scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    /* Ancho del scrollbar */
+    height: 8px;
+    /* Alto del scrollbar (para scroll horizontal) */
+  }
+
+  /* Color del fondo del scrollbar */
+  /* Estilos por defecto (Modo Claro) */
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #004A94;
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #003366;
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #05203b;
+  }
+
+  /* Estilos para Modo Oscuro */
+  .dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: #1e293b;
+    /* Azul oscuro */
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #334155;
+    /* Gris oscuro */
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+    /* Gris más claro */
+  }
+
+  .direction-rtl {
+    direction: rtl;
+    /* Mueve el scrollbar a la izquierda */
+  }
+
+  .direction-ltr {
+    direction: ltr;
+    /* Restaura la dirección del contenido */
+  }
+
+  .responsive-table {
+    margin-left: 0 !important;
+    /* elimina hueco izquierdo */
+    width: 100% !important;
+    /* ocupa todo el padre */
+  }
+
+  @media (min-width: 1367px) and (max-width: 1919px) {
+
+    .responsive-table th,
+    .responsive-table td {
+      @apply px-2 py-0.5 text-sm leading-snug !important;
+    }
+  }
+}
+
+@media (min-width: 1920px) {
+
+  /* estilos para pantallas grandes */
+  .responsive-table {
+    margin-left: 0 !important;
+    /* elimina hueco izquierdo */
+    width: 100% !important;
+    /* ocupa todo el padre */
+  }
+
+  @media (min-width: 1367px) and (max-width: 1919px) {
+
+    .responsive-table th,
+    .responsive-table td {
+      @apply px-2 py-1 text-sm leading-snug !important;
+    }
+  }
+
+}
+
+@media (max-width: 1366px) {
+
+  /* Aplica a la <table> */
+  .responsive-table {
+    margin-left: 0 !important;
+    /* elimina hueco izquierdo */
+    width: 100% !important;
+    /* ocupa todo el padre */
+  }
+
+  /* Celdas y encabezados más compactos */
+  .responsive-table th,
+  .responsive-table td {
+    @apply px-1 py-[0.05px] text-xs leading-tight !important;
+  }
+
+  /* form */
+  .form-compact-apply {
+    @apply gap-3 !important;
+  }
+
+  .field-compact-apply {
+    @apply gap-0.5 !important;
+  }
+
+  .input-compact-apply {
+    @apply px-2 py-2 text-xs leading-tight !important;
+  }
+
+  .checkbox-compact-apply label {
+    @apply text-xs leading-tight !important;
+  }
+
+  span {
+    @apply text-xs;
+  }
+}
+
+/* @media (max-width: 640px) {
+  .form-compact-apply {
+    @apply form-compact;
+  }
+
+  .field-compact-apply {
+    @apply field-compact;
+  }
+
+  .input-compact-apply {
+    @apply input-compact;
+  }
+
+  .checkbox-compact-apply {
+    @apply checkbox-compact;
+  }
+} */
