@@ -7,6 +7,7 @@ import ProtectedRoutes from './router/ProtectedRoutes';
 // Páginas
 import LoginPage from './pages/auth/LoginPage';
 import HomePage from './pages/HomePage';
+import UsersPage from './pages/Users/UsersPage';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route path="/contracts" element={<ContractsPage />} />
             <Route path="/users" element={<UsersPage />} /> 
             */}
+            <Route path="/users" element={<UsersPage />} />
           </Route>
 
 

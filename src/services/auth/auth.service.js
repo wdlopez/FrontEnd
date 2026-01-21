@@ -1,4 +1,4 @@
-import api from '../config/api';
+import api from '../../config/api';
 
 const AuthService = {
   /**
@@ -16,7 +16,7 @@ const AuthService = {
    * @param {Object} userData
    */
   register: async (userData) => {
-    const response = await api.post('/auth/sign-up', userData); 
+    const response = await api.post('/auth/signup', userData); 
     return response.data;
   },
 
