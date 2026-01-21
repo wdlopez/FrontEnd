@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Asegúrate de instalar react-router-dom
+import { useNavigate, Link } from 'react-router-dom'; // Importamos Link
 import LoginForm from '../../components/organisms/Forms/LoginForm';
-import { useAuth } from '../../context/AuthContext'; // Importamos el hook
-// Importa tus imágenes aquí desde ../assets/images/
+import { useAuth } from '../../context/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // Usamos la función del contexto
+  const { login } = useAuth();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -14,16 +13,14 @@ const LoginPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const success = await login(credentials); // Delegamos al Contexto
-      
+      const success = await login(credentials);
       if (success) {
-        navigate('/home'); // O a /dashboard
+        navigate('/home');
       } else {
         setError("No se pudo iniciar sesión. Verifique sus credenciales.");
       }
     } catch (err) {
       console.error(err);
-      // Extraemos el mensaje de error del backend si existe
       const msg = err.response?.data?.message || "Credenciales inválidas o error de conexión";
       setError(msg);
     } finally {
@@ -33,14 +30,14 @@ const LoginPage = () => {
 
   return (
     <div className="flex w-full h-screen">
-      {/* Sección Izquierda (Imagen/Branding) */}
+      {/* Sección Izquierda */}
       <div className="hidden md:flex flex-col flex-1 bg-blue-900 justify-center px-10 text-white">
         <h1 className="font-bold text-5xl pb-6">CONTRACTX</h1>
         <hr className="border-t-2 border-white w-20 mb-4" />
         <p className="text-xl">Gestión inteligente de contratos.</p>
       </div>
 
-      {/* Sección Derecha (Formulario) */}
+      {/* Sección Derecha */}
       <div className="flex flex-1 justify-center items-center bg-gray-100">
         <div className="bg-white p-10 rounded-xl shadow-2xl w-full max-w-md">
           <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Ingreso al sistema</h2>
@@ -53,10 +50,27 @@ const LoginPage = () => {
 
           <LoginForm onSubmit={handleLogin} isLoading={loading} />
           
-          <div className="mt-4 text-center">
-            <button onClick={() => console.log("Abrir modal")} className="text-blue-500 text-sm hover:underline">
+          <div className="mt-6 flex flex-col gap-3 text-center">
+            {/* Botón de Olvidé mi contraseña */}
+            <button 
+              onClick={() => console.log("Abrir modal")} 
+              className="text-blue-500 text-sm hover:underline"
+            >
               ¿Olvidaste tu contraseña?
             </button>
+
+            <hr className="border-gray-200 mt-2" />
+
+            {/* Nuevo Botón para Registro */}
+            <div className="text-sm text-gray-600">
+              ¿No tienes una cuenta?{' '}
+              <Link 
+                to="/register" 
+                className="text-blue-600 font-bold hover:underline"
+              >
+                Regístrate aquí
+              </Link>
+            </div>
           </div>
         </div>
       </div>

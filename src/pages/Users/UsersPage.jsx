@@ -22,19 +22,27 @@ const UsersPage = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await UserService.getAllUsers();
-      // Mapeamos los datos para que coincidan con lo que espera InteractiveTable
-      // Ajusta las keys según venga tu backend nuevo
-      const formattedData = data.map(u => ({
-        id: u.id, // ID único para la tabla
-        nombre: `${u.firstName} ${u.lastName}`,
+      const response = await UserService.getAllUsers();
+      console.log("📦 Estructura recibida:", response); // Para confirmar
+      
+      let usersArray = [];
+
+      if (response?.data?.data && Array.isArray(response.data.data)) {
+         usersArray = response.data.data;
+      } else if (response?.data && Array.isArray(response.data)) {
+         usersArray = response.data;
+      } else if (Array.isArray(response)) {
+         usersArray = response;
+      } else {
+         console.warn("⚠️ No se encontró el array de usuarios. Estructura desconocida.");
+         usersArray = [];
+      }
+      const formattedData = usersArray.map((u, i) => ({
+        "N°": i + 1,
+        nombre: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
         email: u.email,
-        usuario: u.username,
-        rol: u.role?.name || 'Sin Rol', // Asumiendo relación
-        entidad: u.client?.name || u.provider?.name || 'N/A',
         estado: u.isActive ? 'Activo' : 'Inactivo',
-        // Guardamos el objeto original por si necesitamos editar
-        originalData: u 
+        id: u.id // Se usa para la key y acciones, pero se oculta en la tabla
       }));
       
       setUsers(formattedData);
@@ -45,7 +53,6 @@ const UsersPage = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -100,12 +107,13 @@ const UsersPage = () => {
       ) : (
         <InteractiveTable 
           data={users}
+          hiddenColumns={['id']}
+          columnWidths={[{ column: 'N°', width: '50px' }]}
+          parameterId="id"
           columns={[
+            { header: 'N°', accessor: 'N°' },
             { header: 'Nombre', accessor: 'nombre' },
-            { header: 'Usuario', accessor: 'usuario' },
             { header: 'Email', accessor: 'email' },
-            { header: 'Rol', accessor: 'rol' },
-            { header: 'Entidad', accessor: 'entidad' },
             { header: 'Estado', accessor: 'estado' },
           ]}
           onDelete={handleDelete}

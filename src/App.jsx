@@ -8,6 +8,7 @@ import ProtectedRoutes from './router/ProtectedRoutes';
 import LoginPage from './pages/auth/LoginPage';
 import HomePage from './pages/HomePage';
 import UsersPage from './pages/Users/UsersPage';
+import RegisterPage from './pages/auth/RegisterPage';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
               ZONA PÚBLICA (Cualquiera puede entrar aquí)
           ======================================================== */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           
           {/* Si alguien entra a "tudominio.com", lo mandamos al login */}
           <Route path="/" element={<Navigate to="/login" replace />} />

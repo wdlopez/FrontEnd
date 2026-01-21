@@ -3,9 +3,7 @@ import Modal from '../../molecules/Modal';
 import Form from './Form';
 import UserService from '../../../services/User/user.service';
 import RoleService from '../../../services/Role/role.service';
-// Asumo que tienes estos servicios creados basándote en user.service
 import ClientService from '../../../services/Clients/client.service'; 
-import ProviderService from '../../../services/Providers/provider.service';
 import Swal from 'sweetalert2'; 
 
 const AddUserModal = ({ open, setOpen, onSuccess }) => {
@@ -21,28 +19,28 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
       const fetchData = async () => {
         setLoadingLists(true);
         try {
-          // 1. Cargar Roles
-          const roles = await RoleService.getRoles();
-          setRolesList(roles.map(r => ({ value: r.id, label: r.name })));
+    const [rolesRes, clientsRes, providersRes] = await Promise.allSettled([
+      RoleService.getRoles(),
+      ClientService.getAll(),
+    ]);
 
-          // 2. Cargar Clientes y Proveedores para la lista de "Entidad"
-          // Esto replica tu lógica anterior de unir listas
-          const [clients, providers] = await Promise.all([
-            ClientService.getAll(),     // Ajusta según tu servicio real
-            ProviderService.getAll()    // Ajusta según tu servicio real
-          ]);
+    // Validar Roles (usando Promise.allSettled para que si uno falla, los otros sigan)
+    const roles = rolesRes.status === 'fulfilled' ? rolesRes.value : [];
+    setRolesList(roles.map(r => ({ value: r.id, label: r.name })));
 
-          const clientOpts = clients.map(c => ({ value: `c_${c.id}`, label: `Cliente: ${c.name}` }));
-          const providerOpts = providers.map(p => ({ value: `p_${p.id}`, label: `Proveedor: ${p.name}` }));
-          
-          setEntitiesList([...clientOpts, ...providerOpts]);
+    // Validar Clientes y Proveedores
+    const clients = clientsRes.status === 'fulfilled' ? (clientsRes.value?.data || clientsRes.value || []) : [];
 
-        } catch (error) {
-          console.error("Error cargando listas", error);
-        } finally {
-          setLoadingLists(false);
-        }
-      };
+    const clientOpts = clients.map(c => ({ value: `c_${c.id}`, label: `Cliente: ${c.name}` }));
+
+    setEntitiesList([...clientOpts]);
+
+  } catch (error) {
+    console.error("Error crítico cargando listas", error);
+  } finally {
+    setLoadingLists(false);
+  }
+};
       fetchData();
     }
   }, [open]);
@@ -143,7 +141,7 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
         <Form 
           fields={userFields} 
           onSubmit={handleCreateUser} 
-          sendMessage="Crear Usuario"
+          sendMessage="Crear Usuario" 
           onCancel={() => setOpen(false)}
         />
       )}
