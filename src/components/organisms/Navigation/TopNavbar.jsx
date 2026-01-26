@@ -3,14 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 //import image from "../../../assets/images/image.png";
 import Form from "../Forms/form";
 import SearchBar from "../../molecules/searchBar";
-import logoutService from "../../../services/user-services/logout";
+//import logoutService from "../../../services/user-services/logout";
 //import darkModeImage from "../../../assets/images/freepik_br_e1d79d38-8918-400d-869e-4731634c668a.png";
 import Modal from "../../molecules/modal";
-import getClientSInService from "../../../services/clients-service/getClientA";
+//import getClientSInService from "../../../services/clients-service/getClientA";
 import Toolbar from "./toolBar";
 import DarkModeToggle from "../../atoms/darckModeBtn";
 import useUnreadNotifications from "../../../hooks/useUnreadNotifications";
-import { listContract } from "../../../pages/Deliverables/delLists";
+//import { listContract } from "../../../pages/Deliverables/delLists";
 
 function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, setDarkMode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,8 +24,9 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
   const navigate = useNavigate();
   const profileButtonRef = useRef(null);
   const { unreadCount } = useUnreadNotifications();
-
+  /*
   const handleClients = async () => {
+    
     if (userRol === 1) {
       const clients = await getClientSInService.getClientA();
       const clientsList = [
@@ -41,6 +42,7 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
         }
       }
     }
+      
     try {
       const contracts = await listContract(userRol);
       // console.log(userRol);
@@ -55,10 +57,10 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
 
     // Verificar si hay un cliente seleccionado en el SessionStorage
   };
-
+*/
   const handleOpenModal = () => {
     setIsModalOpen(true);
-    handleClients();
+    //handleClients();
   };
 
   const handleSubmit = (data) => {
@@ -114,7 +116,7 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
 
   useEffect(() => {
     // Cargar la lista de clientes y el cliente seleccionado al montar el componente
-    handleClients();
+    //handleClients();
   }, [userRol]);
 
   useEffect(() => {
@@ -145,7 +147,7 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
     sessionStorage.removeItem('selected_client_name');
     sessionStorage.removeItem('selected_contract_names');
     sessionStorage.removeItem('selected_contract_ids');
-    logoutService.logout();
+    //logoutService.logout();
     window.location.href = "/login";
   };
 

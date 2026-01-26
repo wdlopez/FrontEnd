@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import ExpandableMenu from "../../molecules/expandableMenu";
-import getOnePermissService from "../../../services/permission-service/getOnePermiss";
+import ExpandableMenu from "../../molecules/ExpandableMenu";
+//import getOnePermissService from "../../../services/permission-service/getOnePermiss";
 const dashBoardOptions = [
   { name: "Contratos", path: "/dashboard/Contract" },
   { name: "Solicitudes", path: "/dashboard/request" },
@@ -82,12 +82,14 @@ function Sidebar({ isCollapsed, setIsCollapsed, userRol, id }) {
   useEffect(() => {
     const fetchPerms = async () => {
       try {
+        /** 
         const { permissions } = await getOnePermissService.getOnePermiss(id);
         setUserPermissions(
           permissions
             .filter(p => p.perm_status === 1)
             .map(p => p.permission.permission_name)
         );
+        */
       } catch (err) {
         console.warn("No hay permisos o hubo un error al cargarlos:", err);
        // Aseguramos que, ante cualquier fallo, userPermissions quede en []

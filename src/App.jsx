@@ -3,18 +3,22 @@ import { AuthProvider } from './context/AuthContext';
 
 // Importamos el "Guardia de Seguridad" que creamos en el paso anterior
 import ProtectedRoutes from './router/ProtectedRoutes'; 
+import MainLayout from './components/templates/MainLayoutGlobal';
 
 // Páginas
 import LoginPage from './pages/auth/LoginPage';
-import HomePage from './pages/HomePage';
+import DashboardIndex from './pages/Dashboard/Index';
 import UsersPage from './pages/Users/UsersPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import ClientsPage from './pages/Clients/ClientsPage';
+
 
 function App() {
   return (
     // 1. El AuthProvider envuelve TODA la app para dar acceso a la sesión en cualquier lugar
     <AuthProvider>
       <BrowserRouter>
+      <MainLayout>
         <Routes>
           
           {/* =======================================================
@@ -32,13 +36,14 @@ function App() {
               El componente <ProtectedRoutes /> actúa como un muro.
           ======================================================== */}
           <Route element={<ProtectedRoutes />}>
-            <Route path="/home" element={<HomePage />} />
+            <Route path="/dashboard" element={<DashboardIndex />} />
             
             {/* Aquí irás agregando tus futuras rutas privadas:
             <Route path="/contracts" element={<ContractsPage />} />
             <Route path="/users" element={<UsersPage />} /> 
             */}
-            <Route path="/users" element={<UsersPage />} />
+            <Route path="/client" element={<ClientsPage />} />
+            <Route path="/settings/userNroles" element={<UsersPage />} />
           </Route>
 
 
@@ -49,6 +54,7 @@ function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
 
         </Routes>
+        </MainLayout>
       </BrowserRouter>
     </AuthProvider>
   );

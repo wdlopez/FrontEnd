@@ -19,7 +19,7 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
       const fetchData = async () => {
         setLoadingLists(true);
         try {
-    const [rolesRes, clientsRes, providersRes] = await Promise.allSettled([
+    const [rolesRes, clientsRes] = await Promise.allSettled([
       RoleService.getRoles(),
       ClientService.getAll(),
     ]);

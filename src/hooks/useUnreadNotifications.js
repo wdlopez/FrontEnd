@@ -1,7 +1,7 @@
 // src/hooks/useUnreadNotifications.js
 import { useState, useEffect, useRef, useCallback } from "react";
 import { socket } from "./useSocket";
-import getDashboardNotifications from "../services/notifications-service/getDashboardNotifications";
+//import getDashboardNotifications from "../services/notifications-service/getDashboardNotifications";
 
 export default function useUnreadNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -14,11 +14,11 @@ export default function useUnreadNotifications() {
     if (!userId) return;
 
     try {
-      const list = await getDashboardNotifications(userId);
+      ///const list = await getDashboardNotifications(userId);
       
       if (!mountedRef.current) return;
-      const cnt = list.filter(n => n.notif_status === 0).length;
-      setUnreadCount(cnt);
+      //const cnt = list.filter(n => n.notif_status === 0).length;
+      //etUnreadCount(cnt);
       // console.log(cnt);
     } catch (err) {
       console.error("Error cargando contador:", err);

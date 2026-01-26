@@ -1,0 +1,159 @@
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import DashboardService from "../../services/dashboard.service";
+import WelcomeWidget from "./components/WelcomeWidget";
+
+// Importación de los Dashboards específicos
+import DashBSuperAdmin from "./DashBAdmin";
+import DashBContratoAdmin from "./DashBAdminContractC";
+
+const ROLES = {
+  SUPER_ADMIN: "super_admin",
+  CONTRACT_ADMIN: "client_contract_admin",
+};
+
+const DashboardIndex = () => {
+  const { user, loading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    contracts: [],
+    slas: [],
+    clientsCount: 0,
+    usersCount: 0,
+  });
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (authLoading || !user?.role) return;
+      try {
+        setLoading(true);
+        let data = { contracts: [], slas: [], clientsCount: 0, usersCount: 0 };
+
+        if (user.role === ROLES.SUPER_ADMIN) {
+          data = await DashboardService.getSuperAdminSummary();
+        } else if (user.role === ROLES.CONTRACT_ADMIN) {
+          data = await DashboardService.getContractAdminSummary(
+            user.role,
+            user.id,
+          );
+        }
+
+        setDashboardData(data);
+      } catch (error) {
+        console.error("Error cargando dashboard", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.role) fetchDashboardData();
+  }, [user, authLoading]);
+
+  if (authLoading) {
+    return <div className="p-10 text-center">Verificando sesión...</div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="p-10 text-center">
+        No autorizado. Por favor inicia sesión.
+      </div>
+    );
+  }
+
+  if (loading)
+    return <div className="p-10 text-center">Cargando tablero...</div>;
+
+  // CASO 1: SUPER ADMINISTRADOR
+  if (user.role === ROLES.SUPER_ADMIN) {
+    return (
+      <div className="space-y-6">
+        {/* Sección de Bienvenida con botones de acceso rápido */}
+        <div className="p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Hola, {user.firstName}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Bienvenido a ContractX. Comienza gestionando clientes y usuarios.
+            </p>
+          </div>
+
+          {/* Grid de botones de acceso rápido */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <WelcomeWidget
+              title="Clientes"
+              message="Registra y gestiona todos tus clientes."
+              buttonText="Ir a Clientes"
+              linkTo="/client"
+              count={dashboardData.clientsCount}
+              icon="domain"
+            />
+            <WelcomeWidget
+              title="Usuarios"
+              message="Invita y gestiona usuarios del sistema."
+              buttonText="Ir a Usuarios"
+              linkTo="/settings/userNroles"
+              count={dashboardData.usersCount || 0}
+              icon="people"
+            />
+          </div>
+        </div>
+
+        {/* Dashboard Completo siempre visible */}
+        <DashBSuperAdmin
+          user={user}
+          contracts={dashboardData.contracts}
+          slas={dashboardData.slas}
+        />
+      </div>
+    );
+  }
+
+  // CASO 2: ADMIN DE CONTRATOS
+  if (user.role === ROLES.CONTRACT_ADMIN) {
+    return (
+      <div className="space-y-6">
+        {/* Botones de acceso rápido para Contract Admin */}
+        <div className="p-6 space-y-4">
+          <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <WelcomeWidget
+              title="Clientes"
+              message="Ver y gestionar clientes."
+              buttonText="Ir a Clientes"
+              linkTo="/client"
+              count={dashboardData.clientsCount}
+              icon="domain"
+            />
+            <WelcomeWidget
+              title="Usuarios"
+              message="Gestionar usuarios del sistema."
+              buttonText="Ir a Usuarios"
+              linkTo="/settings/userNroles"
+              count={dashboardData.usersCount || 0}
+              icon="people"
+            />
+          </div>
+        </div>
+
+        {/* Dashboard de Contract Admin */}
+        <DashBContratoAdmin
+          user={user}
+          contracts={dashboardData.contracts}
+          slas={dashboardData.slas}
+        />
+      </div>
+    );
+  }
+
+  // CASO DEFAULT
+  return (
+    <div className="p-6 text-center">
+      <h2>Rol no reconocido</h2>
+      <p className="text-xs text-gray-400">ID detectado: {user.role}</p>
+    </div>
+  );
+};
+
+export default DashboardIndex;

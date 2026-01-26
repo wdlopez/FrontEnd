@@ -15,7 +15,7 @@ const LoginPage = () => {
     try {
       const success = await login(credentials);
       if (success) {
-        navigate('/home');
+        navigate('/dashboard');
       } else {
         setError("No se pudo iniciar sesión. Verifique sus credenciales.");
       }
