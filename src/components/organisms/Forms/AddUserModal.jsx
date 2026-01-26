@@ -19,28 +19,76 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
       const fetchData = async () => {
         setLoadingLists(true);
         try {
-    const [rolesRes, clientsRes] = await Promise.allSettled([
-      RoleService.getRoles(),
-      ClientService.getAll(),
-    ]);
+          const [rolesRes, clientsRes] = await Promise.allSettled([
+            RoleService.getRoles(),
+            ClientService.getAllClients(),
+          ]);
 
-    // Validar Roles (usando Promise.allSettled para que si uno falla, los otros sigan)
-    const roles = rolesRes.status === 'fulfilled' ? rolesRes.value : [];
-    setRolesList(roles.map(r => ({ value: r.id, label: r.name })));
+          // 1. Procesar Roles
+          let rolesData = [];
+          if (rolesRes.status === 'fulfilled') {
+            const val = rolesRes.value;
+            console.log("📦 Roles Response:", val);
+            
+            if (Array.isArray(val)) {
+              rolesData = val;
+            } else if (val?.data?.data && Array.isArray(val.data.data)) {
+              rolesData = val.data.data;
+            } else if (val?.data && Array.isArray(val.data)) {
+              rolesData = val.data;
+            } else if (val?.items && Array.isArray(val.items)) {
+              rolesData = val.items;
+            }
+          }
 
-    // Validar Clientes y Proveedores
-    const clients = clientsRes.status === 'fulfilled' ? (clientsRes.value?.data || clientsRes.value || []) : [];
+          // Asegurar que rolesData es siempre un array antes de usar .map()
+          if (!Array.isArray(rolesData)) {
+            console.warn("⚠️ rolesData no es un array:", rolesData);
+            rolesData = [];
+          }
 
-    const clientOpts = clients.map(c => ({ value: `c_${c.id}`, label: `Cliente: ${c.name}` }));
+          setRolesList(rolesData.map(r => ({ 
+            value: r.id, 
+            label: r.name || r.description || 'Sin nombre' 
+          })));
 
-    setEntitiesList([...clientOpts]);
+          // 2. Procesar Clientes para la lista de Entidades
+          let clientsData = [];
+          if (clientsRes.status === 'fulfilled') {
+            const val = clientsRes.value;
+            console.log("📦 Clients Response:", val);
+            
+            if (Array.isArray(val)) {
+              clientsData = val;
+            } else if (val?.data?.data && Array.isArray(val.data.data)) {
+              clientsData = val.data.data;
+            } else if (val?.data && Array.isArray(val.data)) {
+              clientsData = val.data;
+            } else if (val?.items && Array.isArray(val.items)) {
+              clientsData = val.items;
+            }
+          }
 
-  } catch (error) {
-    console.error("Error crítico cargando listas", error);
-  } finally {
-    setLoadingLists(false);
-  }
-};
+          // Asegurar que clientsData es siempre un array
+          if (!Array.isArray(clientsData)) {
+            console.warn("⚠️ clientsData no es un array:", clientsData);
+            clientsData = [];
+          }
+
+          const clientOpts = clientsData.map(c => ({ 
+            value: `c_${c.id}`, 
+            label: `Cliente: ${c.name || c.contactPerson || 'Sin nombre'}` 
+          }));
+
+          setEntitiesList([...clientOpts]);
+
+        } catch (error) {
+          console.error("Error crítico cargando listas", error);
+          Swal.fire('Error', 'No se pudieron cargar las listas de roles/clientes', 'warning');
+        } finally {
+          setLoadingLists(false);
+        }
+      };
       fetchData();
     }
   }, [open]);
@@ -48,28 +96,43 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
   // Manejo del Submit
   const handleCreateUser = async (formData) => {
     try {
-      // LOGICA DE ADAPTACIÓN DE DATOS (Reciclando tu lógica anterior)
-      const payload = { ...formData };
-      
-      // Separar lógica de entidad (Cliente o Proveedor)
-      if (payload.entityId) {
-        if (payload.entityId.startsWith('c_')) {
-          payload.client_id = parseInt(payload.entityId.split('_')[1]);
-        } else if (payload.entityId.startsWith('p_')) {
-          payload.provider_id = parseInt(payload.entityId.split('_')[1]);
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        roleId: formData.role_id, 
+        isActive: true
+      };
+
+      // --- LÓGICA DE ENTIDAD (CLIENTE vs PROVEEDOR) ---
+      if (formData.entityId) {
+        const [type, id] = formData.entityId.split('_');
+        
+        if (type === 'c') {
+          payload.clientId = id;
+        } else if (type === 'p') {
+          payload.providerId = id;
         }
-        delete payload.entityId; // Limpiamos el campo auxiliar
       }
+
+      console.log("📤 Payload Enviado:", payload); 
 
       await UserService.createUser(payload);
       
-      Swal.fire('Creado!', 'El usuario ha sido creado.', 'success');
+      Swal.fire('Creado!', 'El usuario ha sido creado exitosamente.', 'success');
       setOpen(false);
-      if (onSuccess) onSuccess(); // Recargar tabla padre
+      if (onSuccess) onSuccess(); 
 
     } catch (error) {
-      console.error(error);
-      Swal.fire('Error', 'No se pudo crear el usuario', 'error');
+      console.error('Error creando usuario:', error);
+      const msg = error.response?.data?.message 
+        ? (Array.isArray(error.response.data.message) 
+            ? error.response.data.message.join(', ') 
+            : error.response.data.message)
+        : 'No se pudo crear el usuario';
+        
+      Swal.fire('Error', msg, 'error');
     }
   };
 
@@ -80,14 +143,14 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
       label: 'Nombre',
       type: 'text',
       required: true,
-      placeholder: 'Nombre del usuario'
+      placeholder: 'Ej: Juan'
     },
     {
       name: 'lastName',
       label: 'Apellido',
       type: 'text',
       required: true,
-      placeholder: 'Apellido'
+      placeholder: 'Ej: Pérez'
     },
     {
       name: 'email',
@@ -97,54 +160,48 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
       placeholder: 'ejemplo@correo.com'
     },
     {
-      name: 'phone',
-      label: 'Teléfono',
-      type: 'text',
-      required: true,
-      placeholder: '+57 300...'
-    },
-    {
-      name: 'username',
-      label: 'Nickname (Usuario)',
-      type: 'text',
-      required: true,
-      placeholder: 'jperez'
-    },
-    {
-      name: 'password', // Asumiendo que creas la pass inicial aquí
-      label: 'Contraseña Inicial',
+      name: 'password',
+      label: 'Contraseña',
       type: 'password',
-      required: true
+      required: true,
+      placeholder: 'Ingrese una contraseña segura'  
     },
     {
       name: 'role_id',
-      label: 'Rol',
+      label: 'Rol Asignado',
       type: 'select',
       required: true,
-      options: rolesList
+      options: rolesList,
+      placeholder: 'Seleccione un rol'
     },
     {
       name: 'entityId',
-      label: 'Asignar a Entidad (Opcional)',
+      label: 'Asociar a Organización (Opcional)',
       type: 'select',
       required: false,
       options: entitiesList,
-      placeholder: 'Seleccione Cliente o Proveedor'
+      placeholder: 'Seleccione Cliente (si aplica)'
     }
   ];
 
   return (
     <Modal open={open} setOpen={setOpen} title="Agregar Nuevo Usuario">
-      {loadingLists ? (
-        <div className="p-10 text-center text-blue-600">Cargando listas...</div>
-      ) : (
-        <Form 
-          fields={userFields} 
-          onSubmit={handleCreateUser} 
-          sendMessage="Crear Usuario" 
-          onCancel={() => setOpen(false)}
-        />
-      )}
+      <div className="pt-2">
+        {loadingLists ? (
+          <div className="flex flex-col items-center justify-center p-10 text-gray-500">
+             <span className="material-symbols-outlined animate-spin text-3xl mb-2">refresh</span>
+             <p>Cargando roles y clientes...</p>
+          </div>
+        ) : (
+          <Form 
+            fields={userFields} 
+            onSubmit={handleCreateUser} 
+            sendMessage="Crear Usuario" 
+            onCancel={() => setOpen(false)}
+            gridLayout={true} // Si tu componente Form soporta gridLayout
+          />
+        )}
+      </div>
     </Modal>
   );
 };

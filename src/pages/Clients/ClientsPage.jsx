@@ -56,6 +56,7 @@ const ClientsPage = () => {
         'Contacto': c.contactPerson || c.contact_person || c.ClientEntity_contact_person || c.contacto || '',
         'Industria': c.category || c.ClientEntity_category || c.categoria || '',
         'Email': c.email || c.ClientEntity_email || '',
+        'Phone': c.phone || c.ClientEntity_phone || '',
         'Estado': (c.active ?? c.isActive ?? c.ClientEntity_active) ? 'Activo' : 'Inactivo',
         id: c.id || c.ClientEntity_id || c.uuid || null,
       }));
@@ -85,6 +86,7 @@ const ClientsPage = () => {
     'Contacto': 'contactPerson',
     'Industria': 'category',
     'Email': 'email',
+    'Phone': 'phone',
     'Estado': 'status' // Asumiendo que el backend devuelve un status
   };
 
@@ -139,7 +141,7 @@ const ClientsPage = () => {
         {/* Modales */}
         <AddClientModal 
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          setIsOpen={setIsModalOpen}
           onSuccess={fetchClients} // Recarga la tabla al crear
           setAlert={setAlert}
         />

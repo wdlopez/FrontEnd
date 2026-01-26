@@ -15,7 +15,7 @@ const UserService = {
 
   // Crear usuario (Admin dashboard)
   createUser: async (userData) => {
-    const response = await api.post('/users', userData);
+    const response = await api.post('/users/user', userData);
     return response.data;
   },
 
