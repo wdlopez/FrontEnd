@@ -1,37 +1,50 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, 
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true,
-});
 
+// Función para crear un interceptor genérico
+const createApiInstance = (baseURL) => {
+  const instance = axios.create({
+    baseURL,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    withCredentials: true,
+  });
 
-api.interceptors.request.use(
-  (config) => {
-    const token = Cookies.get('auth_token');
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      Cookies.remove('auth_token');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+  // Interceptor de request
+  instance.interceptors.request.use(
+    (config) => {
+      const token = Cookies.get('auth_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // Interceptor de response
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response && error.response.status === 401) {
+        Cookies.remove('auth_token');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
-  }
-);
+  );
+
+  return instance;
+};
+
+// API para usuarios, clientes, roles (microservicio principal)
+const api = createApiInstance(import.meta.env.VITE_API_URL);
+
+// API para proveedores (microservicio de proveedores)
+const apiProviders = createApiInstance(import.meta.env.VITE_API_URL_PROVIDERS);
 
 export default api;
+export { apiProviders };

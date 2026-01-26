@@ -3,7 +3,8 @@ import Modal from '../../molecules/Modal';
 import Form from './Form';
 import UserService from '../../../services/User/user.service';
 import RoleService from '../../../services/Role/role.service';
-import ClientService from '../../../services/Clients/client.service'; 
+import ClientService from '../../../services/Clients/client.service';
+import ProviderService from '../../../services/Providers/provider.service';
 import Swal from 'sweetalert2'; 
 
 const AddUserModal = ({ open, setOpen, onSuccess }) => {
@@ -11,7 +12,8 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
   
   // Listas para los selects
   const [rolesList, setRolesList] = useState([]);
-  const [entitiesList, setEntitiesList] = useState([]); 
+  const [entitiesList, setEntitiesList] = useState([]);
+  const [providerList, setProviderList] = useState([]); 
 
   // Cargar listas al abrir el modal
   useEffect(() => {
@@ -19,9 +21,10 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
       const fetchData = async () => {
         setLoadingLists(true);
         try {
-          const [rolesRes, clientsRes] = await Promise.allSettled([
+          const [rolesRes, clientsRes, providerRes] = await Promise.allSettled([
             RoleService.getRoles(),
             ClientService.getAllClients(),
+            ProviderService.getAllProviders()
           ]);
 
           // 1. Procesar Roles
@@ -82,6 +85,34 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
 
           setEntitiesList([...clientOpts]);
 
+          // 3. Procesar Proveedores
+          let providersData = [];
+          if (providerRes.status === 'fulfilled') {
+            const val = providerRes.value;
+            console.log("📦 Providers Response:", val);
+            
+            if (Array.isArray(val)) {
+              providersData = val;
+            } else if (val?.data?.data && Array.isArray(val.data.data)) {
+              providersData = val.data.data;
+            } else if (val?.data && Array.isArray(val.data)) {
+              providersData = val.data;
+            } else if (val?.items && Array.isArray(val.items)) {
+              providersData = val.items;
+            }
+          }
+
+          // Asegurar que providersData es siempre un array antes de usar .map()
+          if (!Array.isArray(providersData)) {
+            console.warn("⚠️ providersData no es un array:", providersData);
+            providersData = [];
+          }
+
+          setProviderList(providersData.map(p => ({ 
+            value: `p_${p.id}`, 
+            label: `Proveedor: ${p.legalName || p.name || 'Sin nombre'}` 
+          })));
+
         } catch (error) {
           console.error("Error crítico cargando listas", error);
           Swal.fire('Error', 'No se pudieron cargar las listas de roles/clientes', 'warning');
@@ -101,11 +132,12 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        roleId: formData.role_id, 
+        roleId: formData.role_id,
         isActive: true
       };
 
       // --- LÓGICA DE ENTIDAD (CLIENTE vs PROVEEDOR) ---
+      // Si el usuario selecciona una entidad desde el select de entityId
       if (formData.entityId) {
         const [type, id] = formData.entityId.split('_');
         
@@ -114,6 +146,11 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
         } else if (type === 'p') {
           payload.providerId = id;
         }
+      }
+
+      // Si el usuario selecciona directamente un proveedor desde el campo providerId
+      if (formData.providerId) {
+        payload.providerId = formData.providerId;
       }
 
       console.log("📤 Payload Enviado:", payload); 
@@ -181,7 +218,16 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
       required: false,
       options: entitiesList,
       placeholder: 'Seleccione Cliente (si aplica)'
+    },
+    {
+      name: 'providerId',
+      label: 'Asociar a Proveedor (Opcional)',
+      type: 'select',
+      required: false,
+      options: providerList,
+      placeholder: 'Seleccione Proveedor (si aplica)'
     }
+
   ];
 
   return (
