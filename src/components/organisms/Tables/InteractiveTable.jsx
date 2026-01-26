@@ -98,7 +98,6 @@ function InteractiveTable({
       if (rows[selectedCell.rowIndex]) {
         const cell = rows[selectedCell.rowIndex].children[selectedCell.colIndex + 1];
         if (editableCell) {
-          // focus first interactive element in modal or inline
           const input = cell?.querySelector('input, select, button');
           input?.focus();
         } else if (cell) {
@@ -107,7 +106,7 @@ function InteractiveTable({
       }
     }
   }, [selectedCell, editableCell]);
-  if (!data || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0) {
     return (
       <div className="w-full p-6">
         <div className="max-w-2xl mx-auto bg-white dark:bg-dark3 border border-gray-100 dark:border-gray-700 rounded-lg shadow-sm p-6 text-center">
@@ -123,7 +122,9 @@ function InteractiveTable({
     );
   }
 
-  const columns = Object.keys(data[0]);
+  const columns = Array.isArray(data) && data.length > 0 && data[0]
+    ? Object.keys(data[0])
+    : [];
   
   // Combinar columnas ocultas por props y por usuario
   const allHiddenColumns = [...hiddenColumns, ...userHiddenColumns];

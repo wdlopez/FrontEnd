@@ -72,7 +72,7 @@ const DashboardIndex = () => {
         <div className="p-6 space-y-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">
-              Hola, {user.firstName}
+              Hola, {user.role}
             </h1>
             <p className="text-gray-600 mt-2">
               Bienvenido a ContractX. Comienza gestionando clientes y usuarios.
@@ -115,7 +115,15 @@ const DashboardIndex = () => {
     return (
       <div className="space-y-6">
         {/* Botones de acceso rápido para Contract Admin */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Hola, {user.role}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Bienvenido a ContractX. Comienza gestionando clientes y contratos.
+            </p>
+          </div>
           <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <WelcomeWidget

@@ -13,7 +13,7 @@ const UsersPage = () => {
 
   // Breadcrumbs
   const paths = [
-    { name: 'Inicio', url: '/home' },
+    { name: 'Inicio', url: '/dashboard' },
     { name: 'Configuración', url: '/settings' },
     { name: 'Usuarios', url: '/settings/users' }
   ];
@@ -48,7 +48,7 @@ const UsersPage = () => {
       setUsers(formattedData);
     } catch (error) {
       console.error(error);
-      Swal.fire('Error', 'No se pudieron cargar los usuarios', 'error');
+      Swal.fire('Error', 'No tienes permiso para ver esta seccion de usuarios', 'error');
     } finally {
       setLoading(false);
     }

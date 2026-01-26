@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import MainLayout from '../../components/templates/MainLayout'; // Layout principal
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
@@ -28,11 +27,40 @@ const ClientsPage = () => {
       // Asumimos que el backend devuelve { data: [...], meta: {...} } o un array directo
       // Ajusta según la respuesta real de tu DTO "ApiResponseDto"
       const response = await ClientService.getAllClients();
-      
-      // Si tu backend devuelve la data dentro de una propiedad 'data' o 'items'
-      const dataList = Array.isArray(response) ? response : (response.data || []);
-      
-      setClients(dataList);
+
+      // Normalizar las posibles formas de respuesta de la API y siempre obtener un array
+      let dataList = [];
+      if (Array.isArray(response)) {
+        dataList = response;
+      } else if (Array.isArray(response?.data)) {
+        dataList = response.data;
+      } else if (Array.isArray(response?.items)) {
+        dataList = response.items;
+      } else if (Array.isArray(response?.data?.data)) {
+        dataList = response.data.data;
+      } else if (Array.isArray(response?.data?.items)) {
+        dataList = response.data.items;
+      } else {
+        // Fall back seguro: si la respuesta es un objeto con keys pero no contiene el array esperado,
+        // dejar dataList como array vacío para que InteractiveTable muestre 'Sin registros' en vez de romper.
+        dataList = [];
+      }
+
+      console.log('📦 Clients API response:', response);
+
+      // Mapear la respuesta a la forma que espera la tabla (cabeceras legibles)
+      const formattedClients = dataList.map((c, i) => ({
+        'N°': i + 1,
+        'Nombre': c.name || c.client_name || c.ClientEntity_name || c.nombre || '',
+        'NIT / Documento': c.document || c.document_file || c.ClientEntity_document_file || c.nit || '',
+        'Contacto': c.contactPerson || c.contact_person || c.ClientEntity_contact_person || c.contacto || '',
+        'Industria': c.category || c.ClientEntity_category || c.categoria || '',
+        'Email': c.email || c.ClientEntity_email || '',
+        'Estado': (c.active ?? c.isActive ?? c.ClientEntity_active) ? 'Activo' : 'Inactivo',
+        id: c.id || c.ClientEntity_id || c.uuid || null,
+      }));
+
+      setClients(formattedClients);
     } catch (error) {
       console.error("Error cargando clientes:", error);
       setAlert({ 
@@ -61,7 +89,6 @@ const ClientsPage = () => {
   };
 
   return (
-    <MainLayout>
       <div className="p-6 space-y-6">
         
         {/* Navegación y Alertas */}
@@ -118,7 +145,6 @@ const ClientsPage = () => {
         />
 
       </div>
-    </MainLayout>
   );
 };
 
