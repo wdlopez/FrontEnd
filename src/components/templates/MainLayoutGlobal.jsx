@@ -1,21 +1,13 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import TopBar from '../organisms/Navigation/TopNavbar';
 import Sidebar from '../organisms/Navigation/SideNavbar';
 
-export default function MainLayout({ children }) {
-  const location = useLocation();
+export default function MainLayout() {
   const { user, nameRol, rol, client, provider, otherRol } = useAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [darkMode, setDarkMode] = useState('light');
-
-  // Solo mostrar layout si estamos en rutas protegidas
-  const showLayout = location.pathname !== '/login' && location.pathname !== '/register';
-
-  if (!showLayout) {
-    return children;
-  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -32,8 +24,7 @@ export default function MainLayout({ children }) {
           setDarkMode={setDarkMode} 
         />
       </div>
-
-      {/* Contenedor principal */}
+      
       <div className="flex flex-1">
         {/* Sidebar */}
         <Sidebar 
@@ -50,7 +41,7 @@ export default function MainLayout({ children }) {
             isSidebarCollapsed ? 'ml-16' : 'ml-20'
           }`}
         >
-          {children}
+          <Outlet /> 
         </main>
       </div>
     </div>

@@ -276,7 +276,7 @@ function InteractiveTable({
 
   // handleSelectAll removed (unused)
 
-  const handleSortChange = (col, checked) => {
+  const handleSortChange = (col, /*checked*/) => {
     setSortConfig(prev => ({
       column: col,
       ascending: prev.column === col ? !prev.ascending : true

@@ -45,6 +45,7 @@ const api = createApiInstance(import.meta.env.VITE_API_URL);
 
 // API para proveedores (microservicio de proveedores)
 const apiProviders = createApiInstance(import.meta.env.VITE_API_URL_PROVIDERS);
+const apiContracts = createApiInstance(import.meta.env.VITE_API_URL_CONTRACTS)
 
 export default api;
-export { apiProviders };
+export { apiProviders, apiContracts };
