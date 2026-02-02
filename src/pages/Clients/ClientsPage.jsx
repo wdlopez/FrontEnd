@@ -5,6 +5,8 @@ import InteractiveTable from '../../components/organisms/Tables/InteractiveTable
 import AddClientModal from '../../components/organisms/Forms/AddClientModal';
 import Alerts from '../../components/molecules/Alerts';
 import ClientService from '../../services/Clients/client.service';
+import InfoTooltip from '../../components/atoms/InfoToolTip';
+import { getText } from '../../utils/text';
 
 const ClientsPage = () => {
   // --- Estados ---
@@ -16,7 +18,6 @@ const ClientsPage = () => {
   // Configuración Breadcrumb
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
-    { name: "Gestión Integral", url: "/clients" },
     { name: "Clientes", url: null } // Actual
   ];
 
@@ -106,16 +107,14 @@ const ClientsPage = () => {
         {/* Encabezado con Acciones */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Gestión de Clientes</h1>
+            <div className="flex gap-2 items-center">
+                <InfoTooltip size="sm" message={getText("clientsIntro")} sticky={true}>
+                    <span className="material-symbols-outlined text-gray-400">info</span>
+                </InfoTooltip>
+                <h1 className="text-2xl font-bold text-gray-800">Gestión de Clientes</h1>
+            </div>
             <p className="text-gray-500 text-sm">Administra la base de datos de tus clientes.</p>
           </div>
-          
-          <HeaderActions 
-            onAdd={() => setIsModalOpen(true)}
-            addButtonLabel="Nuevo Cliente"
-            showExport={true} // Si quieres mostrar botón de exportar
-            onRefresh={fetchClients}
-          />
         </div>
 
         {/* Tabla de Resultados */}
@@ -134,6 +133,14 @@ const ClientsPage = () => {
               onEdit={(row) => console.log("Editar", row)}
               onDelete={(row) => console.log("Eliminar", row)}
               rowsPerPage={10}
+              headerButtons={
+                <HeaderActions 
+                  onAdd={() => setIsModalOpen(true)}
+                  addButtonLabel="Nuevo Cliente"
+                  showExport={true} 
+                  onRefresh={fetchClients}
+                />
+              }
             />
           )}
         </div>

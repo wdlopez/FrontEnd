@@ -407,8 +407,8 @@ function InteractiveTable({
                   {/* Acciones */}
                   {(onDelete || actionButton || path !== undefined) &&
                     (
-                      <th className="px-4 py-3 text-center font-bold bg-customBlue dark:bg-dark1 dark:text-gray-200 border-l border-blue-400 dark:border-gray-600 min-w-[100px]">
-                        Acciones
+                      <th className="px-4 py-3 text-center font-bold bg-customBlue dark:bg-dark1 dark:text-gray-200 border-l border-blue-400 dark:border-gray-600 min-w-[140px]">
+                        ACCIONES
                       </th>
                     )}
 
@@ -604,42 +604,50 @@ function InteractiveTable({
                       );
                     })}
                     {(onDelete || actionButton || path !== undefined) &&
-                      <td className="px-4 flex flex-row gap-2 items-center border-l border-gray-200 dark:border-gray-700 min-w-[100px] py-3">
-                        {actionButton && (
-                          React.isValidElement(actionButton)
-                            // clonamos el elemento estático, inyectándole la fila como prop 'row'
-                            ? React.cloneElement(actionButton, { row })
-                            // si es función, la llamamos directamente
-                            : typeof actionButton === "function"
-                              ? actionButton(row)
-                              : null
-                        )}
+                      <td className="px-4 py-3 border-l border-gray-200 dark:border-gray-700 min-w-[140px]">
+                        <div className="flex items-center justify-center gap-2">
+                            {/* Menú de Acciones (3 líneas) */}
+                            <MenuModal icon="menu" styleBtn="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors" size="sm">
+                                <div className="flex items-center justify-around p-2 gap-3">
+                                    <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200" title="Agregar">
+                                        <span className="material-symbols-outlined text-[20px]">add</span>
+                                    </button>
+                                    <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200" title="Historial">
+                                        <span className="material-symbols-outlined text-[20px]">history</span>
+                                    </button>
+                                    <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200" title="Notificaciones">
+                                        <span className="material-symbols-outlined text-[20px]">notifications</span>
+                                    </button>
+                                </div>
+                            </MenuModal>
 
-                        {onDelete && (
-                          <Toolbar
-                            position="bottom"
-                            message={row[parameterState] ? "Desactivar" : "Reactivar"}
-                          >
-                            <button
-                              onClick={() => onDelete(row)}
-                              className="btn-icon btn-icon-primary text-red-500 hover:bg-red-50"
-                            >
-                              <span className="material-symbols-outlined">
-                                {row[parameterState] ? "delete" : "rotate_left"}
-                              </span>
-                            </button>
-                          </Toolbar>
-                        )}
+                            {/* Botón Eliminar */}
+                            {onDelete && (
+                                <button
+                                    onClick={() => onDelete(row)}
+                                    className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors"
+                                    title={row[parameterState] ? "Desactivar / Eliminar" : "Reactivar"}
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                                </button>
+                            )}
 
-                        {path && (
-                          <Toolbar message="Ver Detalles" position="bottom">
-                            <Link to={`${path}${row.id}`}>
-                              <div className="btn-icon btn-icon-primary text-blue-500 hover:bg-blue-50">
-                                <span className="material-symbols-outlined">preview</span>
-                              </div>
-                            </Link>
-                          </Toolbar>
-                        )}
+                            {/* Botón Ver Detalles */}
+                            {path && (
+                                <Link to={`${path}${row.id}`} className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors" title="Ver detalles">
+                                    <span className="material-symbols-outlined text-[20px]">visibility</span>
+                                </Link>
+                            )}
+
+                            {/* Acciones extra */}
+                            {actionButton && (
+                              React.isValidElement(actionButton)
+                                ? React.cloneElement(actionButton, { row })
+                                : typeof actionButton === "function"
+                                  ? actionButton(row)
+                                  : null
+                            )}
+                        </div>
                       </td>}
                   </tr>
                 ))}

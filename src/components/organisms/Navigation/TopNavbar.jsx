@@ -6,13 +6,14 @@ import SearchBar from "../../molecules/searchBar";
 //import logoutService from "../../../services/user-services/logout";
 //import darkModeImage from "../../../assets/images/freepik_br_e1d79d38-8918-400d-869e-4731634c668a.png";
 import Modal from "../../molecules/modal";
-//import getClientSInService from "../../../services/clients-service/getClientA";
+import ClientService from "services/Clients/client.service";
 import Toolbar from "./toolBar";
 import DarkModeToggle from "../../atoms/darckModeBtn";
 import useUnreadNotifications from "../../../hooks/useUnreadNotifications";
+import { useAuth } from "../../../context/AuthContext";
 //import { listContract } from "../../../pages/Deliverables/delLists";
 
-function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, setDarkMode }) {
+function TopBar({ name, darkMode, setDarkMode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [clients, setClients] = useState([]);
@@ -24,29 +25,53 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
   const navigate = useNavigate();
   const profileButtonRef = useRef(null);
   const { unreadCount } = useUnreadNotifications();
-  /*
+  const { user, loading: authLoading } = useAuth();
+  const userRol = user?.role;
+
   const handleClients = async () => {
-    
-    if (userRol === 1) {
-      const clients = await getClientSInService.getClientA();
-      const clientsList = [
-        { value: 0, label: "Ver todos los clientes" }, // Nueva opción
-        ...clients.data.map((c) => ({ value: c.client_id, label: c.client_name }))
-      ];
-      setClients(clientsList);
-      const savedClientId = sessionStorage.getItem('selected_client_id');
-      if (savedClientId) {
-        const savedClient = clientsList.find(c => c.value === parseInt(savedClientId));
-        if (savedClient) {
-          setSelectedClient(savedClient.label);
+
+    // Validar si el usuario tiene permiso para ver todos los clientes
+    if (userRol === 'super_admin' || userRol === 'client_contract_admin' || userRol === 1 || userRol === "1") {
+      try {
+        const response = await ClientService.getAllClients();
+        let clientsData = [];
+
+        // Lógica robusta para extraer el array de clientes
+        // Maneja diferentes formatos de respuesta: [], { data: [] }, { items: [] }, { data: { data: [] } }
+        if (Array.isArray(response)) {
+          clientsData = response;
+        } else if (response?.data && Array.isArray(response.data)) {
+          clientsData = response.data;
+        } else if (response?.items && Array.isArray(response.items)) {
+          clientsData = response.items;
+        } else if (response?.data?.data && Array.isArray(response.data.data)) {
+          clientsData = response.data.data;
         }
+
+        const clientsList = [
+          { value: 0, label: "Ver todos los clientes" },
+          // Ajustamos el mapeo basándonos en la respuesta del backend (ResponseDto: id, name)
+          ...clientsData.map((c) => ({ value: c.id, label: c.name }))
+        ];
+
+        setClients(clientsList);
+
+        const savedClientId = sessionStorage.getItem('selected_client_id');
+        if (savedClientId) {
+          // Comparación robusta convirtiendo ambos a string (para soportar UUIDs y números)
+          const savedClient = clientsList.find(c => String(c.value) === String(savedClientId));
+          if (savedClient) {
+            setSelectedClient(savedClient.label);
+          }
+        }
+      } catch (error) {
+        console.error("Error al cargar clientes en TopBar:", error);
+        setClients([]);
       }
     }
-      
+
     try {
       const contracts = await listContract(userRol);
-      // console.log(userRol);
-      // console.log(contracts);
       const adjusted = contracts.length > 0
         ? [{ ...contracts[0], label: "Seleccionar todos" }, ...contracts.slice(1)]
         : [];
@@ -54,33 +79,30 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
     } catch (error) {
       setContractList([]);
     }
-
-    // Verificar si hay un cliente seleccionado en el SessionStorage
   };
-*/
+
   const handleOpenModal = () => {
     setIsModalOpen(true);
-    //handleClients();
+    handleClients();
   };
 
   const handleSubmit = (data) => {
-    if (parseInt(data.client) === 0) {
+    if (data.client === 0 || data.client === "0") {
       // Si selecciona "Ver todos los clientes"
       sessionStorage.removeItem('selected_client_id');
       sessionStorage.removeItem('selected_client_name');
       setSelectedClient(null);
       setIsModalOpen(false);
       navigate('/Contract/general');
-      // Recargar la página después de un breve delay para asegurar que la navegación se complete
       setTimeout(() => {
         window.location.reload();
       }, 100);
     } else {
-      const selectedClientData = clients.find((c) => c.value === parseInt(data.client));
+      const selectedClientData = clients.find((c) => c.value === data.client);
       if (selectedClientData) {
         setSelectedClient(selectedClientData.label);
-        // Guardar tanto el ID como el nombre del cliente
-        sessionStorage.setItem('selected_client_id', JSON.stringify([parseInt(data.client)]));
+        // Guardar ID como string (UUID)
+        sessionStorage.setItem('selected_client_id', data.client);
         sessionStorage.setItem('selected_client_name', selectedClientData.label);
         navigate(`/Contract/client/${data.client}`);
       }
@@ -115,9 +137,10 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
 
 
   useEffect(() => {
-    // Cargar la lista de clientes y el cliente seleccionado al montar el componente
-    //handleClients();
-  }, [userRol]);
+    if (!authLoading && userRol) {
+      handleClients();
+    }
+  }, [userRol, authLoading]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -165,11 +188,13 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
 
       <div className="flex items-center justify-end space-x-4 text-nowrap">
         <div className="flex flex-col">
-          <p>{name}</p>
-        <Toolbar message={rol} position="top" ><p>{rolName}</p></Toolbar>
+          <p>{user?.name || "Usuario"}</p>
+          <Toolbar message={userRol} position="top">
+            <p>{userRol === 'super_admin' ? 'Super Administrador' : userRol === 'client_contract_admin' ? 'Administrador de Contratos' : 'Usuario'}</p>
+          </Toolbar>
         </div>
 
-        {userRol === 1 ? (
+         {userRol === 'super_admin' || userRol === 'client_contract_admin' ? (
           <div className="flex flex-col justify-center">
             <p>Cliente:</p>
             {selectedClient === null ? (
@@ -185,15 +210,21 @@ function TopBar({ name, darkMode, rolName,rol ,clientName, provider, userRol, se
             )}
           </div>
         ) : (
-          <div>
-            {clientName && (<div className="flex flex-col">
-              <p>Cliente:</p>
-              <b>{clientName}</b>
-            </div>)}
-            {provider && (<div className="flex flex-col">
-              <p>Proveedor:</p>
-              <b>{provider}</b>
-            </div>)}
+          <div className="flex gap-4">
+            {/* Cambiamos clientName por user?.client_name (o el campo que use tu API) */}
+            {user?.client_name && (
+              <div className="flex flex-col">
+                <p className="text-xs opacity-70">Cliente:</p>
+                <b className="text-sm">{user.client_name}</b>
+              </div>
+            )}
+            {/* Cambiamos provider por user?.provider_name */}
+            {user?.provider_name && (
+              <div className="flex flex-col">
+                <p className="text-xs opacity-70">Proveedor:</p>
+                <b className="text-sm">{user.provider_name}</b>
+              </div>
+            )}
           </div>
         )}
         <div className="flex flex-col justify-center ml-6">

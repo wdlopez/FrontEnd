@@ -2,10 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import DashboardService from "../../services/dashboard.service";
 import WelcomeWidget from "./components/WelcomeWidget";
+import Alerts from "../../components/molecules/Alerts";
 
 // Importación de los Dashboards específicos
 import DashBSuperAdmin from "./DashBAdmin";
 import DashBContratoAdmin from "./DashBAdminContractC";
+import WelcomeClient from "./Clients";
+import WelcomeUser from "./Users";  
 
 const ROLES = {
   SUPER_ADMIN: "super_admin",
@@ -21,6 +24,11 @@ const DashboardIndex = () => {
     clientsCount: 0,
     usersCount: 0,
   });
+
+  // Estados para Alertas (requeridos por WelcomeClient)
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState("info");
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -81,24 +89,28 @@ const DashboardIndex = () => {
 
           {/* Grid de botones de acceso rápido */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <WelcomeWidget
-              title="Clientes"
-              message="Registra y gestiona todos tus clientes."
-              buttonText="Ir a Clientes"
-              linkTo="/client"
+            <WelcomeClient 
+              setMsg={setAlertMessage} 
+              setOpenAlert={setAlertOpen} 
+              setAlert={setAlertType} 
               count={dashboardData.clientsCount}
-              icon="domain"
             />
-            <WelcomeWidget
-              title="Usuarios"
-              message="Invita y gestiona usuarios del sistema."
-              buttonText="Ir a Usuarios"
-              linkTo="/settings/userNroles"
-              count={dashboardData.usersCount || 0}
-              icon="people"
+            <WelcomeUser 
+              setMsg={setAlertMessage} 
+              setOpenAlert={setAlertOpen} 
+              setAlert={setAlertType} 
+              count={dashboardData.usersCount}
             />
           </div>
         </div>
+
+        {/* Alertas Globales del Dashboard */}
+        <Alerts 
+          open={alertOpen} 
+          setOpen={setAlertOpen} 
+          message={alertMessage} 
+          type={alertType} 
+        />
 
         {/* Dashboard Completo siempre visible */}
         <DashBSuperAdmin
@@ -126,22 +138,21 @@ const DashboardIndex = () => {
           </div>
           <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <WelcomeWidget
-              title="Clientes"
-              message="Ver y gestionar clientes."
-              buttonText="Ir a Clientes"
-              linkTo="/client"
+            <WelcomeClient 
+              setMsg={setAlertMessage} 
+              setOpenAlert={setAlertOpen} 
+              setAlert={setAlertType} 
               count={dashboardData.clientsCount}
-              icon="domain"
             />
-            <WelcomeWidget
-              title="Usuarios"
-              message="Gestionar usuarios del sistema."
-              buttonText="Ir a Usuarios"
-              linkTo="/settings/userNroles"
-              count={dashboardData.usersCount || 0}
-              icon="people"
-            />
+            {/* Solo mostramos WelcomeUser para super_admin, o si quieres habilitarlo para contract_admin también, quita el condicional */}
+            {user.role === ROLES.SUPER_ADMIN && (
+              <WelcomeUser 
+                setMsg={setAlertMessage} 
+                setOpenAlert={setAlertOpen} 
+                setAlert={setAlertType} 
+                count={dashboardData.usersCount}
+              />
+            )}
           </div>
         </div>
 

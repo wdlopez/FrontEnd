@@ -12,6 +12,7 @@ import DashboardIndex from './pages/Dashboard/Index';
 import UsersPage from './pages/Users/UsersPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ClientsPage from './pages/Clients/ClientsPage';
+import ContractsPage from './pages/Contracts/General/ContractsPage';
 
 
 function App() {
@@ -39,6 +40,8 @@ function App() {
               <Route path="/dashboard" element={<DashboardIndex />} />
               <Route path="/client" element={<ClientsPage />} />
               <Route path="/settings/userNroles" element={<UsersPage />} />
+              <Route path="/contract/general" element={<ContractsPage />} />
+
             </Route>
           </Route>
 

@@ -5,6 +5,8 @@ import BreadCrumb from '../../components/molecules/BreadCrumb';
 import AddUserModal from '../../components/organisms/Forms/AddUserModal';
 import UserService from '../../services/User/user.service';
 import Swal from 'sweetalert2';
+import InfoTooltip from '../../components/atoms/InfoToolTip';
+import { getText } from '../../utils/text';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -14,7 +16,6 @@ const UsersPage = () => {
   // Breadcrumbs
   const paths = [
     { name: 'Inicio', url: '/dashboard' },
-    { name: 'Configuración', url: '/settings' },
     { name: 'Usuarios', url: '/settings/users' }
   ];
 
@@ -92,14 +93,12 @@ const UsersPage = () => {
       <BreadCrumb paths={paths} />
       
       <div className="mt-4 mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Gestión de Usuarios</h1>
-        
-        {/* Componente de Acciones de Cabecera */}
-        <HeaderActions 
-          onAdd={() => setIsModalOpen(true)} // Abre el modal
-          onRefresh={fetchUsers}
-          // Si tienes componente de exportar: ExportComponent={<ExportUser ... />}
-        />
+        <div className="flex gap-2 items-center">
+            <InfoTooltip size="sm" message={getText("usersIntro")} sticky={true}>
+                <span className="material-symbols-outlined text-gray-400">info</span>
+            </InfoTooltip>
+            <h1 className="text-2xl font-bold text-gray-800">Gestión de Usuarios</h1>
+        </div>
       </div>
 
       {loading ? (
@@ -118,6 +117,13 @@ const UsersPage = () => {
           ]}
           onDelete={handleDelete}
           onEdit={handleEdit}
+          headerButtons={
+            <HeaderActions 
+              onAdd={() => setIsModalOpen(true)} 
+              onRefresh={fetchUsers}
+              showExport={true}
+            />
+          }
           // Si tu InteractiveTable soporta paginación interna, configúrala aquí
         />
       )}

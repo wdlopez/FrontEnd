@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Modal from '../../molecules/Modal';
 import Form from './Form';
 import ClientService from '../../../services/Clients/client.service';
 import Swal from 'sweetalert2';
+import InfoTooltip from '../../atoms/InfoToolTip';
+import { getText } from '../../../utils/text';
 
 // Lista de industrias
 const INDUSTRIES = [
@@ -23,7 +25,7 @@ const INDUSTRIES = [
   { value: "Alimentos y bebidas", label: "Alimentos y bebidas" }
 ];
 
-const AddClientModal = ({ isOpen, setIsOpen, onSuccess, setAlert }) => {
+const AddClientModal = ({ isOpen, setIsOpen, onSuccess }) => {
   // Definición de campos del Formulario
   const clientFields = [
     {
@@ -111,7 +113,12 @@ const AddClientModal = ({ isOpen, setIsOpen, onSuccess, setAlert }) => {
       size="lg"
     >
       <div>
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Agregar Nuevo Cliente</h2>
+        <div className="flex gap-2 items-center mb-4">
+            <InfoTooltip size="sm" message={getText("formClient")} sticky={true}>
+                <span className="material-symbols-outlined text-gray-400">info</span>
+            </InfoTooltip>
+            <h2 className="text-xl font-bold text-gray-800">Agregar Nuevo Cliente</h2>
+        </div>
         <Form 
           fields={clientFields} 
           onSubmit={handleCreateClient} 

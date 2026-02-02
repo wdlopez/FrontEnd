@@ -13,43 +13,55 @@ const HeaderActions = ({
     onRefresh,
     showExport
 }) => {
+    const btnClass = "btn btn-primary !p-2 !h-[38px] !w-[38px] flex items-center justify-center shadow-sm";
+
     return (
         <div className={`flex items-center gap-2 ${className || ''}`}>
             {/* Mostrar AddComponent si existe, si no crear un botón con onAdd */}
             {AddComponent ? (
                 AddComponent
             ) : onAdd ? (
-                <button 
-                    onClick={onAdd}
-                    className='px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 transition'
-                >
-                    <span className="material-symbols-outlined text-lg">add</span>
-                    {addButtonLabel}
-                </button>
+                <Toolbar position="bottom" message={addButtonLabel}>
+                    <button 
+                        onClick={onAdd}
+                        className={btnClass}
+                    >
+                        <span className="material-symbols-outlined text-[22px]">add</span>
+                    </button>
+                </Toolbar>
             ) : null}
 
-            {/* Botón de Refrescar */}
-            {onRefresh && (
-                <button 
-                    onClick={onRefresh}
-                    className='px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium flex items-center gap-2 transition'
-                    title="Refrescar datos"
-                >
-                    <span className="material-symbols-outlined text-lg">refresh</span>
-                </button>
-            )}
-
             {typeof isActive !== 'undefined' && typeof onToggle === 'function' && (
-                <Toolbar position="bottom" message={isActive ? 'Ver registros activos' : 'Ver registros inactivos'}>
-                    <button onClick={onToggle} className='btn btn-primary'>
-                        <span className="material-symbols-outlined">
-                            {isActive ? 'content_paste_go' : 'content_paste_off'}
+                <Toolbar position="bottom" message={isActive ? 'Ver inactivos' : 'Ver activos'}>
+                    <button onClick={onToggle} className={btnClass}>
+                        <span className="material-symbols-outlined text-[22px]">
+                            {isActive ? 'find_in_page' : 'rule_folder'}
                         </span>
                     </button>
                 </Toolbar>
             )}
 
-            {ExportComponent}
+            {/* Botón de Refrescar */}
+            {onRefresh && (
+                <Toolbar position="bottom" message="Refrescar">
+                    <button 
+                        onClick={onRefresh}
+                        className={btnClass}
+                    >
+                        <span className="material-symbols-outlined text-[22px]">refresh</span>
+                    </button>
+                </Toolbar>
+            )}
+
+            {ExportComponent ? (
+                ExportComponent
+            ) : showExport ? (
+                <Toolbar position="bottom" message="Exportar">
+                    <button className={btnClass}>
+                        <span className="material-symbols-outlined text-[22px]">download</span>
+                    </button>
+                </Toolbar>
+            ) : null}
 
             {children}
         </div>

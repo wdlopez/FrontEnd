@@ -6,6 +6,8 @@ import RoleService from '../../../services/Role/role.service';
 import ClientService from '../../../services/Clients/client.service';
 import ProviderService from '../../../services/Providers/provider.service';
 import Swal from 'sweetalert2'; 
+import InfoTooltip from '../../atoms/InfoToolTip';
+import { getText } from '../../../utils/text';
 
 const DEFAULT_PASSWORD = "Password2026!";
 const AddUserModal = ({ open, setOpen, onSuccess }) => {
@@ -225,7 +227,13 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
   ];
 
   return (
-    <Modal open={open} setOpen={setOpen} title="Agregar Nuevo Usuario">
+    <Modal open={open} setOpen={setOpen}>
+        <div className="flex gap-2 items-center mb-4 px-1 pt-2">
+            <InfoTooltip size="sm" message={getText("formUser")} sticky={true}>
+                <span className="material-symbols-outlined text-gray-400">info</span>
+            </InfoTooltip>
+            <h2 className="text-xl font-bold text-gray-800">Agregar Nuevo Usuario</h2>
+        </div>
       <div className="pt-2">
         {loadingLists ? (
           <div className="flex flex-col items-center justify-center p-10 text-gray-500">

@@ -1,49 +1,18 @@
-import AddContract from "../Contracts/General/addContract";
-import AddUser from "../Users/AddUser";
-import { useEffect, useState } from "react";
-//import  getContractServiece from "../../services/contract-service/getContractA";
-//import getUserC from "../../services/contract-service/getUsersC";
-//import getUserService from "../../services/clients-service/userByClient";
+import UsersPage from "../Users/UsersPage";
 import { Link } from "react-router-dom";
+import WelcomeWidget from "./components/WelcomeWidget";
 
-function WelcomeUser({ setMsg, setOpenAlert, setAlert,rol,client,provider }) {
-    const [anyUser, /**setAnyUser**/] = useState(0);
-    const fetchClient = async () => {
-        try {
-            /** 
-            const users = await getUserService.getUserbyClient();
-
-            const data = users.filter(u=>u.user_status===1);
-            console.log(data);
-            setAnyUser(data.length);
-            */
-        } catch (error) {
-            if (error.response) {
-                setMsg(`${error.response.data.error || "Error"}: ${error.response.data.message || "Intente de nuevo"}`);
-            } else {
-                setMsg("Error inesperado. Verifique la conexión con el servidor.");
-            }
-            setAlert("error"); // Cambia el tipo de alerta a error
-            setOpenAlert(true);
-            console.log(error);
-        }
-    }
-
-    useEffect(() => {
-        fetchClient();
-    }, [])
+function WelcomeUser({ setMsg, setOpenAlert, setAlert,rol,client,provider, count = 0 }) {
+    // SIEMPRE mostrar el Widget tipo tarjeta en el Dashboard principal para mantener consistencia
     return (
-        <>
-            {anyUser!== 0 ?
-                <Link to={'/settings/userNroles'}>
-                    <button className="btn btn-primary">
-                        Ir a Usuarios
-                    </button>
-                </Link>
-                :
-                <AddUser setAlert={setAlert} setMsg={setMsg} setOpenAlert={setOpenAlert} welcome={true} rol={rol} client={client} provider={provider} />
-            }
-        </>
+        <WelcomeWidget
+            title="Usuarios"
+            message={count > 0 ? "Invita y gestiona usuarios del sistema." : "Comienza creando usuarios."}
+            buttonText="Ir a Usuarios"
+            linkTo="/settings/userNroles"
+            count={count}
+            icon="people"
+        />
     );
 }
 
