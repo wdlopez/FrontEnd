@@ -1,16 +1,18 @@
 import logo from "../../assets/images/it_experts_sin fondo.png";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Form from "../../components/organisms/Forms/Form";
 import Modal from "../../components/molecules/Modal";
 import Alert from "../../components/molecules/Alerts";
 import AuthService from "../../services/auth/auth.service";
+import Captcha from "../../components/atoms/Captcha";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 
 function ForgotPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaRef = useRef(null);
   // 1. Extraer el token ANTES de inicializar cualquier estado
   const tokenFromUrl = searchParams.get("token") || "";
 
@@ -21,24 +23,36 @@ function ForgotPassword() {
   const [openAlert, setOpenAlert] = useState(false);
   const [alertConfig, setAlertConfig] = useState({ message: "", type: "" });
 
-  // 3. Limpiar la URL si entramos por link de correo
+
   useEffect(() => {
     if (tokenFromUrl) {
-      // Reemplazamos la ruta para limpiar el token de la barra de direcciones
-      // pero el componente ya lo tiene guardado en 'initialToken'
       navigate("/reset-password", { replace: true });
     }
-  }, []); // Se ejecuta solo al montar
+  }, []);
+
+  const onCaptchaChange = (token) => {
+    setCaptchaToken(token);
+  };
 
   const handleRequestToken = async (data) => {
+    if (!captchaToken) {
+      setAlertConfig({
+        type: "warning",
+        message: "Por favor, completa el captcha para continuar."
+      });
+      setOpenAlert(true);
+      return;
+    }
     try {
-      await AuthService.forgotPassword({ email: data.email });
+      await AuthService.forgotPassword({ email: data.email});
       setAlertConfig({
         type: "success",
         message: "Si el correo existe, recibirás instrucciones de recuperación."
       });
       setOpenAlert(true);
     } catch (error) {
+      if (captchaRef.current) captchaRef.current.reset();
+      setCaptchaToken(null);
       setAlertConfig({
         type: "error",
         message: error.response?.data?.message || "Error al solicitar recuperación"
@@ -97,7 +111,7 @@ function ForgotPassword() {
             Ingresa tu email y te enviaremos las instrucciones.
           </p>
         </div>
-
+        <Captcha ref={captchaRef} onChange={onCaptchaChange} />
         <Form
           gridLayout={false}
           fields={[
@@ -130,7 +144,7 @@ function ForgotPassword() {
                 label: "Token de seguridad",
                 placeholder: "Pega el código recibido",
                 required: true,
-                defaultValue: initialToken // Aquí ya no fallará
+                defaultValue: initialToken
               },
               {
                 name: "newPassword",

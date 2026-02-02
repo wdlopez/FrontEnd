@@ -7,9 +7,11 @@ import Swal from 'sweetalert2';
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [registerError, setRegisterError] = useState(false);
 
   const handleRegister = async (data) => {
     setLoading(true);
+    setRegisterError(false)
     try {
         const payload = {
       firstName: data.firstName,
@@ -27,6 +29,7 @@ const RegisterPage = () => {
         navigate('/login');
       }
     } catch (err) {
+      setRegisterError(true);
       const errorMsg = err.response?.data?.message || "Error al registrar usuario";
       Swal.fire('Error', Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg, 'error');
     } finally {
@@ -39,7 +42,7 @@ const RegisterPage = () => {
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Registro de Usuario</h2>
         
-        <SignUpForm onSubmit={handleRegister} isLoading={loading} />
+        <SignUpForm onSubmit={handleRegister} isLoading={loading} hasError={registerError} />
         
         <p className="mt-6 text-center text-sm text-gray-600">
           ¿Ya tienes cuenta?{' '}

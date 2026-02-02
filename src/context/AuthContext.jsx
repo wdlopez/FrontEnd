@@ -39,24 +39,22 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const response = await AuthService.login(credentials);
+      const authData = response.data || response;
 
-      if (response && response.accessToken) {
-        Cookies.set("auth_token", response.accessToken, {
-          expires: 1,
-          secure: true,
-          sameSite: "strict",
-        });
+     if (authData && authData.accessToken) {
+      Cookies.set("auth_token", authData.accessToken, {
+        expires: 1,
+        secure: true,
+        sameSite: "strict",
+      });
         const userData = {
-          id: response.userId,
-          firstName: response.firstName,
-          lastName: response.lastName,
-          role:
-            response.roles && response.roles.length > 0
-              ? response.roles[0]
-              : null,
-          clientId: response.clientId,
-          providerId: response.providerId,
-        };
+        id: authData.userId,
+        firstName: authData.firstName,
+        lastName: authData.lastName,
+        role: authData.roles?.[0] || null,
+        clientId: authData.clientId,
+        providerId: authData.providerId,
+      };
 
         setUser(userData);
         Cookies.set("user_data", JSON.stringify(userData), { expires: 1 }); // Guardamos datos del usuario

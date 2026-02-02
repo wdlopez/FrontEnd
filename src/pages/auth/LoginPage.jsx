@@ -8,23 +8,25 @@ const LoginPage = () => {
   const { login } = useAuth();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState(false);
 
-  const handleLogin = async (credentials) => {
+  const handleLogin = async (dataWithCaptcha) => {
     setLoading(true);
+    setLoginError(null);
     setError(null);
     try {
-      const success = await login(credentials);
+      const success = await login(dataWithCaptcha);
       if (success) {
         navigate("/dashboard");
       } else {
         setError("No se pudo iniciar sesión. Verifique sus credenciales.");
+        setLoginError(true);
       }
     } catch (err) {
       console.error(err);
-      const msg =
-        err.response?.data?.message ||
-        "Credenciales inválidas o error de conexión";
+      const msg = err.response?.data?.message || "Error de conexión con el servidor";
       setError(msg);
+      setLoginError(true)
     } finally {
       setLoading(false);
     }
@@ -52,7 +54,7 @@ const LoginPage = () => {
             </div>
           )}
 
-          <LoginForm onSubmit={handleLogin} isLoading={loading} />
+          <LoginForm onSubmit={handleLogin} isLoading={loading} hasError={loginError} />
 
           <div className="mt-6 flex flex-col gap-3 text-center">
             <Link

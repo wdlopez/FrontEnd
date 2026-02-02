@@ -1,8 +1,10 @@
+import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import Button from "../../atoms/Button";
 import FormField from "../../molecules/FormField";
+import Captcha from "../../atoms/Captcha";
 
-const SignUpForm = ({ onSubmit, isLoading }) => {
+const SignUpForm = ({ onSubmit, isLoading, hasError }) => {
   const {
     register,
     handleSubmit,
@@ -11,9 +13,32 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
   } = useForm();
 
   const password = watch("password");
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaRef = useRef(null);
+  const [captchaError, setCaptchaError] = useState(null);
+
+  useEffect(() => {
+    if (hasError && captchaRef.current) {
+        captchaRef.current.reset();
+        setCaptchaToken(null);
+    }
+  }, [hasError]);
+
+  const onCaptchaChange = (token) => {
+    setCaptchaToken(token);
+    if(token) setCaptchaError(null);
+  };
+
+  const onFormSubmit = (data) => {
+    if (!captchaToken) {
+        setCaptchaError("Es necesario completar el captcha.");
+        return;
+    }
+    onSubmit(data);
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="flex flex-col gap-3">
       {/* Nombre y Apellido en una fila */}
       <div className="flex gap-2">
         <div className="flex-1">
@@ -96,6 +121,12 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
             {errors.confirmPassword.message}
           </span>
         )}
+      </div>
+
+      {/* Captcha Integrado */}
+      <div className="flex flex-col items-center mt-2">
+         <Captcha ref={captchaRef} onChange={onCaptchaChange} />
+         {captchaError && <span className="text-red-500 text-xs font-bold mt-1">{captchaError}</span>}
       </div>
 
       <div className="flex items-start gap-2 mt-2">

@@ -7,6 +7,7 @@ import ClientService from '../../../services/Clients/client.service';
 import ProviderService from '../../../services/Providers/provider.service';
 import Swal from 'sweetalert2'; 
 
+const DEFAULT_PASSWORD = "Password2026!";
 const AddUserModal = ({ open, setOpen, onSuccess }) => {
   const [loadingLists, setLoadingLists] = useState(false);
   
@@ -131,7 +132,7 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        password: formData.password,
+        password: formData.password || DEFAULT_PASSWORD,
         roleId: formData.role_id,
         isActive: true
       };
@@ -195,13 +196,6 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
       type: 'email',
       required: true,
       placeholder: 'ejemplo@correo.com'
-    },
-    {
-      name: 'password',
-      label: 'Contraseña',
-      type: 'password',
-      required: true,
-      placeholder: 'Ingrese una contraseña segura'  
     },
     {
       name: 'role_id',

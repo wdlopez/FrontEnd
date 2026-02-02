@@ -9,7 +9,7 @@ const AuthService = {
   //Crud para iniciar sesion
   login: async (credentials) => {
     const response = await api.post('/auth/signin', credentials); 
-    return response.data.data;
+    return response.data;
   },
   /**
    * Crud para registra un nuevo usuario
