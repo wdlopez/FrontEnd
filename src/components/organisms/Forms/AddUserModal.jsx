@@ -8,6 +8,7 @@ import ProviderService from '../../../services/Providers/provider.service';
 import Swal from 'sweetalert2'; 
 import InfoTooltip from '../../atoms/InfoToolTip';
 import { getText } from '../../../utils/text';
+import { normalizeList } from '../../../utils/api-helpers';
 
 const DEFAULT_PASSWORD = "Password2026!";
 const AddUserModal = ({ open, setOpen, onSuccess }) => {
@@ -24,104 +25,37 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
       const fetchData = async () => {
         setLoadingLists(true);
         try {
-          const [rolesRes, clientsRes, providerRes] = await Promise.allSettled([
+        const [rolesRes, clientsRes, providerRes] = await Promise.allSettled([
             RoleService.getRoles(),
             ClientService.getAllClients(),
             ProviderService.getAllProviders()
-          ]);
+        ]);
 
-          // 1. Procesar Roles
-          let rolesData = [];
-          if (rolesRes.status === 'fulfilled') {
-            const val = rolesRes.value;
-            console.log("📦 Roles Response:", val);
-            
-            if (Array.isArray(val)) {
-              rolesData = val;
-            } else if (val?.data?.data && Array.isArray(val.data.data)) {
-              rolesData = val.data.data;
-            } else if (val?.data && Array.isArray(val.data)) {
-              rolesData = val.data;
-            } else if (val?.items && Array.isArray(val.items)) {
-              rolesData = val.items;
-            }
-          }
+        // Usamos la utilidad para todos por igual
+        const rolesData = rolesRes.status === 'fulfilled' ? normalizeList(rolesRes.value) : [];
+        const clientsData = clientsRes.status === 'fulfilled' ? normalizeList(clientsRes.value) : [];
+        const providersData = providerRes.status === 'fulfilled' ? normalizeList(providerRes.value) : [];
 
-          // Asegurar que rolesData es siempre un array antes de usar .map()
-          if (!Array.isArray(rolesData)) {
-            console.warn("⚠️ rolesData no es un array:", rolesData);
-            rolesData = [];
-          }
-
-          setRolesList(rolesData.map(r => ({ 
+        setRolesList(rolesData.map(r => ({ 
             value: r.id, 
             label: r.name || r.description || 'Sin nombre' 
-          })));
+        })));
 
-          // 2. Procesar Clientes para la lista de Entidades
-          let clientsData = [];
-          if (clientsRes.status === 'fulfilled') {
-            const val = clientsRes.value;
-            console.log("📦 Clients Response:", val);
-            
-            if (Array.isArray(val)) {
-              clientsData = val;
-            } else if (val?.data?.data && Array.isArray(val.data.data)) {
-              clientsData = val.data.data;
-            } else if (val?.data && Array.isArray(val.data)) {
-              clientsData = val.data;
-            } else if (val?.items && Array.isArray(val.items)) {
-              clientsData = val.items;
-            }
-          }
-
-          // Asegurar que clientsData es siempre un array
-          if (!Array.isArray(clientsData)) {
-            console.warn("⚠️ clientsData no es un array:", clientsData);
-            clientsData = [];
-          }
-
-          const clientOpts = clientsData.map(c => ({ 
+        setEntitiesList(clientsData.map(c => ({ 
             value: `c_${c.id}`, 
-            label: `Cliente: ${c.name || c.contactPerson || 'Sin nombre'}` 
-          }));
+            label: `Cliente: ${c.name || 'Sin nombre'}` 
+        })));
 
-          setEntitiesList([...clientOpts]);
-
-          // 3. Procesar Proveedores
-          let providersData = [];
-          if (providerRes.status === 'fulfilled') {
-            const val = providerRes.value;
-            console.log("📦 Providers Response:", val);
-            
-            if (Array.isArray(val)) {
-              providersData = val;
-            } else if (val?.data?.data && Array.isArray(val.data.data)) {
-              providersData = val.data.data;
-            } else if (val?.data && Array.isArray(val.data)) {
-              providersData = val.data;
-            } else if (val?.items && Array.isArray(val.items)) {
-              providersData = val.items;
-            }
-          }
-
-          // Asegurar que providersData es siempre un array antes de usar .map()
-          if (!Array.isArray(providersData)) {
-            console.warn("⚠️ providersData no es un array:", providersData);
-            providersData = [];
-          }
-
-          setProviderList(providersData.map(p => ({ 
+        setProviderList(providersData.map(p => ({ 
             value: `p_${p.id}`, 
-            label: `Proveedor: ${p.legalName || p.name || 'Sin nombre'}` 
-          })));
+            label: `Proveedor: ${p.legal_name || p.name || 'Sin nombre'}` 
+        })));
 
-        } catch (error) {
-          console.error("Error crítico cargando listas", error);
-          Swal.fire('Error', 'No se pudieron cargar las listas de roles/clientes', 'warning');
-        } finally {
-          setLoadingLists(false);
-        }
+    } catch (error) {
+        console.error("Error cargando listas", error);
+    } finally {
+        setLoadingLists(false);
+    }
       };
       fetchData();
     }
@@ -130,34 +64,25 @@ const AddUserModal = ({ open, setOpen, onSuccess }) => {
   // Manejo del Submit
   const handleCreateUser = async (formData) => {
     try {
+
+      const entityType = formData.entityId?.split('_')[0];
+      const entityValue = formData.entityId?.split('_')[1];
+      const directProviderId = formData.providerId?.replace('p_', '');
+
       const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password || DEFAULT_PASSWORD,
         roleId: formData.role_id,
-        isActive: true
+        isActive: true,
+        ...(entityType === 'c' && { clientId: entityValue }),
+        ...((entityType === 'p' || directProviderId) && { 
+            providerId: directProviderId || entityValue
+        })
       };
 
-      // --- LÓGICA DE ENTIDAD (CLIENTE vs PROVEEDOR) ---
-      // Si el usuario selecciona una entidad desde el select de entityId
-      if (formData.entityId) {
-        const [type, id] = formData.entityId.split('_');
-        
-        if (type === 'c') {
-          payload.clientId = id;
-        } else if (type === 'p') {
-          payload.providerId = id;
-        }
-      }
-
-      // Si el usuario selecciona directamente un proveedor desde el campo providerId
-      if (formData.providerId) {
-        payload.providerId = formData.providerId;
-      }
-
-      console.log("📤 Payload Enviado:", payload); 
-
+      console.log("📤 Payload final:", payload);
       await UserService.createUser(payload);
       
       Swal.fire('Creado!', 'El usuario ha sido creado exitosamente.', 'success');

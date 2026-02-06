@@ -47,8 +47,7 @@ function ContractPage() {
         "Fin": d.end_date,
         "Estado": d.status,
         "Moneda": d.currency,
-        "Valor": d.total_value,
-        state: d.status === 'active' ? 1 : 0 
+        "Valor": d.total_value
     }))
     : [];
 
