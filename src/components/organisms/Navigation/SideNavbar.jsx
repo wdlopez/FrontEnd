@@ -19,7 +19,7 @@ const integralControl = [
   { name: "Entregables", path: "/Contract/deliverables", allowedRoles: [1, 2, 3, 8, 9], allowedPermissions: ["read-deliverables"] },
   { name: "Servicios", path: "/contract/services", allowedRoles: [1, 2, 3, 8, 9] },
   { name: "SLAs", path: "/Contract/sla", allowedRoles: [1, 2, 8], allowedPermissions: ["read-serviceLevel"] },
-  { name: "Clausulas", path: "/Contract/clauses", allowedRoles: [1, 2,] }, // 👈 Agregado
+  { name: "Clausulas", path: "/contract/clauses" },
 
 ];
 const contract = [
