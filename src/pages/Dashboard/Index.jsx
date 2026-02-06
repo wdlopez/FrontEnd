@@ -8,11 +8,21 @@ import Alerts from "../../components/molecules/Alerts";
 import DashBSuperAdmin from "./DashBAdmin";
 import DashBContratoAdmin from "./DashBAdminContractC";
 import WelcomeClient from "./Clients";
-import WelcomeUser from "./Users";  
+import WelcomeUser from "./Users";
+import DashbRendimiento from "./DashBRendimiento";
+import DashbFinanzas from "./DashBFinanzas";
+import DashbReportes from "./DashBReportes";
+import DashbRelacionamiento from "./DashBRelacionamiento";
+import DashbRiesgos from "./DashBRiesgos";  
 
 const ROLES = {
   SUPER_ADMIN: "super_admin",
   CONTRACT_ADMIN: "client_contract_admin",
+  CLIENT_PERFORMANCE_RESP: "client_performance_resp",
+  CLIENT_FINANCE_RESP: "client_finance_resp",
+  CLIENT_REPORTS_RESP: "client_reports_resp",
+  CLIENT_RELATIONSHIP_RESP: "client_relationship_resp",
+  CLIENT_RISK_RESP: "client_risk_resp",
 };
 
 const DashboardIndex = () => {
@@ -158,6 +168,226 @@ const DashboardIndex = () => {
 
         {/* Dashboard de Contract Admin */}
         <DashBContratoAdmin
+          user={user}
+          contracts={dashboardData.contracts}
+          slas={dashboardData.slas}
+        />
+      </div>
+    );
+  }
+
+  // CASO 3: RESPONSABLES DE RENDIMIENTOS DE ClIENTE
+  if (user.role === ROLES.CLIENT_PERFORMANCE_RESP) {
+    return (
+      <div className="space-y-6">
+        {/* Botones de acceso rápido para Contract Admin */}
+        <div className="p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Hola, {user.role}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Bienvenido a ContractX. Comienza gestionando clientes y contratos.
+            </p>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <WelcomeClient 
+              setMsg={setAlertMessage} 
+              setOpenAlert={setAlertOpen} 
+              setAlert={setAlertType} 
+              count={dashboardData.clientsCount}
+            />
+            {/* Solo mostramos WelcomeUser para super_admin, o si quieres habilitarlo para contract_admin también, quita el condicional */}
+            {user.role === ROLES.SUPER_ADMIN && (
+              <WelcomeUser 
+                setMsg={setAlertMessage} 
+                setOpenAlert={setAlertOpen} 
+                setAlert={setAlertType} 
+                count={dashboardData.usersCount}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Dashboard de Contract Admin */}
+        <DashbRendimiento
+          user={user}
+          contracts={dashboardData.contracts}
+          slas={dashboardData.slas}
+        />
+      </div>
+    );
+  }
+
+  // CASO 4: RESPONSABLES DE RIESGOS DE CLIENTE
+  if (user.role === ROLES.CLIENT_RISK_RESP) {
+    return (
+      <div className="space-y-6">
+        {/* Botones de acceso rápido para Contract Admin */}
+        <div className="p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Hola, {user.role}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Bienvenido a ContractX. Comienza gestionando clientes y contratos.
+            </p>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <WelcomeClient 
+              setMsg={setAlertMessage} 
+              setOpenAlert={setAlertOpen} 
+              setAlert={setAlertType} 
+              count={dashboardData.clientsCount}
+            />
+            {/* Solo mostramos WelcomeUser para super_admin, o si quieres habilitarlo para contract_admin también, quita el condicional */}
+            {user.role === ROLES.SUPER_ADMIN && (
+              <WelcomeUser 
+                setMsg={setAlertMessage} 
+                setOpenAlert={setAlertOpen} 
+                setAlert={setAlertType} 
+                count={dashboardData.usersCount}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Dashboard de Contract Admin */}
+        <DashbRiesgos
+          user={user}
+          contracts={dashboardData.contracts}
+          slas={dashboardData.slas}
+        />
+      </div>
+    );
+  }
+
+  // CASO 5: RESPONSABLES DE REPORTES DE ClIENTE
+  if (user.role === ROLES.CLIENT_REPORTS_RESP) {
+    return (
+      <div className="space-y-6">
+        {/* Botones de acceso rápido para Contract Admin */}
+        <div className="p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Hola, {user.role}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Bienvenido a ContractX. Comienza gestionando clientes y contratos.
+            </p>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <WelcomeClient 
+              setMsg={setAlertMessage} 
+              setOpenAlert={setAlertOpen} 
+              setAlert={setAlertType} 
+              count={dashboardData.clientsCount}
+            />
+            {/* Solo mostramos WelcomeUser para super_admin, o si quieres habilitarlo para contract_admin también, quita el condicional */}
+            {user.role === ROLES.SUPER_ADMIN && (
+              <WelcomeUser 
+                setMsg={setAlertMessage} 
+                setOpenAlert={setAlertOpen} 
+                setAlert={setAlertType} 
+                count={dashboardData.usersCount}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Dashboard de Contract Admin */}
+        <DashbReportes
+          user={user}
+          contracts={dashboardData.contracts}
+          slas={dashboardData.slas}
+        />
+      </div>
+    );
+  }
+
+  // CASO 6: RESPONSABLES DE FINANZAS DE ClIENTE
+  if (user.role === ROLES.CLIENT_FINANCE_RESP) {
+    return (
+      <div className="space-y-6">
+        {/* Botones de acceso rápido para Contract Admin */}
+        <div className="p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Hola, {user.role}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Bienvenido a ContractX. Comienza gestionando clientes y contratos.
+            </p>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <WelcomeClient 
+              setMsg={setAlertMessage} 
+              setOpenAlert={setAlertOpen} 
+              setAlert={setAlertType} 
+              count={dashboardData.clientsCount}
+            />
+            {/* Solo mostramos WelcomeUser para super_admin, o si quieres habilitarlo para contract_admin también, quita el condicional */}
+            {user.role === ROLES.SUPER_ADMIN && (
+              <WelcomeUser 
+                setMsg={setAlertMessage} 
+                setOpenAlert={setAlertOpen} 
+                setAlert={setAlertType} 
+                count={dashboardData.usersCount}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Dashboard de Contract Admin */}
+        <DashbFinanzas
+          user={user}
+          contracts={dashboardData.contracts}
+          slas={dashboardData.slas}
+        />
+      </div>
+    );
+  }
+
+  // CASO 7: RESPONSABLES DE RELACIONAMIENTO DE ClIENTE
+  if (user.role === ROLES.CLIENT_RELATIONSHIP_RESP) {
+    return (
+      <div className="space-y-6">
+        {/* Botones de acceso rápido para Contract Admin */}
+        <div className="p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Hola, {user.role}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Bienvenido a ContractX. Comienza gestionando clientes y contratos.
+            </p>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <WelcomeClient 
+              setMsg={setAlertMessage} 
+              setOpenAlert={setAlertOpen} 
+              setAlert={setAlertType} 
+              count={dashboardData.clientsCount}
+            />
+            {/* Solo mostramos WelcomeUser para super_admin, o si quieres habilitarlo para contract_admin también, quita el condicional */}
+            {user.role === ROLES.SUPER_ADMIN && (
+              <WelcomeUser 
+                setMsg={setAlertMessage} 
+                setOpenAlert={setAlertOpen} 
+                setAlert={setAlertType} 
+                count={dashboardData.usersCount}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Dashboard de Contract Admin */}
+        <DashbRelacionamiento
           user={user}
           contracts={dashboardData.contracts}
           slas={dashboardData.slas}
