@@ -15,7 +15,7 @@ const integralControl = [
   { name: "Clientes", path: "/client", allowedRoles: [1], allowedPermissions: ["read-clients"] },
   { name: "Contratos", path: "/contract/general"},
   { name: "Usuarios", path: "/settings/userNroles", allowedRoles: [1, 2, 8], allowedPermissions: ["read-users"] },
-  { name: "Proveedores", path: "/suppliers", allowedRoles: [1, 2, 8], allowedPermissions: ["read-providers"] },
+  { name: "Proveedores", path: "/suppliers"},
   { name: "Entregables", path: "/Contract/deliverables", allowedRoles: [1, 2, 3, 8, 9], allowedPermissions: ["read-deliverables"] },
   { name: "Servicios", path: "/contract/services", allowedRoles: [1, 2, 3, 8, 9] },
   { name: "SLAs", path: "/Contract/sla", allowedRoles: [1, 2, 8], allowedPermissions: ["read-serviceLevel"] },
