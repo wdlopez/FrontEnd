@@ -36,16 +36,21 @@ function ContractPage() {
     const { loading, data, refresh } = useContracts(id_client, isActiveToggle);
 
     // Mapeo de datos para la tabla
-    const tableData = data.contracts.map(d => ({
-        id: d.cont_id,
-        "#": d.virtual_id,
-        "Nombre Clave": d.contract_key_name,
-        "Cliente": d.client?.client_name || d.client,
-        "Proveedor": d.provider?.prov_name || d.provider,
+   const tableData = Array.isArray(data?.contracts) 
+    ? data.contracts.map(d => ({
+        id: d.id, 
+        "#": d.contract_number,
+        "Nombre Clave": d.keyName || 'N/A',
+        "Cliente": d.client?.name || d.client_id || '...', 
+        "Proveedor": d.provider?.name || d.provider_id || '...',
+        "Inicio": d.start_date,
         "Fin": d.end_date,
-        "Estado": d.status_label,
-        state: d.cont_active
-    }));
+        "Estado": d.status,
+        "Moneda": d.currency,
+        "Valor": d.total_value,
+        state: d.status === 'active' ? 1 : 0 
+    }))
+    : [];
 
     // Configuración de Breadcrumb (puedes dinamizarlo con el nombre del cliente si el hook lo da)
     const breadcrumbPaths = [
@@ -63,7 +68,7 @@ function ContractPage() {
                     
                     <div className="flex justify-between items-center">
                         <div className="flex gap-2 items-center">
-                            <InfoTooltip size="sm" message={getText("contractsIntro")} sticky={true}>
+                            <InfoTooltip size="sm" message={getText("contractsIntro") || "Gestión de contratos"} sticky={true}>
                                 <span className="material-symbols-outlined text-gray-400">info</span>
                             </InfoTooltip>
                             <h1 className="text-2xl font-bold text-titleBlue">Gestión De Contratos</h1>
@@ -74,6 +79,8 @@ function ContractPage() {
                         <InteractiveTable
                             data={tableData}
                             loading={loading}
+                            // Definimos columnas explícitamente si tu tabla lo soporta, 
+                            // sino usará las keys del objeto tableData
                             headerButtons={
                                 <HeaderActions
                                     isActive={isActiveToggle}
@@ -84,23 +91,20 @@ function ContractPage() {
                                     onRefresh={refresh}
                                 />
                             }
-                            // Aquí puedes añadir onEdit o onDelete siguiendo el patrón de InteractiveTable
                         />
                     </div>
                 </div>
             )}
 
-            {/* Sub-vistas de las pestañas */}
-            {/* {activeTab === "Service" && <ServiceIndex />}
-            {activeTab === "SLAs" && <SLAsIndex />}
-            {activeTab === "E&O" && <Deliverables />} */}
-
-            {/* MODAL UNIFICADO: Lógica de formulario y servicios encapsulada */}
+            {/* MODAL: Usa el componente que creamos en el paso anterior */}
             <AddContractModal 
                 isOpen={isModalOpen}
                 setIsOpen={setIsModalOpen}
-                clientSelectedId={id_client}
-                onSuccess={refresh} // Recarga la tabla al crear con éxito
+                clientSelectedId={id_client} // Pre-seleccionamos el cliente si estamos en su vista
+                onSuccess={() => {
+                    refresh(); // Recargamos la tabla al crear
+                    setAlert({ open: true, message: "Contrato creado con éxito", type: "success" });
+                }}
             />
 
             <Alert 

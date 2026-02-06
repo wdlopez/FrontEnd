@@ -1,202 +1,226 @@
 import React, { useState, useEffect } from "react";
-import Modal from "../../modal";
-import Form from "../../form";
-import InfoTooltip from "../../infoToolTip";
+import Modal from "../../molecules/Modal"; 
+import Form from "../Forms/Form"; 
+import InfoTooltip from "../../atoms/InfoToolTip"; 
 import { getText } from "../../../utils/text";
-//import createContractService from "../../../services/contract-service/createContract";
-//import getProviderService from "../../../services/suppliers-service/getSupplier";
-//import getValuesService from "../../../services/valueType-service/getTypes";
-//import getClientservice from "../../../services/clients-service/getClients";
-//import getUserService from "../../../services/user-services/getUsers";
-//import getFilteredUserService from "../../../services/clients-service/filteredUsersbyClient";
+import ClientService from '../../../services/Clients/client.service';
+import ProviderService from '../../../services/Providers/provider.service';
+import ContractService from "../../../services/Contracts/contract.service";
+import { useAuth } from "../../../context/AuthContext";
 import Swal from 'sweetalert2';
 
-const AddContractModal = ({ isOpen, setIsOpen, onSuccess, clientSelectedId}) => {
-    // --- Estados ---
+const AddContractModal = ({ isOpen, setIsOpen, onSuccess, clientSelectedId }) => {
+    const { user } = useAuth(); 
     const [loading, setLoading] = useState(false);
-    const [loadingUsers, setLoadingUsers] = useState(false);
     const [catalogs, setCatalogs] = useState({
         providers: [],
-        types: [],
-        clients: [],
-        users: []
+        clients: []
     });
-    /** 
-    // --- Carga de Catálogos (Selects) ---
-    const loadInitialData = async () => {
-        setLoadingUsers(true);
-        try {
-            const [providersRes, typesRes, clientsRes, usersRes] = await Promise.all([
-                getProviderService.getSupplier(),
-                getValuesService.getValueType(),
-                getClientservice.getClients(),
-                getUserService.getUsers()
-            ]);
-
-            setCatalogs({
-                providers: providersRes.data
-                    .filter(p => p.prov_status === 1)
-                    .map(p => ({ value: p.prov_id, label: p.prov_name })),
-                types: typesRes.map(t => ({ 
-                    value: t.typev_id, 
-                    label: `${t.typev_name} ${t.typev_simbol}` 
-                })),
-                clients: clientsRes.data
-                    .filter(c => c.client_status === 1)
-                    .map(c => ({ value: c.client_id, label: c.client_name })),
-                users: usersRes.data
-                    .filter(u => u.user_status === true)
-                    .map(u => ({ value: u.user_id, label: u.user_nickname }))
-            });
-        } catch (error) {
-            console.error("Error al cargar datos del formulario:", error);
-            Swal.fire('Error', 'No se pudieron cargar los catálogos', 'error');
-        } finally {
-            setLoadingUsers(false);
-        }
-    };
 
     useEffect(() => {
-        if (isOpen) loadInitialData();
+        if (isOpen) {
+            const fetchData = async () => {
+                try {
+                    // Cargar Clientes y Proveedores
+                    const [clientsRes, providersRes] = await Promise.all([
+                        ClientService.getAllClients(),
+                        ProviderService.getAllProviders()
+                    ]);
+
+                    // Normalizar respuestas (Array vs Object.data)
+                    const cData = Array.isArray(clientsRes) ? clientsRes : (clientsRes.data || []);
+                    const pData = Array.isArray(providersRes) ? providersRes : (providersRes.data || []);
+
+                    setCatalogs({
+                        clients: cData.map(c => ({ 
+                            value: c.id, 
+                            label: c.name 
+                        })),
+                        providers: pData.map(p => ({ 
+                            value: p.id, 
+                            label: p.name // Asegúrate que el back devuelva 'name' o ajusta a 'prov_name'
+                        }))
+                    });
+                } catch (error) {
+                    console.error("Error loading catalogs:", error);
+                    Swal.fire('Error', 'Error al cargar listas de clientes/proveedores', 'error');
+                }
+            };
+            fetchData();
+        }
     }, [isOpen]);
 
-    // --- Lógica de Filtrado de Usuarios por Cliente ---
-    const handleClientChange = async (clientId) => {
-        if (!clientId) return;
-        setLoadingUsers(true);
-        try {
-            const response = await getFilteredUserService.getFilteredUserbyClient(clientId);
-            const filteredUsers = response.users || [];
-            setCatalogs(prev => ({
-                ...prev,
-                users: filteredUsers.map(u => ({
-                    value: u.user_id,
-                    label: `${u.user_nickname} (${u.role?.rol_name || 'Sin Rol'})`
-                }))
-            }));
-        } catch (error) {
-            console.error("Error filtrando usuarios:", error);
-        } finally {
-            setLoadingUsers(false);
-        }
-    };
-    */
-    // --- Definición de Campos (Lo que antes estaba en ContractForm) ---
+    // --- Campos del Formulario (Mapeado exacto al DTO) ---
     const contractFields = [
         {
-            name: 'contract_key_name',
+            name: 'contract_number',
             type: 'text',
-            label: 'Nombre Clave',
-            placeholder: 'Ej: CON-2024-ACME',
+            label: 'Número de Contrato *',
+            placeholder: 'Ej: CR-2026-001',
             required: true
         },
         {
-            name: 'cont_description',
+            name: 'version',
+            type: 'text',
+            label: 'Versión',
+            placeholder: '1',
+            required: false // DTO: Optional
+        },
+        {
+            name: 'keyName',
+            type: 'text',
+            label: 'Nombre Clave (Alias)',
+            placeholder: 'Ej: Contrato Marco IT',
+            required: false // DTO: Optional
+        },
+        {
+            name: 'description',
             type: 'textarea',
             label: 'Descripción',
-            placeholder: 'Breve descripción del contrato...',
+            placeholder: 'Detalles del contrato...',
+            required: false // DTO: Optional
+        },
+        {
+            name: 'client_id',
+            type: 'select',
+            label: 'Cliente *',
+            options: catalogs.clients,
+            required: true,
+            defaultValue: clientSelectedId || ''
+        },
+        {
+            name: 'provider_id',
+            type: 'select',
+            label: 'Proveedor *',
+            options: catalogs.providers,
             required: true
         },
         {
             name: 'start_date',
             type: 'date',
-            label: 'Fecha Inicio',
+            label: 'Fecha Inicio *',
             required: true,
             group: 'Vigencia'
         },
         {
             name: 'end_date',
             type: 'date',
-            label: 'Fecha Fin',
+            label: 'Fecha Fin *',
             required: true,
             group: 'Vigencia'
         },
         {
             name: 'total_value',
             type: 'number',
-            label: 'Valor Total',
+            label: 'Valor Total *',
             placeholder: '0.00',
             required: true,
+            group: 'Financiero'
         },
         {
-            name: 'typev_id',
+            name: 'currency',
             type: 'select',
             label: 'Moneda',
-            options: catalogs.types,
-            required: true
+            options: [
+                { value: 'USD', label: 'Dólares (USD)' },
+                { value: 'COP', label: 'Pesos Col (COP)' },
+                { value: 'EUR', label: 'Euros (EUR)' }
+            ],
+            required: false, // DTO says Optional, but good to have
+            defaultValue: 'USD',
+            group: 'Financiero'
         },
         {
-            name: 'provider_id',
-            type: 'select',
-            label: 'Proveedor',
-            options: catalogs.providers,
-            required: true
-        },
-        {
-            name: 'client_id',
-            type: 'select',
-            label: 'Cliente',
-            customSelect: true,
-            options: catalogs.clients.length > 0 ? catalogs.clients : [{ value: 0, label: 'Cargando...' }],
+            name: 'country',
+            type: 'text', 
+            label: 'País *',
+            placeholder: 'Colombia',
             required: true,
+            group: 'Ubicación'
         },
         {
-            name: 'user_id',
+            name: 'language',
             type: 'select',
-            label: 'Responsable',
-            options: loadingUsers ? [{ value: 0, label: "Cargando..." }] : catalogs.users,
-            required: true
+            label: 'Idioma *',
+            options: [
+                { value: 'es', label: 'Español' },
+                { value: 'en', label: 'Inglés' },
+                { value: 'pt', label: 'Portugués' }
+            ],
+            required: true,
+            defaultValue: 'es',
+            group: 'Ubicación'
         }
     ];
-    /** 
-    // --- Envío del Formulario ---
+
+    // --- Submit ---
     const handleCreateContract = async (formData) => {
         setLoading(true);
         try {
+            const cleanData = Object.fromEntries(
+            Object.entries(formData).map(([key, value]) => [
+                key, 
+                value === "" ? undefined : value 
+            ])
+        );
+            // 2. Construir Payload (CreateContractRequestDto)
             const payload = {
-                ...formData,
-                user_id: parseInt(formData.user_id),
-                provider_id: parseInt(formData.provider_id),
-                client_id: parseInt(formData.client_id),
-                typev_id: parseInt(formData.typev_id),
-                status: 1,
-                cont_active: 1
+                ...cleanData,
+                total_value: parseFloat(formData.total_value),
+                status: 'draft', // Default del DTO
+                created_by: user?.id,
+                //approved_by: user?.id
             };
 
-            await createContractService.createContract(payload);
+            // Validar que tengamos created_by antes de enviar
+            if (!payload.created_by) {
+                throw new Error("No se pudo identificar al usuario creador (created_by missing).");
+            }
+
+            // 3. Enviar al servicio (Payload + Schema para Header)
+            await ContractService.createContract(payload);
             
-            Swal.fire('¡Creado!', 'El contrato ha sido registrado con éxito.', 'success');
+            Swal.fire('¡Éxito!', 'Contrato creado correctamente.', 'success');
             setIsOpen(false);
-            if (onSuccess) onSuccess(); 
+            if (onSuccess) onSuccess();
+
         } catch (error) {
             console.error('Error creando contrato:', error);
-            Swal.fire('Error', 'Hubo un problema al crear el contrato.', 'error');
+            const msg = error.response?.data?.message || error.message || 'Error desconocido';
+            // NestJS suele devolver un array de mensajes si falla el class-validator
+            const displayMsg = Array.isArray(msg) ? msg.join(', ') : msg;
+            
+            Swal.fire('Error', displayMsg, 'error');
         } finally {
             setLoading(false);
         }
     };
-    */
+
     return (
         <Modal size="lg" open={isOpen} setOpen={setIsOpen}>
             <div className="flex gap-2 items-center mb-6">
-                <InfoTooltip size="sm" message={getText("formCont")} sticky={true}>
+                <InfoTooltip size="sm" message={getText("formCont") || "Nuevo Contrato"} sticky={true}>
                     <span className="material-symbols-outlined text-gray-400">info</span>
                 </InfoTooltip>
-                <h2 className="text-xl font-bold text-gray-800">Agregar Nuevo Contrato</h2>
+                <h2 className="text-xl font-bold text-gray-800">Registrar Contrato</h2>
             </div>
 
             {loading ? (
-                <div className="flex flex-col items-center py-10">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-titleBlue"></div>
-                    <p className="mt-4 text-gray-500">Guardando contrato...</p>
+                <div className="flex flex-col items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-800"></div>
+                    <p className="mt-4 text-gray-600 font-medium">Procesando solicitud...</p>
                 </div>
             ) : (
                 <Form 
                     fields={contractFields} 
-                    //onSubmit={handleCreateContract} 
-                    //onSelectChange={handleClientChange}
-                    initialValues={clientSelectedId ? { client_id: Number(clientSelectedId) } : {}}
-                    sendMessage="Crear Contrato"
+                    onSubmit={handleCreateContract} 
+                    initialValues={{
+                        currency: 'USD',
+                        language: 'es',
+                        client_id: clientSelectedId || ''
+                    }}
+                    sendMessage="Guardar Contrato"
+                    gridLayout={true} 
                 />
             )}
         </Modal>
