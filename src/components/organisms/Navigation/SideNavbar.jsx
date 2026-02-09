@@ -2,48 +2,54 @@ import React, { useState, useEffect } from "react";
 import ExpandableMenu from "../../molecules/ExpandableMenu";
 //import getOnePermissService from "../../../services/permission-service/getOnePermiss";
 const dashBoardOptions = [
-  { name: "Contratos", path: "/dashboard/Contract" },
-  { name: "Solicitudes", path: "/dashboard/request" },
-  { name: "Riesgos", path: "/dashboard/risk" },
-  { name: "Entregables", path: "/dashboard/deliverable" },
-  { name: "Facturas", path: "/dashboard/invoices" },
-  { name: "RAID", path: "/dashboard/raid" },
-  { name: "Ejecutivo", path: "/dashboard/ejecutive" },
-  { name: "Niveles de servicio", path: "/dashboard/slas" },
+  { name: "Visión Global de Contratos", path: "/dashboard/Contract" },
+  { name: "Cumplimiento de E&O", path: "/dashboard/deliverable" },
+  { name: "Desempeño y SLAs", path: "/dashboard/slas" },
+  { name: "Gestión Financiera", path: "/dashboard/invoices" },
+  { name: "Resumen Ejecutivo (C-Level)", path: "/dashboard/ejecutive" },
+  { name: "Matriz de Riesgos (RAID)", path: "/dashboard/raid" },
+  { name: "Control de Cambios", path: "/dashboard/request" },
+  { name: "Gestión de Gobierno", path: "/dashboard/risk" },
 ];
 const integralControl = [
-  { name: "Clientes", path: "/client", allowedRoles: [1], allowedPermissions: ["read-clients"] },
-  { name: "Contratos", path: "/contract/general"},
-  { name: "Usuarios", path: "/settings/userNroles", allowedRoles: [1, 2, 8], allowedPermissions: ["read-users"] },
-  { name: "Proveedores", path: "/suppliers"},
-  { name: "Entregables", path: "/Contract/deliverables", allowedRoles: [1, 2, 3, 8, 9], allowedPermissions: ["read-deliverables"] },
-  { name: "Servicios", path: "/contract/services", allowedRoles: [1, 2, 3, 8, 9] },
-  { name: "SLAs", path: "/Contract/sla", allowedRoles: [1, 2, 8], allowedPermissions: ["read-serviceLevel"] },
-  { name: "Clausulas", path: "/contract/clauses" },
+  { name: "Directorio de Clientes", path: "/client"},
+  { name: "Gestión de Usuarios y Roles", path: "/settings/userNroles"},
+  { name: "Directorio de Proveedores", path: "/suppliers"},
+  { name: "Registro Central de Contratos", path: "/contract/general"},
+  { name: "Catálogo de Entregables (E&O)", path: "/Contract/deliverables"},
+  { name: "Definición de Niveles de Servicio", path: "/Contract/sla"},
+  { name: "Registro Central de Servicios", path: "/contract/services"},
 
 ];
-const contract = [
-  { name: "Entregables", path: "/Contract/deliverables", allowedRoles: [1, 2, 3, 8, 9], allowedPermissions: ["read-deliverables"] },
-  { name: "SLAs", path: "/Contract/sla", allowedRoles: [1, 2, 8], allowedPermissions: ["read-serviceLevel"] },
-  // { name: "Ventanas de medición", path: "/contract/measurementWindows", allowedRoles: [1, 7] },
-  { name: "Ordenes de Trabajo", path: "/Contract/workOrders", allowedRoles: [1, 2, 3, 4] },
+const changes = [
+  { name: "Solicitudes de Cambio (CRs)", path: "/Contract/deliverables"},
+  { name: "Ejecución de Órdenes de Trabajo (OTs)", path: "/Contract/workOrders"},
 ];
 
-const relationship = [
-  { name: "gestión de Reuniones", path: "/Relationship/", allowedRoles: [1, 2, 3, 4, 7] },
+const follow_up = [
+  { name: "Gestión de reuniones", path: "/Relationship/"},
   { name: "Seguimiento", path: "/Relationship/" },
-  { name: "Escalamiento", path: "/Relationship/", allowedRoles: [1, 2, 3, 4, 7] },
+  { name: "Escalamiento", path: "/Relationship/"},
 ];
 
-const costs = [
+const finance = [
+  { name: "Flujo de Pagos", path: "/Costs/" },
   { name: "Registro de Pagos", path: "/Costs/" },
-  { name: "Flujo de Pago", path: "/Costs/" },
   { name: "Auditoría", path: "/Costs/" },
 ];
 
 const risks = [
-  { name: "gestión RAID", path: "/Risks/" },
+  { name: "Gestión RAID", path: "/Risks/" },
   { name: "Evaluaciones", path: "/Risks/" },
+];
+
+const flows = [
+  { name: "Gestion de Roles y Permisos", path: "/workflow/test" },
+  { name: "Dashboard", path: "/workflow/test" },
+  { name: "Diseño", path: "/workflow/test" },
+  { name: "Procesos de Aprobacion", path: "/workflow/test" },
+  { name: "Mis tareas", path: "/workflow/test" },
+  { name: "Plantillas y Alertas", path: "/workflow/test" },
 ];
 
 const practics = [
@@ -141,7 +147,7 @@ const filterMenu = options => {
         <ExpandableMenu
           menuId="dashboards"
           options={dashBoardOptions}
-          nameMenu={isCollapsed ? "" : "Dashboards"}
+          nameMenu={isCollapsed ? "" : "Reportes"}
           icon={"bar_chart_4_bars"}
           isCollapsed={isCollapsed}
           openMenu={openMenu}
@@ -151,7 +157,7 @@ const filterMenu = options => {
         <ExpandableMenu
           menuId="integralControl"
           options={filterMenu(integralControl)}
-          nameMenu={isCollapsed ? "" : "Configuración Contrato"}
+          nameMenu={isCollapsed ? "" : "Gestión Contrato"}
           icon={"manage_accounts"}
           isCollapsed={isCollapsed}
           openMenu={openMenu}
@@ -159,9 +165,9 @@ const filterMenu = options => {
           setIsCollapsed={setIsCollapsed}
         />
         <ExpandableMenu
-          menuId="contract"
-          options={filterMenu(contract)}
-          nameMenu={isCollapsed ? "" : "Gestión de Contratos"}
+          menuId="changes"
+          options={filterMenu(changes)}
+          nameMenu={isCollapsed ? "" : "Gestión de Cambios"}
           icon={"contract_edit"}
           isCollapsed={isCollapsed}
           openMenu={openMenu}
@@ -169,9 +175,9 @@ const filterMenu = options => {
           setIsCollapsed={setIsCollapsed}
         />
         <ExpandableMenu
-          menuId="relationship"
-          options={filterMenu(relationship)}
-          nameMenu={isCollapsed ? "" : "Relacionamiento"}
+          menuId="follow_up"
+          options={filterMenu(follow_up)}
+          nameMenu={isCollapsed ? "" : "Control y Seguimiento"}
           icon={"groups"}
           isCollapsed={isCollapsed}
           openMenu={openMenu}
@@ -179,10 +185,20 @@ const filterMenu = options => {
           setIsCollapsed={setIsCollapsed}
         />
         <ExpandableMenu
-          menuId="costs"
-          options={costs}
-          nameMenu={isCollapsed ? "" : "Gastos"}
+          menuId="finance"
+          options={finance}
+          nameMenu={isCollapsed ? "" : "Finanzas"}
           icon={"request_quote"}
+          isCollapsed={isCollapsed}
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setIsCollapsed={setIsCollapsed}
+        />
+        <ExpandableMenu
+          menuId="flows"
+          options={flows}
+          nameMenu={isCollapsed ? "" : "Flujos y Reglas"}
+          icon={"account_tree"}
           isCollapsed={isCollapsed}
           openMenu={openMenu}
           setOpenMenu={setOpenMenu}

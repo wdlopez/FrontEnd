@@ -9,7 +9,8 @@ import Alert from "../../../components/alerts";
 import AddContractModal from "../../../components/organisms/Forms/AddContractModal"; 
 import InfoTooltip from "../../../components/atoms/InfoToolTip"; // Importamos el componente de ayuda
 import { getText } from "../../../utils/text"; // Función auxiliar para textos
-
+import ServicePage from "../Services/ServicesPage";
+import ClausesPage from "../Clauses/ClausesPage";
 // Componentes de sub-pestañas (Descomentar según uso)
 // import ServiceIndex from "../SLAServices";
 // import SLAsIndex from "../../SLAs/SLA";
@@ -18,14 +19,13 @@ import { getText } from "../../../utils/text"; // Función auxiliar para textos
 
 const NAV_ITEMS = [
     { key: "contract", label: "Contratos" },
-    { key: "Service", label: "Servicios" },
-    { key: "SLAs", label: "SLAs" },
-    { key: "E&O", label: "E&O" },
+    { key: "services", label: "Servicios" },
+    { key: "clauses", label: "Clausulas" }
 ];
 
 function ContractPage() {
     const { id_client } = useParams();
-    const [activeTab, setActiveTab] = useState('contract');
+    const [activeTab, setActiveTab] = useState(NAV_ITEMS[0].key);
     const [isActiveToggle, setIsActiveToggle] = useState(false);
     
     // Estado para controlar el Modal (Igual que en Clientes)
@@ -93,6 +93,14 @@ function ContractPage() {
                         />
                     </div>
                 </div>
+            )}
+
+            {activeTab === 'services' && (
+                <ServicePage id_client={id_client} />
+            )}
+
+            {activeTab === 'clauses' && (
+                <ClausesPage id_client={id_client} />
             )}
 
             {/* MODAL: Usa el componente que creamos en el paso anterior */}
