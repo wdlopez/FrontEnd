@@ -16,6 +16,7 @@ import ContractsPage from './pages/Contracts/General/ContractsPage';
 import SuppliersPage from './pages/Suppliers/SuppliersPage';
 import ServicesPage from './pages/Contracts/Services/ServicesPage';
 import ClausesPage from './pages/Contracts/Clauses/ClausesPage';
+import WorkOrdersPage from './pages/Contracts/WorkOrders/WorkOrdesPage';
 function App() {
   return (
     <AuthProvider>
@@ -45,6 +46,7 @@ function App() {
               <Route path="/suppliers" element={<SuppliersPage />} />
               <Route path="/contract/services" element={<ServicesPage />} />
               <Route path="/contract/clauses" element={<ClausesPage />} />
+              <Route path="/contract/workOrders" element={<WorkOrdersPage />} />
 
             </Route>
           </Route>

@@ -23,7 +23,7 @@ const integralControl = [
 ];
 const changes = [
   { name: "Solicitudes de Cambio (CRs)", path: "/Contract/deliverables"},
-  { name: "Ejecución de Órdenes de Trabajo (OTs)", path: "/Contract/workOrders"},
+  { name: "Ejecución de Órdenes de Trabajo (OTs)", path: "/contract/workOrders"},
 ];
 
 const follow_up = [
