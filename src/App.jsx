@@ -18,6 +18,7 @@ import ServicesPage from './pages/Contracts/Services/ServicesPage';
 import ClausesPage from './pages/Contracts/Clauses/ClausesPage';
 import WorkOrdersPage from './pages/Contracts/WorkOrders/WorkOrdesPage';
 import SchemasPage from './pages/Contracts/Schemas/SchemasPage';
+import SchemasProvidersPage from './pages/Suppliers/Schemas/SchemasProvidersPage';
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
               <Route path="/contract/clauses" element={<ClausesPage />} />
               <Route path="/contract/workOrders" element={<WorkOrdersPage />} />
               <Route path="/contract/schemas" element={<SchemasPage />} />
+              <Route path="/suppliers/schemas" element={<SchemasProvidersPage />} />
 
             </Route>
           </Route>

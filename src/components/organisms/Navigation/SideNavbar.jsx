@@ -28,6 +28,7 @@ const changes = [
 
 const schemas = [
   { name: "Esquemas de Contratos", path: "/contract/schemas"},
+  { name: "Esquemas de Proveedores", path: "/suppliers/schemas"},
 ]
 
 const follow_up = [
