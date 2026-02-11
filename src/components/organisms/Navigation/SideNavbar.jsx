@@ -26,6 +26,10 @@ const changes = [
   { name: "Ejecución de Órdenes de Trabajo (OTs)", path: "/contract/workOrders"},
 ];
 
+const schemas = [
+  { name: "Esquemas de Contratos", path: "/contract/schemas"},
+]
+
 const follow_up = [
   { name: "Gestión de reuniones", path: "/Relationship/"},
   { name: "Seguimiento", path: "/Relationship/" },
@@ -149,6 +153,16 @@ const filterMenu = options => {
           options={dashBoardOptions}
           nameMenu={isCollapsed ? "" : "Reportes"}
           icon={"bar_chart_4_bars"}
+          isCollapsed={isCollapsed}
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setIsCollapsed={setIsCollapsed}
+        />
+        <ExpandableMenu
+          menuId="schemas"
+          options={filterMenu(schemas)}
+          nameMenu={isCollapsed ? "" : "Esquemas"}
+          icon={"schema"}
           isCollapsed={isCollapsed}
           openMenu={openMenu}
           setOpenMenu={setOpenMenu}
