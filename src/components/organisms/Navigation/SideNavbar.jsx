@@ -45,22 +45,27 @@ const finance = [
 const risks = [
   { name: "Gestión RAID", path: "/Risks/" },
   { name: "Evaluaciones", path: "/Risks/" },
+  { name: "Análisis de Exposición y Seguros", path: "/Risks/" },
 ];
 
 const flows = [
-  { name: "Gestion de Roles y Permisos", path: "/workflow/test" },
-  { name: "Dashboard", path: "/workflow/test" },
-  { name: "Diseño", path: "/workflow/test" },
+  { name: "Configuración de Accesos y Roles", path: "/workflow/test" },
+  { name: "Monitor de Procesos Activos", path: "/workflow/test" },
+  { name: "Diseñador de Reglas y Automatización", path: "/workflow/test" },
   { name: "Procesos de Aprobacion", path: "/workflow/test" },
   { name: "Mis tareas", path: "/workflow/test" },
   { name: "Plantillas y Alertas", path: "/workflow/test" },
 ];
 
+const ia =[
+  { name: "Extracción de Datos (OCR & NLP)", path: "/ia/contractWriter" },
+]
+
 const practics = [
-  { name: "SLA", path: "/practics/" },
-  { name: "Gobierno", path: "/practics/" },
-  { name: "SOW", path: "/practics/" },
-  { name: "Otros", path: "/practics/" },
+  { name: "Estándares de Gobierno Corporativo", path: "/practics/" },
+  { name: "Biblioteca de SOW y Alcances", path: "/practics/" },
+  { name: "Guía de Diseño de SLAs", path: "/practics/" },
+  { name: "Otros Recursos y Documentación", path: "/practics/" },
 ];
 
 const report = [
@@ -69,20 +74,15 @@ const report = [
 ];
 
 const settings = [
-  { name: "General", path: "/settings/TypeValue" },
-  { name: "Notificaciones", path: "/perfil" },
-  { name: "Usuarios y roles", path: "/settings/userNroles", allowedRoles: [1, 2, 7] },
-  { name: "Tipos de Moneda", path: "/settings/TypeValue", allowedRoles: [1, 2] },
-  { name: "Gestión de Permisos", path: "/settings/Permission", allowedRoles: [1, 2, 8] },
-  { name: "Panel de Flujos", path: "/workflow/test", allowedRoles: [1, 2, 8] },
-  { name: "Alertas", path: "/settings/" },
-  { name: "Integraciones", path: "/settings/" },
+  { name: "Parámetros Regionales y Moneda", path: "/settings/TypeValue" },
+  { name: "Centro de Integraciones (API/Webhooks)", path: "/perfil" },
+  { name: "Personalización de Marca", path: "/settings/userNroles",}
 ];
 
 const help = [
+  { name: "FAQ", path: "/suport/" },
   { name: "Guía de uso", path: "/suport/" },
   { name: "Soporte", path: "/suport/" },
-  { name: "FAQ", path: "/suport/" },
 ];
 
 function Sidebar({ isCollapsed, setIsCollapsed, userRol, id }) {
@@ -209,16 +209,6 @@ const filterMenu = options => {
           setIsCollapsed={setIsCollapsed}
         />
         <ExpandableMenu
-          menuId="flows"
-          options={flows}
-          nameMenu={isCollapsed ? "" : "Flujos y Reglas"}
-          icon={"account_tree"}
-          isCollapsed={isCollapsed}
-          openMenu={openMenu}
-          setOpenMenu={setOpenMenu}
-          setIsCollapsed={setIsCollapsed}
-        />
-        <ExpandableMenu
           menuId="risks"
           options={risks}
           nameMenu={isCollapsed ? "" : "Riesgos"}
@@ -229,9 +219,29 @@ const filterMenu = options => {
           setIsCollapsed={setIsCollapsed}
         />
         <ExpandableMenu
+          menuId="flows"
+          options={flows}
+          nameMenu={isCollapsed ? "" : "Flujos y Reglas"}
+          icon={"account_tree"}
+          isCollapsed={isCollapsed}
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setIsCollapsed={setIsCollapsed}
+        />
+        <ExpandableMenu
+          menuId="ia"
+          options={ia}
+          nameMenu={isCollapsed ? "" : "IA"}
+          icon={"smart_toy"}
+          isCollapsed={isCollapsed}
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setIsCollapsed={setIsCollapsed}
+        />
+        <ExpandableMenu
           menuId="practics"
           options={practics}
-          nameMenu={isCollapsed ? "" : "Mejores Prácticas"}
+          nameMenu={isCollapsed ? "" : "Base de Conocimiento"}
           icon={"developer_guide"}
           isCollapsed={isCollapsed}
           openMenu={openMenu}
