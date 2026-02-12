@@ -21,6 +21,7 @@ import SchemasPage from './pages/Contracts/Schemas/SchemasPage';
 import SchemasProvidersPage from './pages/Suppliers/Schemas/SchemasProvidersPage';
 import SchemasDeliverablesPage from './pages/Deliverables/Schemas/SchemasDeliverablesPage';
 import DeliverablesPage from './pages/Deliverables/DeliverablesPage';
+import SchemasSlasPage from './pages/SLAs/Schemas/SchemasSlasPage';
 function App() {
   return (
     <AuthProvider>
@@ -55,6 +56,7 @@ function App() {
               <Route path="/suppliers/schemas" element={<SchemasProvidersPage />} />
               <Route path="/deliverables/schemas" element={<SchemasDeliverablesPage />} />
               <Route path="/contract/deliverables" element={<DeliverablesPage />} />
+              <Route path="/slas/schemas" element={<SchemasSlasPage />} />
             </Route>
           </Route>
 

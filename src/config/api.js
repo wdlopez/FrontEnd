@@ -49,6 +49,8 @@ const apiProviders = createApiInstance(import.meta.env.VITE_API_URL_PROVIDERS);
 const apiContracts = createApiInstance(import.meta.env.VITE_API_URL_CONTRACTS)
 // API para deliverables (microservicio de deliverables)
 const apiDeliverables = createApiInstance(import.meta.env.VITE_API_URL_DELIVERABLES)
+// API para SLAs (microservicio de SLAs)
+const apiSLAs = createApiInstance(import.meta.env.VITE_API_URL_SLAS)
 
 export default api;
-export { apiProviders, apiContracts, apiDeliverables };
+export { apiProviders, apiContracts, apiDeliverables, apiSLAs };
