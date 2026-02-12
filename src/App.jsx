@@ -19,7 +19,7 @@ import ClausesPage from './pages/Contracts/Clauses/ClausesPage';
 import WorkOrdersPage from './pages/Contracts/WorkOrders/WorkOrdesPage';
 import SchemasPage from './pages/Contracts/Schemas/SchemasPage';
 import SchemasProvidersPage from './pages/Suppliers/Schemas/SchemasProvidersPage';
-
+import SchemasDeliverablesPage from './pages/Deliverables/Schemas/SchemasDeliverablesPage';
 function App() {
   return (
     <AuthProvider>
@@ -52,7 +52,7 @@ function App() {
               <Route path="/contract/workOrders" element={<WorkOrdersPage />} />
               <Route path="/contract/schemas" element={<SchemasPage />} />
               <Route path="/suppliers/schemas" element={<SchemasProvidersPage />} />
-
+              <Route path="/deliverables/schemas" element={<SchemasDeliverablesPage />} />
             </Route>
           </Route>
 
