@@ -16,7 +16,7 @@ const integralControl = [
   { name: "Gestión de Usuarios y Roles", path: "/settings/userNroles"},
   { name: "Directorio de Proveedores", path: "/suppliers"},
   { name: "Registro Central de Contratos", path: "/contract/general"},
-  { name: "Catálogo de Entregables (E&O)", path: "/Contract/deliverables"},
+  { name: "Catálogo de Entregables (E&O)", path: "/contract/deliverables"},
   { name: "Definición de Niveles de Servicio", path: "/Contract/sla"},
   { name: "Registro Central de Servicios", path: "/contract/services"},
 
