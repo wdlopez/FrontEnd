@@ -42,7 +42,7 @@ const follow_up = [
 
 const finance = [
   { name: "Flujo de Pagos", path: "/Costs/" },
-  { name: "Registro de Pagos", path: "/Costs/" },
+  { name: "Registro de Pagos", path: "/invoices" },
   { name: "Auditoría", path: "/Costs/" },
 ];
 

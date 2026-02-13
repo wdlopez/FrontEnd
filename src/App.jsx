@@ -25,6 +25,7 @@ import SchemasSlasPage from './pages/SLAs/Schemas/SchemasSlasPage';
 import SlasPage from './pages/SLAs/SlasPage';
 import MeasurementWindowsPage from './pages/SLAs/MeasurementWindows/MeasurementWindowsPage';
 import SchemasInvoicesPage from './pages/Invoices/Schemas/SchemasInvoicesPage';
+import InvoicesPage from './pages/Invoices/InvoicesPage';
 function App() {
   return (
     <AuthProvider>
@@ -63,6 +64,7 @@ function App() {
               <Route path="/contract/sla" element={<SlasPage />} />
               <Route path="/contract/sla/measurement-windows" element={<MeasurementWindowsPage />} />
               <Route path="/invoices/schemas" element={<SchemasInvoicesPage />} />
+              <Route path="/invoices" element={<InvoicesPage />} />
             </Route>
           </Route>
 
