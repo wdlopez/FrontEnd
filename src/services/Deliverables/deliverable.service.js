@@ -6,18 +6,18 @@ const DeliverableService = {
     return response.data; 
   },
 
-  getDeliverableById: async (providerId) => {
-    const response = await apiDeliverables.get(`/deliverable/${providerId}`);
+  getDeliverableById: async (deliverableId) => {
+    const response = await apiDeliverables.get(`/deliverable/${deliverableId}`);
     return response.data;
   },
 
-  createDeliverable: async (providerData) =>{
-    const response = await apiDeliverables.post('/deliverable', providerData);
+  createDeliverable: async (deliverableData) =>{
+    const response = await apiDeliverables.post('/deliverable', deliverableData);
     return response.data;
   },
 
-  updateDeliverable: async (id, providerData) => {
-    const response = await apiDeliverables.put(`/deliverable/${id}`, providerData);
+  updateDeliverable: async (id, deliverableData) => {
+    const response = await apiDeliverables.put(`/deliverable/${id}`, deliverableData);
     return response.data;
   },
 
