@@ -4,11 +4,20 @@ import HeaderActions from '../../../components/organisms/Navigation/HeaderAction
 import InteractiveTable from '../../../components/organisms/Tables/InteractiveTable';
 import AddBestPracticeModal from '../../../components/organisms/Forms/AddBestPracticeModal';
 import Alerts from '../../../components/molecules/Alerts';
+import Tabs from '../../../components/molecules/Tabs';
+import DocumentTemplatePage from '../DocumentTemplate/DocumentTemplatePage';
 import BestPracticesService from '../../../services/Others/BestPractices/best-practice.service';
 import { normalizeList } from '../../../utils/api-helpers';
 
+
+const NAV_ITEMS = [
+    { key: "best-practices", label: "Mejores Prácticas" },
+    { key: "document-templates", label: "Plantillas de Documentos" },
+];
+
 const BestPracticesPage = () => {
   const [practices, setPractices] = useState([]);
+  const [activeTab, setActiveTab] = useState(NAV_ITEMS[0].key);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
@@ -58,6 +67,7 @@ const BestPracticesPage = () => {
 
   return (
     <div className="p-6 space-y-6">
+      <Tabs activeKey={activeTab} items={NAV_ITEMS} onChange={setActiveTab} />
       <BreadCrumb paths={breadcrumbPaths} />
       <Alerts 
         open={alert.open} 
@@ -66,42 +76,49 @@ const BestPracticesPage = () => {
         type={alert.type} 
       />
 
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Repositorio de Mejores Prácticas</h1>
-          <p className="text-gray-500 text-sm">Base de conocimientos y estándares del sistema.</p>
-        </div>
-      </div>
+      {activeTab === 'best-practices' ? (
+        <>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Repositorio de Mejores Prácticas</h1>
+              <p className="text-gray-500 text-sm">Base de conocimientos y estándares del sistema.</p>
+            </div>
+          </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {loading ? (
-          <div className="p-10 text-center text-gray-500">Cargando repositorio...</div>
-        ) : (
-          <InteractiveTable 
-            data={practices}
-            columnMapping={columnMapping}
-            actions={true}
-            onEdit={(row) => console.log("Editar práctica", row)} // Aquí podrías abrir un modal de edición
-            onDelete={async (row) => {
-              await BestPracticesService.deletePractice(row.id);
-              fetchPractices();
-            }}
-            headerButtons={
-              <HeaderActions 
-                onAdd={() => setIsModalOpen(true)}
-                addButtonLabel="Nueva Práctica"
-                onRefresh={fetchPractices}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            {loading ? (
+              <div className="p-10 text-center text-gray-500">Cargando mejores prácticas...</div>
+            ) : (
+              <InteractiveTable 
+                data={practices}
+                columnMapping={columnMapping}
+                actions={true}
+                onEdit={(row) => console.log("Editar práctica", row)}
+                onDelete={async (row) => {
+                  await BestPracticesService.deletePractice(row.id);
+                  fetchPractices();
+                }}
+                headerButtons={
+                  <HeaderActions 
+                    onAdd={() => setIsModalOpen(true)}
+                    addButtonLabel="Nueva Práctica"
+                    onRefresh={fetchPractices}
+                  />
+                }
               />
-            }
-          />
-        )}
-      </div>
+            )}
+          </div>
 
-      <AddBestPracticeModal 
-        isOpen={isModalOpen} 
-        setIsOpen={setIsModalOpen} 
-        onSuccess={fetchPractices} 
-      />
+          <AddBestPracticeModal 
+            isOpen={isModalOpen} 
+            setIsOpen={setIsModalOpen} 
+            onSuccess={fetchPractices} 
+          />
+        </>
+      ) : (
+        <DocumentTemplatePage />
+      )}
+
     </div>
   );
 };

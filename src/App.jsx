@@ -32,6 +32,7 @@ import NotificationsPage from './pages/Notifications/NotificationsPage';
 import PreferencePage from './pages/Notifications/Preferences/PreferencesPage';
 import TrackingNotificationPage from './pages/Notifications/Tracking/TrackingNotificationsPage';
 import BestPracticesPage from './pages/Others/BestPractices/BestPracticesPage';
+import DocumentTemplatePage from './pages/Others/DocumentTemplate/DocumentTemplatePage';
 function App() {
   return (
     <AuthProvider>
@@ -77,6 +78,7 @@ function App() {
               <Route path="/notifications/preferences" element={<PreferencePage />} />
               <Route path="/notifications/tracking" element={<TrackingNotificationPage />} />
               <Route path="/others/practics" element={<BestPracticesPage />} />
+              <Route path="/others/document-templates" element={<DocumentTemplatePage />} />
             </Route>
           </Route>
 
