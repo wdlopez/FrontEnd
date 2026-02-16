@@ -28,6 +28,8 @@ import SchemasInvoicesPage from './pages/Invoices/Schemas/SchemasInvoicesPage';
 import InvoicesPage from './pages/Invoices/InvoicesPage';
 import PaymentsPage from './pages/Invoices/Payments/PaymentsPage';
 import SchemasNotificationsPage from './pages/Notifications/Schemas/SchemasNotificationsPage';
+import NotificationsPage from './pages/Notifications/NotificationsPage';
+import PreferencePage from './pages/Notifications/Preferences/PreferencesPage';
 function App() {
   return (
     <AuthProvider>
@@ -69,6 +71,8 @@ function App() {
               <Route path="/invoices" element={<InvoicesPage />} />
               <Route path="/invoice/payments" element={<PaymentsPage />} />
               <Route path="/notifications/schemas" element={<SchemasNotificationsPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/notifications/preferences" element={<PreferencePage />} />
             </Route>
           </Route>
 

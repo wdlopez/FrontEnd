@@ -81,7 +81,9 @@ const report = [
 const settings = [
   { name: "Parámetros Regionales y Moneda", path: "/settings/TypeValue" },
   { name: "Centro de Integraciones (API/Webhooks)", path: "/perfil" },
-  { name: "Personalización de Marca", path: "/settings/userNroles",}
+  { name: "Personalización de Marca", path: "/settings/userNroles"},
+  { name: "Gestion de Notificaciones", path: "/notifications"},
+  { name: "Gestion de Preferencias", path: "/notifications/preferences"},
 ];
 
 const help = [

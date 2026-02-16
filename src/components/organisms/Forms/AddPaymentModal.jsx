@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Modal from "../../molecules/Modal";
 import Form from "../Forms/Form";
-import InvoiceService from "../../../services/Invoices/Invoice.service"; // Asegúrate de la ruta correcta
+import InvoiceService from "../../../services/Invoices/invoice.service"; // Asegúrate de la ruta correcta
 import PaymentService from "../../../services/Invoices/Payments/payment.service";
 import Swal from "sweetalert2";
 import InfoTooltip from "../../atoms/InfoToolTip";

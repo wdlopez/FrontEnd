@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Modal from "../../molecules/Modal";
 import Form from "../Forms/Form";
-import InvoiceService from "../../../services/Invoices/Invoice.service";
+import InvoiceService from "../../../services/Invoices/invoice.service";
 import ContractService from "../../../services/Contracts/contract.service";
 import ProviderService from "../../../services/Providers/provider.service";
 import Swal from "sweetalert2";

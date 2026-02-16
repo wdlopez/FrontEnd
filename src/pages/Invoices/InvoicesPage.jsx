@@ -4,7 +4,7 @@ import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
 import AddInvoicesModal from '../../components/organisms/Forms/AddInvoiceModal';
 import Alerts from '../../components/molecules/Alerts';
-import InvoiceService from '../../services/Invoices/Invoice.service';
+import InvoiceService from '../../services/Invoices/invoice.service';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import { getText } from '../../utils/text';
 import { normalizeList } from '../../utils/api-helpers';
