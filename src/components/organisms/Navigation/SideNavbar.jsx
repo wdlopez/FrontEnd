@@ -70,7 +70,7 @@ const practics = [
   { name: "Estándares de Gobierno Corporativo", path: "/practics/" },
   { name: "Biblioteca de SOW y Alcances", path: "/practics/" },
   { name: "Guía de Diseño de SLAs", path: "/practics/" },
-  { name: "Otros Recursos y Documentación", path: "/practics/" },
+  { name: "Otros Recursos y Documentación", path: "/others/practics/" },
 ];
 
 const report = [
