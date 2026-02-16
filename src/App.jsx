@@ -30,6 +30,7 @@ import PaymentsPage from './pages/Invoices/Payments/PaymentsPage';
 import SchemasNotificationsPage from './pages/Notifications/Schemas/SchemasNotificationsPage';
 import NotificationsPage from './pages/Notifications/NotificationsPage';
 import PreferencePage from './pages/Notifications/Preferences/PreferencesPage';
+import TrackingNotificationPage from './pages/Notifications/Tracking/TrackingNotificationsPage';
 function App() {
   return (
     <AuthProvider>
@@ -73,6 +74,7 @@ function App() {
               <Route path="/notifications/schemas" element={<SchemasNotificationsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/notifications/preferences" element={<PreferencePage />} />
+              <Route path="/notifications/tracking" element={<TrackingNotificationPage />} />
             </Route>
           </Route>
 

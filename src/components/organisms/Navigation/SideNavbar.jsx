@@ -84,6 +84,7 @@ const settings = [
   { name: "Personalización de Marca", path: "/settings/userNroles"},
   { name: "Gestion de Notificaciones", path: "/notifications"},
   { name: "Gestion de Preferencias", path: "/notifications/preferences"},
+  { name: "Auditoría de Notificaciones", path: "/notifications/tracking"}
 ];
 
 const help = [
