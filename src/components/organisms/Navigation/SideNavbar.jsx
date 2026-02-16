@@ -75,7 +75,7 @@ const practics = [
 
 const report = [
   { name: "Informes Estándar", path: "/reports/" },
-  { name: "Ad Hoc", path: "/practics/" },
+  { name: "Ad Hoc", path: "/reports/ad-hoc" },
 ];
 
 const settings = [
