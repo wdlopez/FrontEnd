@@ -32,6 +32,7 @@ const schemas = [
   { name: "Esquemas de Entregables", path: "/deliverables/schemas"},
   { name: "Esquemas de Slas", path: "/slas/schemas"},
   { name: "Esquemas de Facturas", path: "/invoices/schemas"},
+  { name: "Esquema de Notificaciones", path: "/notifications/schemas"},
 ]
 
 const follow_up = [
