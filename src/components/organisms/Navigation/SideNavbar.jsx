@@ -74,8 +74,9 @@ const practics = [
 ];
 
 const report = [
-  { name: "Informes Estándar", path: "/reports/" },
+  { name: "Informes Estándar", path: "/reports" },
   { name: "Ad Hoc", path: "/reports/ad-hoc" },
+  { name: "Email Logs", path: "/reports/email-logs" },
 ];
 
 const settings = [

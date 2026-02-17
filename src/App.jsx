@@ -34,6 +34,8 @@ import TrackingNotificationPage from './pages/Notifications/Tracking/TrackingNot
 import BestPracticesPage from './pages/Others/BestPractices/BestPracticesPage';
 import DocumentTemplatePage from './pages/Others/DocumentTemplate/DocumentTemplatePage';
 import ReportsAdHocPage from './pages/Reports/ReportsAdHocPage';
+import StandarReportsPage from './pages/Reports/Standar/StandarReportsPage';
+import EmailLogsPage from './pages/Reports/Emails/EmailLogsPage';
 function App() {
   return (
     <AuthProvider>
@@ -81,6 +83,8 @@ function App() {
               <Route path="/others/practics" element={<BestPracticesPage />} />
               <Route path="/others/document-templates" element={<DocumentTemplatePage />} />
               <Route path="/reports/ad-hoc" element={<ReportsAdHocPage />} />
+              <Route path="/reports" element={<StandarReportsPage />} />
+              <Route path="/reports/email-logs" element={<EmailLogsPage />} />
             </Route>
           </Route>
 
