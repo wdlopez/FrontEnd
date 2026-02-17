@@ -6,6 +6,7 @@ import AddDeliverableModal from '../../components/organisms/Forms/AddDeliverable
 import Alerts from '../../components/molecules/Alerts';
 import Tabs from '../../components/molecules/Tabs';
 import DeliverablesSonPage from './DeliverablesSon/DeliverablesSonPage';
+import DeliverablesSonResponsiblePage from './DeliverablesSonResponsible/DeliverablesSonResponsiblePage';
 import DeliverableService from '../../services/Deliverables/deliverable.service';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import { getText } from '../../utils/text';
@@ -14,6 +15,7 @@ import { normalizeList } from '../../utils/api-helpers';
 const NAV_ITEMS = [
     { key: "deliverables", label: "Entregables" },
     { key: "deliverables-son", label: "Entregables Hijos" },
+    { key: "deliverables-son-responsible", label: "Responsables de Sub-Entregables" },
 ];
 
 const DeliverablesPage = () => {
@@ -151,9 +153,12 @@ const DeliverablesPage = () => {
 
       <AddDeliverableModal isOpen={isModalOpen} setIsOpen={setIsModalOpen} onSuccess={fetchDeliverables} />
       </>
-      ) : (
+      ) : activeTab === 'deliverables-son' ? (
         <DeliverablesSonPage />
-      )}
+      ) : activeTab === 'deliverables-son-responsible' ? (
+        <DeliverablesSonResponsiblePage />
+      ) : null}
+      
     </div>
   );
 };
