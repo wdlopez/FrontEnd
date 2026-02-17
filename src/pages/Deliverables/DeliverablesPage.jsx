@@ -4,13 +4,21 @@ import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
 import AddDeliverableModal from '../../components/organisms/Forms/AddDeliverableModal';
 import Alerts from '../../components/molecules/Alerts';
+import Tabs from '../../components/molecules/Tabs';
+import DeliverablesSonPage from './DeliverablesSon/DeliverablesSonPage';
 import DeliverableService from '../../services/Deliverables/deliverable.service';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import { getText } from '../../utils/text';
 import { normalizeList } from '../../utils/api-helpers';
 
+const NAV_ITEMS = [
+    { key: "deliverables", label: "Entregables" },
+    { key: "deliverables-son", label: "Entregables Hijos" },
+];
+
 const DeliverablesPage = () => {
   const [deliverables, setDeliverables] = useState([]);
+  const [activeTab, setActiveTab] = useState(NAV_ITEMS[0].key);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
@@ -97,6 +105,7 @@ const DeliverablesPage = () => {
 
   return (
     <div className="p-6 space-y-6">
+      <Tabs activeKey={activeTab} items={NAV_ITEMS} onChange={setActiveTab} />
       <BreadCrumb paths={breadcrumbPaths} />
       <Alerts 
         open={alert.open} 
@@ -105,6 +114,8 @@ const DeliverablesPage = () => {
         type={alert.type} 
       />
 
+      {activeTab === 'deliverables' ? (
+      <>
       <div className="flex justify-between items-center">
         <div>
           <div className="flex gap-2 items-center">
@@ -139,6 +150,10 @@ const DeliverablesPage = () => {
       </div>
 
       <AddDeliverableModal isOpen={isModalOpen} setIsOpen={setIsModalOpen} onSuccess={fetchDeliverables} />
+      </>
+      ) : (
+        <DeliverablesSonPage />
+      )}
     </div>
   );
 };

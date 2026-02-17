@@ -21,6 +21,7 @@ import SchemasPage from './pages/Contracts/Schemas/SchemasPage';
 import SchemasProvidersPage from './pages/Suppliers/Schemas/SchemasProvidersPage';
 import SchemasDeliverablesPage from './pages/Deliverables/Schemas/SchemasDeliverablesPage';
 import DeliverablesPage from './pages/Deliverables/DeliverablesPage';
+import DeliverablesSonPage from './pages/Deliverables/DeliverablesSon/DeliverablesSonPage';
 import SchemasSlasPage from './pages/SLAs/Schemas/SchemasSlasPage';
 import SlasPage from './pages/SLAs/SlasPage';
 import MeasurementWindowsPage from './pages/SLAs/MeasurementWindows/MeasurementWindowsPage';
@@ -70,6 +71,7 @@ function App() {
               <Route path="/suppliers/schemas" element={<SchemasProvidersPage />} />
               <Route path="/deliverables/schemas" element={<SchemasDeliverablesPage />} />
               <Route path="/contract/deliverables" element={<DeliverablesPage />} />
+              <Route path="/contract/deliverables-son" element={<DeliverablesSonPage />} />
               <Route path="/slas/schemas" element={<SchemasSlasPage />} />
               <Route path="/contract/sla" element={<SlasPage />} />
               <Route path="/contract/sla/measurement-windows" element={<MeasurementWindowsPage />} />
