@@ -19,7 +19,8 @@ const SuppliersPage = () => {
   // Configuración Breadcrumb
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
-    { name: "Proveedores", url: null }
+    {name: "Contacto de Proveedores", url: "/suppliers/contacts" },
+    { name: "Proveedores", url: "/suppliers" }
   ];
 
   // --- Funciones de Carga ---
