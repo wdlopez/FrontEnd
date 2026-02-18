@@ -19,7 +19,8 @@ const SuppliersPage = () => {
   // Configuración Breadcrumb
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
-    {name: "Contacto de Proveedores", url: "/suppliers/contacts" },
+    { name: "Contacto de Proveedores", url: "/suppliers/contacts" },
+    { name: "Matriz de Riesgos", url: "/suppliers/risks" },
     { name: "Proveedores", url: "/suppliers" }
   ];
 
