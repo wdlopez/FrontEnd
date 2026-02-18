@@ -27,6 +27,7 @@ import SlasPage from './pages/SLAs/SlasPage';
 import MeasurementWindowsPage from './pages/SLAs/MeasurementWindows/MeasurementWindowsPage';
 import SchemasInvoicesPage from './pages/Invoices/Schemas/SchemasInvoicesPage';
 import InvoicesPage from './pages/Invoices/InvoicesPage';
+import ItemsInvoicePage from './pages/Invoices/Items/ItemsInvoicePage';
 import PaymentsPage from './pages/Invoices/Payments/PaymentsPage';
 import SchemasNotificationsPage from './pages/Notifications/Schemas/SchemasNotificationsPage';
 import NotificationsPage from './pages/Notifications/NotificationsPage';
@@ -77,6 +78,7 @@ function App() {
               <Route path="/contract/sla/measurement-windows" element={<MeasurementWindowsPage />} />
               <Route path="/invoices/schemas" element={<SchemasInvoicesPage />} />
               <Route path="/invoices" element={<InvoicesPage />} />
+              <Route path="/invoices/items" element={<ItemsInvoicePage />} />
               <Route path="/invoice/payments" element={<PaymentsPage />} />
               <Route path="/notifications/schemas" element={<SchemasNotificationsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />

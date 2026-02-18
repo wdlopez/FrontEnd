@@ -24,8 +24,9 @@ const InvoicesPage = () => {
 
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
+    { name: "Detalle de Ítems", url: "/invoices/items" },
     { name: "Finanzas", url: null },
-    { name: "Facturas", url: null }
+
   ];
 
   const fetchInvoices = async () => {
