@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import BreadCrumb from '../../../components/molecules/BreadCrumb';
 import HeaderActions from '../../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../../components/organisms/Tables/InteractiveTable';
 import AddMeasurementWindowModal from '../../../components/organisms/Forms/AddMeasurementWindowsModal';
@@ -14,12 +13,6 @@ const MeasurementWindowsPage = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
-
-  const breadcrumbPaths = [
-    { name: "Inicio", url: "/dashboard" },
-    { name: "Configuración SLA", url: null },
-    { name: "Ventanas de Medición", url: null }
-  ];
 
   const fetchWindows = async () => {
     setLoading(true);
@@ -71,7 +64,6 @@ const MeasurementWindowsPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <BreadCrumb paths={breadcrumbPaths} />
       <Alerts 
         open={alert.open} 
         setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })} 
