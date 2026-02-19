@@ -1,25 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
 import AddClientModal from '../../components/organisms/Forms/AddClientModal';
+import DesactiveClientModal from '../../components/organisms/Forms/DesactiveClientModal';
 import Alerts from '../../components/molecules/Alerts';
 import ClientService from '../../services/Clients/client.service';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import { getText } from '../../utils/text';
 
 const ClientsPage = () => {
+  
   // --- Estados ---
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDesactiveModalOpen, setIsDesactiveModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [setIsSaving] = useState(false);
 
   // Configuración Breadcrumb
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
     { name: "Clientes", url: null } // Actual
   ];
+
+  // Ref para evitar doble fetch en StrictMode
+  const hasInitialized = useRef(false);
 
   // --- Funciones de Carga ---
   const fetchClients = async () => {
@@ -52,13 +61,14 @@ const ClientsPage = () => {
       // Mapear la respuesta a la forma que espera la tabla (cabeceras legibles)
       const formattedClients = dataList.map((c, i) => ({
         'N°': i + 1,
-        'Nombre': c.name || c.client_name || c.ClientEntity_name || c.nombre || '',
-        'NIT / Documento': c.document || c.document_file || c.ClientEntity_document_file || c.nit || '',
-        'Contacto': c.contactPerson || c.contact_person || c.ClientEntity_contact_person || c.contacto || '',
-        'Industria': c.category || c.ClientEntity_category || c.categoria || '',
-        'Email': c.email || c.ClientEntity_email || '',
-        'Phone': c.phone || c.ClientEntity_phone || '',
-        'Estado': (c.active ?? c.isActive ?? c.ClientEntity_active) ? 'Activo' : 'Inactivo',
+        'NOMBRE': c.name || c.client_name || c.ClientEntity_name || c.nombre || '',
+        'IDENTIFICACIÓN TRIBUTARIA': c.document || c.document_file || c.ClientEntity_document_file || c.nit || '',
+        'CONTACTO DEL CLIENTE': c.contactPerson || c.contact_person || c.ClientEntity_contact_person || c.contacto || '',
+        'INDUSTRIA DEL CLIENTE': c.category || c.ClientEntity_category || c.categoria || '',
+        'CORREO': c.email || c.ClientEntity_email || '',
+        'CODIGO PAIS Y TELEFONO': c.phone || c.ClientEntity_phone || '',
+        'DIRECCIÓN': c.address || c.ClientEntity_address || '',
+        'ESTADO': (c.active ?? c.isActive ?? c.ClientEntity_active) ? 'Activo' : 'Inactivo',
         id: c.id || c.ClientEntity_id || c.uuid || null,
       }));
 
@@ -76,20 +86,126 @@ const ClientsPage = () => {
   };
 
   useEffect(() => {
-    fetchClients();
+    // Prevenir doble fetch en React StrictMode (desarrollo)
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      fetchClients();
+    }
   }, []);
+
+  // --- Funciones de Edición y Eliminación ---
+  const handleEdit = async (editData) => {
+    // editData contiene: row, column, newValue, realColumn
+    const { row, newValue, realColumn } = editData;
+    
+    if (!row?.id) {
+      console.error("No ID found for client");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Crear payload solo con el campo que se cambió
+      const payload = {
+        [realColumn]: newValue
+      };
+
+      await ClientService.updateClient(row.id, payload);
+
+      // Actualizar el cliente en la tabla localmente
+      setClients(clients.map(c => 
+        c.id === row.id 
+          ? { ...c, [editData.column]: newValue }
+          : c
+      ));
+
+      setAlert({
+        open: true,
+        message: 'Cliente actualizado exitosamente',
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Error actualizando cliente:', error);
+      const msg = error.response?.data?.message;
+      const errorDisplay = Array.isArray(msg)
+        ? msg.join(', ')
+        : msg || 'Error al actualizar el cliente';
+
+      setAlert({
+        open: true,
+        message: errorDisplay,
+        type: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAdd = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (row) => {
+    if (row && row.id) {
+      setSelectedClient({
+        id: row.id,
+        name: row['Nombre'] || 'Sin nombre',
+        state: true, // true = eliminar
+      });
+      setIsDesactiveModalOpen(true);
+    }
+  };
+
+  const handleConfirmDelete = async (data) => {
+    setDeletingLoading(true);
+    try {
+      await ClientService.deleteClient(data.id);
+      
+      setAlert({
+        open: true,
+        message: 'Cliente eliminado exitosamente',
+        type: 'success'
+      });
+
+      // Remover el cliente de la tabla sin recargar
+      setClients(clients.filter(c => c.id !== data.id));
+      setIsDesactiveModalOpen(false);
+      setSelectedClient(null);
+    } catch (error) {
+      console.error('Error eliminando cliente:', error);
+      const msg = error.response?.data?.message;
+      const errorDisplay = Array.isArray(msg)
+        ? msg.join(', ')
+        : msg || 'Error al eliminar el cliente';
+
+      setAlert({
+        open: true,
+        message: errorDisplay,
+        type: 'error'
+      });
+    } finally {
+      setDeletingLoading(false);
+    }
+  };
 
   // --- Configuración de Tabla ---
   // Mapeamos las columnas visuales a las propiedades del objeto que viene del backend
   const columnMapping = {
-    'Nombre': 'name', // o 'client_name' si tu backend lo devuelve así
-    'NIT / Documento': 'document',
-    'Contacto': 'contactPerson',
-    'Industria': 'category',
-    'Email': 'email',
-    'Phone': 'phone',
-    'Estado': 'status' // Asumiendo que el backend devuelve un status
+    'NOMBRE': 'name',
+    'IDENTIFICACIÓN TRIBUTARIA': 'document_file',
+    'CONTACTO DEL CLIENTE': 'contact_person',
+    'INDUSTRIA DEL CLIENTE': 'category',
+    'CORREO': 'email',
+    'CODIGO PAIS Y TELEFONO': 'phone',
+    'DIRECCIÓN': 'address',
+    'ESTADO': 'active'
   };
+
+  // Campos que NO se pueden editar inline
+  const nonEditableColumns = ['N°', 'ESTADO'];
+
+  // Path para ver detalles del cliente
+  const clientDetailsPath = '/client/';
 
   return (
       <div className="p-6 space-y-6">
@@ -129,9 +245,11 @@ const ClientsPage = () => {
             <InteractiveTable 
               data={clients}
               columnMapping={columnMapping}
-              actions={true} // Habilitar columna de acciones (editar/eliminar)
-              onEdit={(row) => console.log("Editar", row)}
-              onDelete={(row) => console.log("Eliminar", row)}
+              nonEditableColumns={nonEditableColumns}
+              path={clientDetailsPath}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAdd={handleAdd}
               rowsPerPage={10}
               headerButtons={
                 <HeaderActions 
@@ -151,6 +269,14 @@ const ClientsPage = () => {
           setIsOpen={setIsModalOpen}
           onSuccess={fetchClients} // Recarga la tabla al crear
           setAlert={setAlert}
+        />
+
+        <DesactiveClientModal 
+          isOpen={isDesactiveModalOpen}
+          setIsOpen={setIsDesactiveModalOpen}
+          data={selectedClient}
+          onConfirm={handleConfirmDelete}
+          loading={deletingLoading}
         />
 
       </div>

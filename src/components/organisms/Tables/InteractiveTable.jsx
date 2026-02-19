@@ -9,6 +9,8 @@ function InteractiveTable({
   data,
   columnWidths = [],
   onSubmit,
+  onEdit,
+  onAdd,
   onDelete,
   rowsPerPage = 12,
   originData,
@@ -27,6 +29,8 @@ function InteractiveTable({
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [selectedCell, setSelectedCell] = useState({ rowIndex: 0, colIndex: 0 });
+  const [setEditingValue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   // valueCell removed (not used) to avoid unused variable warnings
   const [currentPage, setCurrentPage] = useState(1);
   const [dynamicRowsPerPage, setDynamicRowsPerPage] = useState(rowsPerPage);
@@ -237,17 +241,43 @@ function InteractiveTable({
     const colName = displayedColumns[colIndex];
     if (colIndex === 0) return;
     if (colName.toLowerCase() === "id" || nonEditableColumns.includes(colName)) return;
+    
+    // Capturar el valor actual
+    setEditingValue(row[colName] || "");
     setEditableCell({ rowIndex, colIndex });
-    const newSelectedRow = originData.find((o) => o[parameterId] === row.id);
-    setSelectedRow(newSelectedRow || null);
-    // Si es checkbox, abrimos modal en posición
-    if (typeColumns[colName] === 'checkbox' && Array.isArray(selectColumns[colName])) {
-      const real = columnMapping[colName] || colName;
-      const existing = newSelectedRow?.[real];
-      setTempSelected({ [colName]: Array.isArray(existing) ? [...existing] : [] });
-    } else {
-      // inline edit for other types
-      setEditableCell({ rowIndex, colIndex });
+    const newSelectedRow = originData?.find((o) => o[parameterId] === row.id) || row;
+    setSelectedRow(newSelectedRow);
+  };
+
+  // Guardar cambios de edición inline
+  const handleEditSave = async (rowIndex, colIndex, row, newValue) => {
+    const colName = displayedColumns[colIndex];
+    
+    // Si el valor no cambió, cancelar edición
+    if (newValue === (row[colName] || "")) {
+      setEditableCell(null);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Llamar a onEdit con los datos de la fila, la columna y el nuevo valor
+      if (onEdit) {
+        await onEdit({
+          row,
+          column: colName,
+          newValue,
+          rowIndex,
+          colIndex,
+          realColumn: columnMapping[colName] || colName
+        });
+      }
+    } catch (error) {
+      console.error("Error al guardar edición:", error);
+    } finally {
+      setIsSaving(false);
+      setEditableCell(null);
+      setEditingValue("");
     }
   };
 
@@ -256,22 +286,12 @@ function InteractiveTable({
   // handleCheckboxSave removed (unused)
 
   // Submit desde inputs
-  const handleInputKeyDown = (e, rowIdx, colIdx, col) => {
+  const handleInputKeyDown = (e, rowIdx, colIdx, col, row) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleSubmit(e, col);
-      setEditableCell(null);
-      const nextRow = rowIdx + 1 < currentData.length ? rowIdx + 1 : 0;
-      setSelectedCell({ rowIndex: nextRow, colIndex: colIdx });
+      const newValue = e.target.value;
+      handleEditSave(rowIdx, colIdx, row, newValue);
     }
-  };
-
-  const handleSubmit = (e, col) => {
-    e.preventDefault();
-    if (!selectedRow) return;
-    const realColumn = columnMapping[col] || col;
-    const updatedRow = { ...selectedRow, [realColumn]: e.target.value };
-    onSubmit(updatedRow);
   };
 
   // handleSelectAll removed (unused)
@@ -583,8 +603,8 @@ function InteractiveTable({
                                     lang="es-ES"
                                     type={typeColumns[col] || "text"}
                                     defaultValue={row[col]}
-                                    onBlur={() => setEditableCell(null)}
-                                    onKeyDown={(e) => handleInputKeyDown(e, rowIndex, colIndex, col)}
+                                    onBlur={(e) => handleEditSave(rowIndex, colIndex, row, e.target.value)}
+                                    onKeyDown={(e) => handleInputKeyDown(e, rowIndex, colIndex, col, row)}
                                     className="rounded py-1 outline-none text-black dark:text-gray-800 w-full"
                                     autoFocus
                                   />
@@ -603,30 +623,27 @@ function InteractiveTable({
                         </td>
                       );
                     })}
-                    {(onDelete || actionButton || path !== undefined) &&
+                    {(onDelete || onAdd || actionButton || path !== undefined) &&
                       <td className="px-4 py-3 border-l border-gray-200 dark:border-gray-700 min-w-[140px]">
                         <div className="flex items-center justify-center gap-2">
-                            {/* Menú de Acciones (3 líneas) */}
-                            <MenuModal icon="menu" styleBtn="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors" size="sm">
-                                <div className="flex items-center justify-around p-2 gap-3">
-                                    <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200" title="Agregar">
-                                        <span className="material-symbols-outlined text-[20px]">add</span>
-                                    </button>
-                                    <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200" title="Historial">
-                                        <span className="material-symbols-outlined text-[20px]">history</span>
-                                    </button>
-                                    <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200" title="Notificaciones">
-                                        <span className="material-symbols-outlined text-[20px]">notifications</span>
-                                    </button>
-                                </div>
-                            </MenuModal>
+                            {/* Botón Agregar */}
+                            {onAdd && (
+                                <button
+                                    onClick={() => onAdd()}
+                                    className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors"
+                                    title="Agregar"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">add</span>
+                                </button>
+                            )}
 
                             {/* Botón Eliminar */}
                             {onDelete && (
                                 <button
                                     onClick={() => onDelete(row)}
-                                    className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors"
-                                    title={row[parameterState] ? "Desactivar / Eliminar" : "Reactivar"}
+                                    disabled={isSaving}
+                                    className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
+                                    title="Eliminar"
                                 >
                                     <span className="material-symbols-outlined text-[20px]">delete</span>
                                 </button>
