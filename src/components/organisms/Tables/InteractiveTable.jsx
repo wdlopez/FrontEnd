@@ -29,7 +29,7 @@ function InteractiveTable({
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [selectedCell, setSelectedCell] = useState({ rowIndex: 0, colIndex: 0 });
-  const [setEditingValue] = useState("");
+  const [editingValue, setEditingValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   // valueCell removed (not used) to avoid unused variable warnings
   const [currentPage, setCurrentPage] = useState(1);

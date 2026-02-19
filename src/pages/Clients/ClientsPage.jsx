@@ -19,7 +19,26 @@ const ClientsPage = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
-  const [setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Lista de industrias para el select
+  const INDUSTRIES = [
+    { value: "Tecnologia", label: "Tecnología" },
+    { value: "Salud", label: "Salud" },
+    { value: "Finanzas", label: "Finanzas" },
+    { value: "Educacion", label: "Educación" },
+    { value: "Manufactura", label: "Manufactura" },
+    { value: "Comercio", label: "Comercio" },
+    { value: "Agroindustria", label: "Agroindustria" },
+    { value: "Energia", label: "Energía" },
+    { value: "Construccion", label: "Construcción" },
+    { value: "Transporte", label: "Transporte" },
+    { value: "Turismo", label: "Turismo" },
+    { value: "Servicios profesionales", label: "Servicios profesionales" },
+    { value: "Bienes raices", label: "Bienes raíces" },
+    { value: "Telecomunicaciones", label: "Telecomunicaciones" },
+    { value: "Alimentos y bebidas", label: "Alimentos y bebidas" },
+  ];
 
   // Configuración Breadcrumb
   const breadcrumbPaths = [
@@ -61,14 +80,14 @@ const ClientsPage = () => {
       // Mapear la respuesta a la forma que espera la tabla (cabeceras legibles)
       const formattedClients = dataList.map((c, i) => ({
         'N°': i + 1,
-        'NOMBRE': c.name || c.client_name || c.ClientEntity_name || c.nombre || '',
-        'IDENTIFICACIÓN TRIBUTARIA': c.document || c.document_file || c.ClientEntity_document_file || c.nit || '',
-        'CONTACTO DEL CLIENTE': c.contactPerson || c.contact_person || c.ClientEntity_contact_person || c.contacto || '',
-        'INDUSTRIA DEL CLIENTE': c.category || c.ClientEntity_category || c.categoria || '',
-        'CORREO': c.email || c.ClientEntity_email || '',
-        'CODIGO PAIS Y TELEFONO': c.phone || c.ClientEntity_phone || '',
-        'DIRECCIÓN': c.address || c.ClientEntity_address || '',
-        'ESTADO': (c.active ?? c.isActive ?? c.ClientEntity_active) ? 'Activo' : 'Inactivo',
+        'Nombre': c.name || c.client_name || c.ClientEntity_name || c.nombre || '',
+        'NIT / Documento': c.document || c.document_file || c.ClientEntity_document_file || c.nit || '',
+        'Contacto': c.contactPerson || c.contact_person || c.ClientEntity_contact_person || c.contacto || '',
+        'Industria': c.category || c.ClientEntity_category || c.categoria || '',
+        'Email': c.email || c.ClientEntity_email || '',
+        'Phone': c.phone || c.ClientEntity_phone || '',
+        'Direccion': c.address || c.ClientEntity_address || '',
+        'Estado': (c.active ?? c.isActive ?? c.ClientEntity_active) ? 'Activo' : 'Inactivo',
         id: c.id || c.ClientEntity_id || c.uuid || null,
       }));
 
@@ -95,8 +114,43 @@ const ClientsPage = () => {
 
   // --- Funciones de Edición y Eliminación ---
   const handleEdit = async (editData) => {
-    // editData contiene: row, column, newValue, realColumn
-    const { row, newValue, realColumn } = editData;
+    // Detectar el formato de editData (puede venir de onEdit o onSubmit)
+    let row, newValue, realColumn, columName;
+    
+    if (editData.realColumn) {
+      // Formato de onEdit
+      row = editData.row;
+      newValue = editData.newValue;
+      realColumn = editData.realColumn;
+      columName = editData.column;
+    } else {
+      // Formato de onSubmit (object con propiedades del row)
+      row = editData;
+      
+      // Encontrar qué campo de la tabla cambió
+      const originalRow = clients.find(c => c.id === row.id);
+      let changedField = null;
+      let changedValue = null;
+      
+      for (const key in row) {
+        if (key !== 'id' && originalRow && originalRow[key] !== row[key]) {
+          changedField = key;
+          changedValue = row[key];
+          break;
+        }
+      }
+      
+      if (!changedField) {
+        console.log('Sin cambios detectados');
+        return;
+      }
+      
+      columName = changedField;
+      newValue = changedValue;
+      realColumn = columnMapping[changedField] || changedField;
+    }
+    
+    console.log('🔧 Editando:', { columName, realColumn, newValue, rowId: row.id });
     
     if (!row?.id) {
       console.error("No ID found for client");
@@ -105,19 +159,42 @@ const ClientsPage = () => {
 
     setIsSaving(true);
     try {
-      // Crear payload solo con el campo que se cambió
+      // Aplicar las mismas recomendaciones de limpieza que en AddClientModal
+      let cleanedValue = newValue;
+      
+      if (realColumn === 'name') {
+        cleanedValue = newValue.toString().trim();
+      } else if (realColumn === 'email') {
+        cleanedValue = newValue.toString().toLowerCase().trim();
+      } else if (realColumn === 'phone') {
+        cleanedValue = newValue.toString().trim();
+      } else if (realColumn === 'contact_person') {
+        cleanedValue = newValue.toString().trim();
+      } else if (realColumn === 'document_file') {
+        cleanedValue = newValue.toString().trim();
+      } else if (realColumn === 'address') {
+        cleanedValue = newValue.toString().trim();
+      }
+
+      // Crear payload con el cliente completo y el campo actualizado
       const payload = {
-        [realColumn]: newValue
+        name: row['Nombre']?.toString().trim() || '',
+        contact_person: row['Contacto']?.toString().trim() || '',
+        email: row['Email']?.toString().toLowerCase().trim() || '',
+        phone: row['Phone']?.toString().trim() || '',
+        category: row['Industria'] || '',
+        document_file: row['NIT / Documento']?.toString().trim() || '',
+        address: row['Direccion']?.toString().trim() || '',
+        // Actualizar el campo específico que se editó
+        [realColumn]: cleanedValue
       };
+      
+      console.log('📤 Payload enviado:', payload);
 
       await ClientService.updateClient(row.id, payload);
 
-      // Actualizar el cliente en la tabla localmente
-      setClients(clients.map(c => 
-        c.id === row.id 
-          ? { ...c, [editData.column]: newValue }
-          : c
-      ));
+      // Refrescar la lista de clientes para asegurar que se reflejen todos los cambios
+      await fetchClients();
 
       setAlert({
         open: true,
@@ -191,18 +268,23 @@ const ClientsPage = () => {
   // --- Configuración de Tabla ---
   // Mapeamos las columnas visuales a las propiedades del objeto que viene del backend
   const columnMapping = {
-    'NOMBRE': 'name',
-    'IDENTIFICACIÓN TRIBUTARIA': 'document_file',
-    'CONTACTO DEL CLIENTE': 'contact_person',
-    'INDUSTRIA DEL CLIENTE': 'category',
-    'CORREO': 'email',
-    'CODIGO PAIS Y TELEFONO': 'phone',
-    'DIRECCIÓN': 'address',
-    'ESTADO': 'active'
+    'Nombre': 'name',
+    'NIT / Documento': 'document_file',
+    'Contacto': 'contact_person',
+    'Industria': 'category',
+    'Email': 'email',
+    'Phone': 'phone',
+    'Direccion': 'address',
+    'Estado': 'active'
+  };
+
+  // Columnas que son select con opciones
+  const selectColumns = {
+    'Industria': INDUSTRIES
   };
 
   // Campos que NO se pueden editar inline
-  const nonEditableColumns = ['N°', 'ESTADO'];
+  const nonEditableColumns = ['N°', 'Estado'];
 
   // Path para ver detalles del cliente
   const clientDetailsPath = '/client/';
@@ -245,9 +327,11 @@ const ClientsPage = () => {
             <InteractiveTable 
               data={clients}
               columnMapping={columnMapping}
+              selectColumns={selectColumns}
               nonEditableColumns={nonEditableColumns}
               path={clientDetailsPath}
               onEdit={handleEdit}
+              onSubmit={handleEdit}
               onDelete={handleDelete}
               onAdd={handleAdd}
               rowsPerPage={10}
