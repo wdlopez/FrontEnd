@@ -323,6 +323,7 @@ function Form(props, ref) {
                       className={textareaClass(f.name)}
                       placeholder={genPlaceholder(f)}
                       {...register(f.name, validationRules)}
+                      onInput={(e) => f.onInput && f.onInput(e)}
                     />
                   ) : (
                     // Inputs estándar (text, number, email, etc)
@@ -331,7 +332,15 @@ function Form(props, ref) {
                       disabled={f.disabled}
                       className={inputClass(f.name)}
                       placeholder={genPlaceholder(f)}
-                      {...register(f.name, validationRules)}
+                      {...register(f.name, {
+                        ...validationRules,
+                        onChange: (e) => {
+        if (f.onChange) f.onChange(e); // React Hook Form usa onChange para capturar el valor
+      },
+                      })}
+                      onInput={(e) => {
+      if (f.onInput) f.onInput(e); // Esto ejecutará la prop onInput si existe en el objeto del campo
+    }}
                     />
                   )}
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import BreadCrumb from "../../components/molecules/BreadCrumb";
-import Alerts from "../../components/molecules/Alerts";
-import ClientService from "../../services/Clients/client.service";
-import InfoTooltip from "../../components/atoms/InfoToolTip";
+import BreadCrumb from "../../molecules/BreadCrumb";
+import Alerts from "../../molecules/Alerts";
+import ClientService from "../../../services/Clients/client.service";
+import InfoTooltip from "../../atoms/InfoToolTip";
 
-const OneClient = () => {
+const ViewOneClient = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [dataClient, setDataClient] = useState({});
@@ -204,4 +204,4 @@ const OneClient = () => {
   );
 };
 
-export default OneClient;
+export default ViewOneClient;

@@ -35,13 +35,17 @@ const AddClientModal = ({ isOpen, setIsOpen, onSuccess }) => {
       type: "text",
       required: true,
       placeholder: "Ej: Acme Corp",
+      // Permite letras, espacios y puntos (para S.A.S, etc)
+      onInput: (e) => { e.target.value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ.\s]/g, ''); }
     },
     {
       name: "document",
       label: "Identificación tributaria (NIT)",
-      type: "text",
+      type: "text", // Usamos text para permitir los puntos del formato NIT
       required: true,
-      placeholder: "Ej: 900.123.456",
+      placeholder: "Ej: 900123456",
+      // Permite solo números y puntos
+      onInput: (e) => { e.target.value = e.target.value.replace(/[^0-9.]/g, ''); }
     },
     {
       name: "contactPerson",
@@ -49,6 +53,8 @@ const AddClientModal = ({ isOpen, setIsOpen, onSuccess }) => {
       type: "text",
       required: true,
       placeholder: "Nombre completo",
+      // Solo letras y espacios
+      onInput: (e) => { e.target.value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); }
     },
     {
       name: "category",
@@ -56,7 +62,6 @@ const AddClientModal = ({ isOpen, setIsOpen, onSuccess }) => {
       type: "select",
       required: true,
       options: INDUSTRIES,
-      placeholder: "Seleccione una categoría",
     },
     {
       name: "email",
@@ -71,6 +76,8 @@ const AddClientModal = ({ isOpen, setIsOpen, onSuccess }) => {
       type: "text",
       required: true,
       placeholder: "+57 300 123 4567",
+      // Permite solo números, el signo + y espacios
+      onInput: (e) => { e.target.value = e.target.value.replace(/[^0-9+\s]/g, ''); }
     },
     {
       name: "address",
@@ -78,6 +85,7 @@ const AddClientModal = ({ isOpen, setIsOpen, onSuccess }) => {
       type: "text",
       required: true,
       placeholder: "Calle 123 # 45-67",
+      // Las direcciones suelen ser alfanuméricas, así que aquí no limitamos drásticamente
     },
   ];
 
