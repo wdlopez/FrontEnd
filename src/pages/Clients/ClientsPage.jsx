@@ -80,14 +80,14 @@ const ClientsPage = () => {
       // Mapear la respuesta a la forma que espera la tabla (cabeceras legibles)
       const formattedClients = dataList.map((c, i) => ({
         'N°': i + 1,
-        'Nombre': c.name || c.client_name || c.ClientEntity_name || c.nombre || '',
-        'NIT / Documento': c.document || c.document_file || c.ClientEntity_document_file || c.nit || '',
-        'Contacto': c.contactPerson || c.contact_person || c.ClientEntity_contact_person || c.contacto || '',
-        'Industria': c.category || c.ClientEntity_category || c.categoria || '',
-        'Email': c.email || c.ClientEntity_email || '',
-        'Phone': c.phone || c.ClientEntity_phone || '',
-        'Direccion': c.address || c.ClientEntity_address || '',
-        'Estado': (c.active ?? c.isActive ?? c.ClientEntity_active) ? 'Activo' : 'Inactivo',
+        'NOMBRE': c.name || c.client_name || c.ClientEntity_name || c.nombre || '',
+        'CONTACTO DEL CLIENTE': c.contactPerson || c.contact_person || c.ClientEntity_contact_person || c.contacto || '',
+        'INDUSTRIA DEL CLIENTE': c.category || c.ClientEntity_category || c.categoria || '',
+        'IDENTIFICACION TRIBUTARIA': c.document || c.document_file || c.ClientEntity_document_file || c.nit || '',
+        'CORREO': c.email || c.ClientEntity_email || '',
+        'CODIGO PAIS Y TELEFONO': c.phone || c.ClientEntity_phone || '',
+        'DIRECCION': c.address || c.ClientEntity_address || '',
+        'ESTADO': (c.active ?? c.isActive ?? c.ClientEntity_active) ? 'Activo' : 'Inactivo',
         id: c.id || c.ClientEntity_id || c.uuid || null,
       }));
 
@@ -178,13 +178,13 @@ const ClientsPage = () => {
 
       // Crear payload con el cliente completo y el campo actualizado
       const payload = {
-        name: row['Nombre']?.toString().trim() || '',
-        contact_person: row['Contacto']?.toString().trim() || '',
-        email: row['Email']?.toString().toLowerCase().trim() || '',
-        phone: row['Phone']?.toString().trim() || '',
-        category: row['Industria'] || '',
-        document_file: row['NIT / Documento']?.toString().trim() || '',
-        address: row['Direccion']?.toString().trim() || '',
+        name: row['NOMBRE']?.toString().trim() || '',
+        contact_person: row['CONTACTO DEL CLIENTE']?.toString().trim() || '',
+        email: row['CORREO']?.toString().toLowerCase().trim() || '',
+        phone: row['CODIGO PAIS Y TELEFONO']?.toString().trim() || '',
+        category: row['INDUSTRIA DEL CLIENTE'] || '',
+        document_file: row['IDENTIFICACION TRIBUTARIA']?.toString().trim() || '',
+        address: row['DIRECCION']?.toString().trim() || '',
         // Actualizar el campo específico que se editó
         [realColumn]: cleanedValue
       };
@@ -226,7 +226,7 @@ const ClientsPage = () => {
     if (row && row.id) {
       setSelectedClient({
         id: row.id,
-        name: row['Nombre'] || 'Sin nombre',
+        name: row['NOMBRE'] || 'Sin nombre',
         state: true, // true = eliminar
       });
       setIsDesactiveModalOpen(true);
@@ -268,23 +268,23 @@ const ClientsPage = () => {
   // --- Configuración de Tabla ---
   // Mapeamos las columnas visuales a las propiedades del objeto que viene del backend
   const columnMapping = {
-    'Nombre': 'name',
-    'NIT / Documento': 'document_file',
-    'Contacto': 'contact_person',
-    'Industria': 'category',
-    'Email': 'email',
-    'Phone': 'phone',
-    'Direccion': 'address',
-    'Estado': 'active'
+    'NOMBRE': 'name',
+    'CONTACTO DEL CLIENTE': 'contact_person',
+    'INDUSTRIA DEL CLIENTE': 'category',
+    'IDENTIFICACION TRIBUTARIA': 'document_file',
+    'CORREO': 'email',
+    'CODIGO PAIS Y TELEFONO': 'phone',
+    'DIRECCION': 'address',
+    'ESTADO': 'active'
   };
 
   // Columnas que son select con opciones
   const selectColumns = {
-    'Industria': INDUSTRIES
+    'INDUSTRIA DEL CLIENTE': INDUSTRIES
   };
 
   // Campos que NO se pueden editar inline
-  const nonEditableColumns = ['N°', 'Estado'];
+  const nonEditableColumns = ['N°', 'ESTADO'];
 
   // Path para ver detalles del cliente
   const clientDetailsPath = '/client/';
