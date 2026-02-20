@@ -18,7 +18,7 @@ const GenericEditModal = ({
   const [initialData, setInitialData] = useState(null);
 
   const formFields = config?.columns
-    ?.filter(col => col.backendKey && col.editable !== false && col.backendKey !== 'id' && col.backendKey !== 'active')
+    ?.filter(col => col.backendKey && col.editable !== false && col.backendKey !== 'id' && col.backendKey !== 'active' && col.type !== 'password')
     .map(col => {
       const field = {
         name: col.backendKey,
@@ -61,7 +61,12 @@ const GenericEditModal = ({
 
       const response = await service.getById(entityId);
       
-      const data = response.data || response.ClientEntity || response.client || response;
+      const data = response.data || response.UserEntity || response.user || response;
+
+      if (data.clientId && !data.entityId) {
+        data.entityId = `c_${data.clientId}`;
+      }
+
       setInitialData(data);
     } catch (error) {
       console.error("Error cargando datos:", error);
@@ -75,8 +80,19 @@ const GenericEditModal = ({
   const handleUpdate = async (formData) => {
     setLoading(true);
     try {
-      
-      await service.update(entityId, formData);
+
+      const allowedKeys = formFields.map(f => f.name);
+      const filteredData = Object.keys(formData)
+      .filter(key => allowedKeys.includes(key))
+      .reduce((obj, key) => {
+        // Evitamos enviar strings vacíos en campos de ID opcionales
+        if (formData[key] !== "") {
+          obj[key] = formData[key];
+        }
+        return obj;
+      }, {});
+
+    await service.update(entityId, filteredData);
 
       Swal.fire("¡Actualizado!", `Exitoso`, "success");
       setIsOpen(false);

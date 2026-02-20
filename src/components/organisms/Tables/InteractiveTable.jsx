@@ -7,6 +7,7 @@ import Toolbar from "../Navigation/ToolBar";
 
 function InteractiveTable({
   data,
+  config = {},
   columnWidths = [],
   onSubmit,
   onEdit,
@@ -129,15 +130,18 @@ function InteractiveTable({
   const columns = Array.isArray(data) && data.length > 0 && data[0]
     ? Object.keys(data[0])
     : [];
+
+  const configHiddenColumns = config?.columns
+  ?.filter(col => col.hideInTable === true)
+  .map(col => col.header) || [];
   
   // Combinar columnas ocultas por props y por usuario
-  const allHiddenColumns = [...hiddenColumns, ...userHiddenColumns];
+  const allHiddenColumns = [...hiddenColumns, ...userHiddenColumns, ...configHiddenColumns];
 
   const displayedColumns = columns.filter(
     (col) =>
       col.toLowerCase() !== "id" &&
       col !== parameterState &&
-      col !== configModalC.parameterConnec &&
       !allHiddenColumns.includes(col)
   );
 
@@ -155,7 +159,7 @@ function InteractiveTable({
   //   const columnWidthMap = React.useMemo(() => {
   //   const map = {};
   //   columnWidths.forEach(({ column, width }) => {
-  //     map[column] = width;
+  //     map[column] = width; 
   //   });
   //   return map;
   // }, [columnWidths]);
@@ -334,7 +338,7 @@ function InteractiveTable({
                 <div ref={columnMenuRef} style={{ position: 'fixed', left: menuPos.left, top: menuPos.top, zIndex: 2000 }} className="w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl max-h-[300px] overflow-y-auto">
                   <div className="p-2">
                     <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 px-2 uppercase tracking-wider">Columnas Visibles</div>
-                    {columns.filter(col => col.toLowerCase() !== "id" && col !== parameterState && col !== configModalC.parameterConnec).map(col => (
+                    {columns.filter(col => col.toLowerCase() !== "id" && col !== parameterState && col !== configModalC.parameterConnec && !allHiddenColumns.includes(col)).map(col => (
                       <label key={col} className="flex items-center px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors">
                         <input
                           type="checkbox"

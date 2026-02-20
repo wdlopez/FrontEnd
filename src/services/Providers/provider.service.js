@@ -1,7 +1,7 @@
 import { apiProviders } from '../../config/api';
 
 const ProviderService = {
-  getAllProviders: async () => {
+  getAll: async () => {
     const response = await apiProviders.get('/providers');
     return response.data; 
   },

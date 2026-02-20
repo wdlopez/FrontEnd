@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
-import { useTranslation } from 'react-i18next';
 import ConfirmActionModal from '../../components/organisms/Forms/ConfirmActionModal';
 import GenericEditModal from '../../components/organisms/Forms/GenericEditModal';
 import GenericAddModal from '../../components/organisms/Forms/GenericAddModal';

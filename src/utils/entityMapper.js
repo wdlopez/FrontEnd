@@ -9,13 +9,21 @@ export const mapBackendToTable = (data, config) => {
     const row = { id: item.id || item.uuid || item.ClientEntity_id };
 
     config.columns.forEach(col => {
+
+        if (col.hideInTable) return;
       if (col.mapFrom) {
-        // Si tiene una función personalizada (ej: N° o Estado)
+        // 1. Si tiene mapFrom (como el N° o el Estado), lo usamos prioritariamente
         row[col.header] = col.mapFrom(item, index);
-      } else {
-        // Busca en la lista de llaves posibles que definimos en el config
-        const foundKey = col.possibleKeys?.find(k => item[k] !== undefined);
+      } else if (col.backendKey) {
+        // 2. Si tiene backendKey, buscamos ese campo directamente en el objeto del backend
+        // Usamos el operador || para que si es undefined ponga un string vacío
+        row[col.header] = item[col.backendKey] ?? '';
+      } else if (col.possibleKeys) {
+        // 3. (Opcional) Mantener compatibilidad con entidades viejas que usen possibleKeys
+        const foundKey = col.possibleKeys.find(k => item[k] !== undefined);
         row[col.header] = foundKey ? item[foundKey] : '';
+      } else {
+        row[col.header] = '';
       }
     });
 
@@ -38,7 +46,9 @@ export const mapTableToBackend = (tableRow, config) => {
         value = (col.type === 'email') ? value.toLowerCase().trim() : value.trim();
       }
       
-      payload[col.backendKey] = value;
+      if (value !== "") {
+        payload[col.backendKey] = value;
+      }
     }
   });
   return payload;

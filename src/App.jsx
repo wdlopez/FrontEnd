@@ -10,6 +10,7 @@ import LoginPage from './pages/auth/LoginPage';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import DashboardIndex from './pages/Dashboard/Index';
 import UsersPage from './pages/Users/UsersPage';
+import ViewOneUser from './components/organisms/Views/ViewOneUser';
 import RegisterPage from './pages/auth/RegisterPage';
 import ClientsPage from './pages/Clients/ClientsPage';
 import ViewOneClient from './components/organisms/Views/ViewOneClient';
@@ -67,6 +68,7 @@ function App() {
               <Route path="/client" element={<ClientsPage />} />
               <Route path="/client/:id" element={<ViewOneClient />} />
               <Route path="/settings/userNroles" element={<UsersPage />} />
+              <Route path="/settings/userNroles/:id" element={<ViewOneUser />} />
               <Route path="/contract/general" element={<ContractsPage />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
               <Route path="/suppliers/contacts" element={<SupplierContactPage />} />
