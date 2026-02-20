@@ -2,9 +2,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
-import AddClientModal from '../../components/organisms/Forms/AddClientModal';
-import ConfirmActionModal from '../../components/organisms/Forms/ConfirmActionModal'; // Nuevo componente
-import GenericEditModal from '../../components/organisms/Forms/GenericEditModal';   // Nuevo componente
+import { useTranslation } from 'react-i18next';
+import ConfirmActionModal from '../../components/organisms/Forms/ConfirmActionModal';
+import GenericEditModal from '../../components/organisms/Forms/GenericEditModal';
+import GenericAddModal from '../../components/organisms/Forms/GenericAddModal';
 import Alerts from '../../components/molecules/Alerts';
 import ClientService from '../../services/Clients/client.service';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
@@ -14,22 +15,20 @@ import { mapBackendToTable, mapTableToBackend } from '../../utils/entityMapper';
 import { normalizeList } from '../../utils/api-helpers';
 
 const ClientsPage = () => {
-  // --- Estados ---
+
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Modales
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Estado para modal de edición
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
-  const [selectedClient, setSelectedClient] = useState(null); // Para eliminar
-  const [editClientId, setEditClientId] = useState(null);     // Para editar
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [editClientId, setEditClientId] = useState(null);
   
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
 
-  // Breadcrumb
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
     { name: "Clientes", url: null }
@@ -37,7 +36,6 @@ const ClientsPage = () => {
 
   const hasInitialized = useRef(false);
 
-  // --- Carga de Datos ---
   const fetchClients = async () => {
     setLoading(true);
     try {
@@ -60,9 +58,6 @@ const ClientsPage = () => {
     }
   }, []);
 
-  // --- Manejadores ---
-
-  // 1. Edición vía Modal
   const openEditModal = (row) => {
     if (row?.id) {
       setEditClientId(row.id);
@@ -70,13 +65,12 @@ const ClientsPage = () => {
     }
   };
 
-  // 3. Eliminación
   const handleDeleteRequest = (row) => {
     if (row?.id) {
       setSelectedClient({
         id: row.id,
         name: row['NOMBRE'] || 'Sin nombre',
-        state: true, // true indica intención de eliminar
+        state: true,
       });
       setIsDeleteModalOpen(true);
     }
@@ -97,7 +91,6 @@ const ClientsPage = () => {
     }
   };
 
-  // --- Configuración de Tabla ---
   const columnMapping = {};
   const selectColumns = {};
   const nonEditableColumns = [];
@@ -161,9 +154,11 @@ const ClientsPage = () => {
       </div>
 
       {/* Modal de Creación (Específico o Genérico si lo refactorizas luego) */}
-      <AddClientModal 
+      <GenericAddModal 
         isOpen={isAddModalOpen}
         setIsOpen={setIsAddModalOpen}
+        service={ClientService}
+        config={CLIENT_CONFIG}
         onSuccess={fetchClients}
       />
 
@@ -172,8 +167,8 @@ const ClientsPage = () => {
         isOpen={isEditModalOpen}
         setIsOpen={setIsEditModalOpen}
         entityId={editClientId}
-        service={ClientService} // Pasamos el servicio
-        config={CLIENT_CONFIG}  // Pasamos la config
+        service={ClientService}
+        config={CLIENT_CONFIG}
         onSuccess={fetchClients}
       />
 
