@@ -50,7 +50,7 @@ function Form(props, ref) {
     handleSubmit,
     control,
     reset,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, isValid },
   } = useForm({
     defaultValues: initialFormState,
     mode: "onChange", // Valida mientras el usuario escribe
@@ -174,6 +174,14 @@ function Form(props, ref) {
               const validationRules = {
                 required: f.required ? "Este campo es obligatorio" : false,
               };
+
+              // Agregar patrón (regex) si existe
+              if (f.pattern) {
+                validationRules.pattern = {
+                  value: f.pattern,
+                  message: f.patternMessage || `${f.label} tiene un formato inválido`
+                };
+              }
 
               return (
                 <div key={idx} className={`${span} flex flex-col gap-2`}>
@@ -403,7 +411,12 @@ function Form(props, ref) {
 
           <button
             type="submit"
-            className="inline-flex items-center px-4 py-2 bg-blue-800 text-white rounded-md hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-700"
+            disabled={!isValid}
+            className={`inline-flex items-center px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-700 ${
+              isValid 
+                ? 'bg-blue-800 text-white hover:bg-blue-900' 
+                : 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-60'
+            }`}
           >
             {sendMessage}
           </button>

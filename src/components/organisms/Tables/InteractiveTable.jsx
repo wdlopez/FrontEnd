@@ -474,7 +474,7 @@ function InteractiveTable({
                         <td
                           key={colIndex}
                           onClick={() => setSelectedCell({ rowIndex, colIndex })}
-                          onDoubleClick={() => handleDoubleClick(rowIndex, colIndex, row)}
+                          onDoubleClick={() => onEdit ? null : handleDoubleClick(rowIndex, colIndex, row)}
                           onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
                           className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 last:border-r-0 cursor-pointer align-top ${widthClass} ${stickyClass} transition-colors
                         ${((editableCell?.rowIndex === rowIndex && editableCell?.colIndex === colIndex) ||
@@ -626,6 +626,18 @@ function InteractiveTable({
                     {(onDelete || onAdd || actionButton || path !== undefined) &&
                       <td className="px-4 py-3 border-l border-gray-200 dark:border-gray-700 min-w-[140px]">
                         <div className="flex items-center justify-center gap-2">
+                            {/* Botón Editar */}
+                            {onEdit && (
+                                <button
+                                    onClick={() => onEdit(row)}
+                                    disabled={isSaving}
+                                    className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
+                                    title="Editar"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">edit</span>
+                                </button>
+                            )}
+
                             {/* Botón Agregar */}
                             {onAdd && (
                                 <button

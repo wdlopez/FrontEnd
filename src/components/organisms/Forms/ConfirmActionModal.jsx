@@ -1,8 +1,15 @@
 import React from "react";
 import Modal from "../../molecules/Modal";
 
-function DesactiveClientModal({ isOpen, setIsOpen, data, onConfirm, loading = false }) {
-  const isDelete = data?.state === true; // state = true significa eliminar/desactivar
+function ConfirmActionModal({ 
+  isOpen, 
+  setIsOpen, 
+  data, 
+  onConfirm, 
+  loading = false, 
+  entityName = "registro" 
+}) {
+  const isDelete = data?.state === true; 
 
   return (
     <Modal open={isOpen} setOpen={setIsOpen}>
@@ -13,8 +20,8 @@ function DesactiveClientModal({ isOpen, setIsOpen, data, onConfirm, loading = fa
         
         <p className="text-gray-600 mb-6">
           {isDelete
-            ? `¿Estás seguro de que deseas eliminar el cliente "${data?.name || 'sin nombre'}"? Esta acción no se puede deshacer.`
-            : `¿Estás seguro de que deseas reactivar el cliente "${data?.name || 'sin nombre'}"?`}
+            ? `¿Estás seguro de que deseas eliminar el ${entityName} "${data?.name || 'sin nombre'}"? Esta acción podría no deshacerse inmediatamente.`
+            : `¿Estás seguro de que deseas reactivar el ${entityName} "${data?.name || 'sin nombre'}"?`}
         </p>
 
         <div className="mt-6 flex justify-end gap-3">
@@ -54,4 +61,4 @@ function DesactiveClientModal({ isOpen, setIsOpen, data, onConfirm, loading = fa
   );
 }
 
-export default DesactiveClientModal;
+export default ConfirmActionModal;

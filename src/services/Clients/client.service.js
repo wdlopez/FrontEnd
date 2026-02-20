@@ -1,32 +1,38 @@
-// src/services/Clients/client.service.js
 import api from '../../config/api';
 
 const ClientService = {
- 
-  getAllClients: async (params = {}) => {
+
+  getAll: async (params = {}) => {
     const response = await api.get('/client', { params });
     return response.data; 
   },
 
-  getClientById: async (id) => {
+  getById: async (id) => {
     const response = await api.get(`/client/${id}`);
     return response.data;
   },
 
-  createClient: async (clientData) => {
-    const response = await api.post('/client', clientData);
+  create: async (data) => {
+    const response = await api.post('/client', data);
     return response.data;
   },
 
-  updateClient: async (id, clientData) => {
-    const response = await api.put(`/client/${id}`, clientData);
+  update: async (id, data) => {
+    const response = await api.put(`/client/${id}`, data);
     return response.data;
   },
 
-  deleteClient: async (id) =>{
+  delete: async (id) => {
     const response = await api.delete(`/client/${id}`);
     return response.data;
-  }
+  },
+
+  // Mantener alias (Opcional)
+  getAllClients: (params) => ClientService.getAll(params),
+  getClientById: (id) => ClientService.getById(id),
+  createClient: (data) => ClientService.create(data),
+  updateClient: (id, data) => ClientService.update(id, data),
+  deleteClient: (id) => ClientService.delete(id),
 };
 
 export default ClientService;
