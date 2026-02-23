@@ -1,30 +1,36 @@
 import { apiContracts } from '../../config/api';
 
 const ContractService = {
-    getAllContracts: async (params = {}) =>{
+    getAll: async (params = {}) =>{
         const response = await apiContracts.get('/contracts', { params });
         return response.data;
     },
 
-    getContractById: async (id) =>{
+    getById: async (id) =>{
         const response = await apiContracts.get(`/contracts/${id}`);
         return response.data;
     },
 
-    createContract: async (contractData) =>{
+    create: async (contractData) =>{
         const response = await apiContracts.post('/contracts', contractData);
         return response.data;
     },
 
-    updateContract: async (id, contractData) =>{
+    update: async (id, contractData) =>{
         const response = await apiContracts.put(`/contracts/${id}`, contractData);
         return response.data;
     },
 
-    deleteContract: async (id) =>{
+    delete: async (id) =>{
         const response = await apiContracts.delete(`/contracts/${id}`);
         return response.data;
-    }
+    },
+
+    getAllContracts: () => ContractService.getAll(),
+    getContractById: (id) => ContractService.getById(id),
+    createContract: (data) => ContractService.create(data),
+    updateContract: (id, data) => ContractService.update(id, data),
+    deleteContract: (id) => ContractService.delete(id),
 };
 
 export default ContractService;

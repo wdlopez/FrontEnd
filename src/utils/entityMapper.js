@@ -10,7 +10,7 @@ export const mapBackendToTable = (data, config) => {
 
     config.columns.forEach(col => {
 
-        if (col.hideInTable) return;
+      if (col.hideInTable || col.header.toLowerCase() === 'id') return;
       if (col.mapFrom) {
         // 1. Si tiene mapFrom (como el N° o el Estado), lo usamos prioritariamente
         row[col.header] = col.mapFrom(item, index);
@@ -35,7 +35,7 @@ export const mapBackendToTable = (data, config) => {
  * Transforma una fila de la tabla al DTO que espera el Backend
  */
 export const mapTableToBackend = (tableRow, config) => {
-  const payload = {};
+  const payload = tableRow.id ? { id: tableRow.id } : {};
   config.columns.forEach(col => {
     if (col.backendKey) {
       // Tomamos el valor de la columna por su nombre de Header
@@ -46,8 +46,15 @@ export const mapTableToBackend = (tableRow, config) => {
         value = (col.type === 'email') ? value.toLowerCase().trim() : value.trim();
       }
       
-      if (value !== "") {
-        payload[col.backendKey] = value;
+      if (value !== "" && value !== undefined && value !== null) {
+        if (col.type === 'number') {
+          payload[col.backendKey] = Number(value);
+        } else if (col.type === 'date' && value) {
+          // Asegurar formato ISO si el backend es estricto
+          payload[col.backendKey] = new Date(value).toISOString();
+        } else {
+          payload[col.backendKey] = value;
+        }
       }
     }
   });

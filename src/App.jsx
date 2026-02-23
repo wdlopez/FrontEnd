@@ -15,6 +15,7 @@ import RegisterPage from './pages/auth/RegisterPage';
 import ClientsPage from './pages/Clients/ClientsPage';
 import ViewOneClient from './components/organisms/Views/ViewOneClient';
 import ContractsPage from './pages/Contracts/General/ContractsPage';
+import ViewOneContract from './components/organisms/Views/ViewOneContract';
 import SuppliersPage from './pages/Suppliers/SuppliersPage';
 import ViewOneSupplier from './components/organisms/Views/ViewOneSupplier';
 import SupplierContactPage from './pages/Suppliers/Contacts/SuppliersContactPage';
@@ -71,6 +72,7 @@ function App() {
               <Route path="/settings/userNroles" element={<UsersPage />} />
               <Route path="/settings/userNroles/:id" element={<ViewOneUser />} />
               <Route path="/contract/general" element={<ContractsPage />} />
+              <Route path="/contract/general/:id" element={<ViewOneContract />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
               <Route path="/suppliers/:id" element={<ViewOneSupplier />} />
               <Route path="/suppliers/contacts" element={<SupplierContactPage />} />

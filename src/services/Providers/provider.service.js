@@ -1,8 +1,8 @@
 import { apiProviders } from '../../config/api';
 
 const ProviderService = {
-  getAll: async () => {
-    const response = await apiProviders.get('/providers');
+  getAll: async (params = {}) => {
+    const response = await apiProviders.get('/providers', { params });
     return response.data; 
   },
 
@@ -32,7 +32,7 @@ const ProviderService = {
     return response.data;
   },
 
-  getAllProviders: () => ProviderService.getAll(),
+  getAllProviders: (params) => ProviderService.getAll(params),
   getProviderById: (id) => ProviderService.getById(id),
   createProvider: (data) => ProviderService.create(data),
   updateProvider: (id, data) => ProviderService.update(id, data),

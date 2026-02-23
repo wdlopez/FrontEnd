@@ -18,7 +18,7 @@ const GenericEditModal = ({
   const [initialData, setInitialData] = useState(null);
 
   const formFields = config?.columns
-    ?.filter(col => col.backendKey && col.editable !== false && col.backendKey !== 'id' && col.backendKey !== 'active' && col.type !== 'password' && col.backendKey !== 'roleId' && col.backendKey !== 'entityId' && col.backendKey !== 'providerId' && col.backendKey !== 'status')
+    ?.filter(col => col.backendKey && col.editable !== false && col.backendKey !== 'id' && col.backendKey !== 'active' && col.type !== 'password' && col.backendKey !== 'roleId' && col.backendKey !== 'entityId' && col.backendKey !== 'providerId')
     .map(col => {
       const field = {
         name: col.backendKey,
@@ -63,6 +63,19 @@ const GenericEditModal = ({
       
       const data = response.data || response.UserEntity || response.user || response;
 
+      // Normalizar fechas al formato YYYY-MM-DD para inputs type="date"
+      if (config?.columns) {
+        config.columns
+          .filter(col => col.type === "date" && col.backendKey)
+          .forEach(col => {
+            const key = col.backendKey;
+            const raw = data[key];
+            if (typeof raw === "string" && raw.includes("T")) {
+              data[key] = raw.split("T")[0];
+            }
+          });
+      }
+
       if (data.clientId && !data.entityId) {
         data.entityId = `c_${data.clientId}`;
       }
@@ -83,14 +96,27 @@ const GenericEditModal = ({
 
       const allowedKeys = formFields.map(f => f.name);
       const filteredData = Object.keys(formData)
-      .filter(key => allowedKeys.includes(key))
-      .reduce((obj, key) => {
-        // Evitamos enviar strings vacíos en campos de ID opcionales
-        if (formData[key] !== "") {
-          obj[key] = formData[key];
-        }
-        return obj;
-      }, {});
+        .filter(key => allowedKeys.includes(key))
+        .reduce((obj, key) => {
+          let value = formData[key];
+
+          // Evitamos enviar strings vacíos en campos opcionales
+          if (value === "") {
+            return obj;
+          }
+
+          // Normalizar campos numéricos (por ahora total_value)
+          if (key === "total_value") {
+            const parsed = parseFloat(value);
+            if (!Number.isNaN(parsed)) {
+              obj[key] = parsed;
+            }
+            return obj;
+          }
+
+          obj[key] = value;
+          return obj;
+        }, {});
 
     await service.update(entityId, filteredData);
 

@@ -11,7 +11,9 @@ const GenericAddModal = ({
   setIsOpen, 
   service,
   config,
-  onSuccess 
+  onSuccess,
+  initialValues = {},
+  getExtraPayload,
 }) => {
   const [loading, setLoading] = useState(false);
   const formFields = generateFormFields(config);
@@ -22,6 +24,12 @@ const GenericAddModal = ({
       const payload = {};
       Object.keys(formData).forEach(key => {
         let value = formData[key];
+        const field = formFields.find(f => f.name === key);
+        if (field?.type === 'number') {
+          const parsed = parseFloat(value);
+          payload[key] = Number.isNaN(parsed) ? value : parsed;
+          return;
+        }
         if (typeof value === 'string') {
           value = value.trim();
           if (key.includes('email') || key === 'mail') {
@@ -30,6 +38,9 @@ const GenericAddModal = ({
         }
         payload[key] = value;
       });
+
+      const extra = getExtraPayload?.() ?? {};
+      Object.assign(payload, extra);
 
       const response = await service.create(payload);
 
@@ -83,6 +94,7 @@ const GenericAddModal = ({
             sendMessage={`Crear ${config.name}`} 
             onCancel={() => setIsOpen(false)}
             gridLayout={true}
+            initialValues={initialValues}
           />
         )}
       </div>
