@@ -59,7 +59,7 @@ export const mapTableToBackend = (tableRow, config) => {
  */
 export const generateFormFields = (config) => {
   return config.columns
-    .filter(col => col.backendKey && col.editable !== false)
+  .filter(col => col.backendKey && col.editable !== false && !col.hideInForm)
     .map(col => {
       const field = {
         name: col.backendKey,

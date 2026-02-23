@@ -4,8 +4,10 @@ const DEFAULT_PASSWORD = "Password2026!";
 
 const UserService = {
 
-  getAll: async () => {
-    const response = await api.get('/users'); 
+  getAll: async ({ page = 1, limit = 10 } = {}) => {
+    const response = await api.get('/users', {
+      params: { page, limit }
+    }); 
     return response.data;
   },
 

@@ -66,7 +66,8 @@ export const USER_CONFIG = {
       required: false,
       options: [],
       placeholder: 'Seleccione un cliente (opcional)',
-      hideInTable: true
+      hideInTable: true,
+      hideInForm: true
     },
     {
       header: 'ASOCIAR A PROVEEDOR',
@@ -75,7 +76,8 @@ export const USER_CONFIG = {
       required: false,
       options: [],
       placeholder: 'Seleccione un proveedor (opcional)',
-      hideInTable: true
+      hideInTable: true,
+      hideInForm: true
     },
     {
       header: 'ESTADO',

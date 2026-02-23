@@ -27,10 +27,14 @@ function InteractiveTable({
   checkboxSelectAllOptions = false,
   hiddenColumns = [],
   headerButtons = null,
+  // Paginación en servidor (opcional)
+  serverPagination = false,
+  serverPage = 1,
+  serverTotalPages = 1,
+  onServerPageChange,
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [selectedCell, setSelectedCell] = useState({ rowIndex: 0, colIndex: 0 });
-  const [editingValue, setEditingValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   // valueCell removed (not used) to avoid unused variable warnings
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,8 +84,10 @@ function InteractiveTable({
   }, [showColumnMenu]);
 
   // console.log(path);
-  // Ajusta rowsPerPage según la altura de la ventana
+  // Ajusta rowsPerPage según la altura de la ventana (solo cuando la paginación es local)
   useEffect(() => {
+    if (serverPagination) return;
+
     const calculateRows = () => {
       const h = window.innerHeight;
       let n;
@@ -94,7 +100,7 @@ function InteractiveTable({
     calculateRows();
     window.addEventListener("resize", calculateRows);
     return () => window.removeEventListener("resize", calculateRows);
-  }, [rowsPerPage]);
+  }, [rowsPerPage, serverPagination]);
 
   // Efecto para manejar el foco
   useEffect(() => {
@@ -193,10 +199,18 @@ function InteractiveTable({
     })
     : filteredData;
 
-  // Usamos dynamicRowsPerPage para la paginación
-  const totalPages = Math.ceil(sortedData.length / dynamicRowsPerPage);
-  const startIndex = (currentPage - 1) * dynamicRowsPerPage;
-  const currentData = sortedData.slice(startIndex, startIndex + dynamicRowsPerPage);
+  // Paginación: local (cliente) o desde el servidor
+  const effectiveCurrentPage = serverPagination ? serverPage : currentPage;
+  const effectiveTotalPages = serverPagination
+    ? serverTotalPages
+    : Math.ceil(sortedData.length / dynamicRowsPerPage);
+
+  const currentData = serverPagination
+    ? sortedData
+    : (() => {
+        const startIndex = (effectiveCurrentPage - 1) * dynamicRowsPerPage;
+        return sortedData.slice(startIndex, startIndex + dynamicRowsPerPage);
+      })();
 
   // Navegación con teclado
   const handleKeyDown = (e, rowIdx, colIdx) => {
@@ -246,8 +260,6 @@ function InteractiveTable({
     if (colIndex === 0) return;
     if (colName.toLowerCase() === "id" || nonEditableColumns.includes(colName)) return;
     
-    // Capturar el valor actual
-    setEditingValue(row[colName] || "");
     setEditableCell({ rowIndex, colIndex });
     const newSelectedRow = originData?.find((o) => o[parameterId] === row.id) || row;
     setSelectedRow(newSelectedRow);
@@ -281,7 +293,6 @@ function InteractiveTable({
     } finally {
       setIsSaving(false);
       setEditableCell(null);
-      setEditingValue("");
     }
   };
 
@@ -688,7 +699,11 @@ function InteractiveTable({
             </table>
           </div>
         </div>
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+        <Pagination
+          currentPage={effectiveCurrentPage}
+          totalPages={effectiveTotalPages}
+          onPageChange={serverPagination && onServerPageChange ? onServerPageChange : setCurrentPage}
+        />
       </div>
     </div>
   );

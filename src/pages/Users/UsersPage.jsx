@@ -22,6 +22,8 @@ const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(USER_CONFIG);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Estados de Modales
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -48,20 +50,25 @@ const UsersPage = () => {
   const hasInitialized = useRef(false);
 
   // 1. Cargar datos
-  const fetchData = async () => {
+  const fetchData = async (page = 1) => {
     setLoading(true);
     try {
       const [usersRes, rolesRes, clientsRes, providersRes] = await Promise.allSettled([
-        UserService.getAll(),
+        UserService.getAll({ page, limit: 10 }),
         RoleService.getRoles(),
         ClientService.getAll(),
         ProviderService.getAll()
       ]);
 
       if (usersRes.status === 'fulfilled') {
-        const dataList = normalizeList(usersRes.value);
+        const usersResponse = usersRes.value;
+        const dataList = normalizeList(usersResponse);
         const formattedUsers = mapBackendToTable(dataList, USER_CONFIG);
         setUsers(formattedUsers);
+
+        const meta = usersResponse?.data || {};
+        setCurrentPage(meta.page || 1);
+        setTotalPages(meta.totalPages || 1);
       }
 
       // Configuración dinámica de Selects
@@ -104,13 +111,13 @@ const UsersPage = () => {
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
-      fetchData();
+      fetchData(1);
     }
   }, []);
 
   const handleUserCreated = (response) => {
   setIsAddModalOpen(false);
-  fetchData();
+  fetchData(currentPage);
   
   console.log("Respuesta completa del servidor:", response);
 
@@ -234,9 +241,13 @@ const UsersPage = () => {
                 onAdd={() => setIsAddModalOpen(true)}
                 addButtonLabel={`Nuevo ${dynamicConfig.name}`}
                 showExport={true} 
-                onRefresh={fetchData}
+                onRefresh={() => fetchData(currentPage)}
               />
             }
+            serverPagination={true}
+            serverPage={currentPage}
+            serverTotalPages={totalPages}
+            onServerPageChange={(page) => fetchData(page)}
           />
         )}
       </div>
