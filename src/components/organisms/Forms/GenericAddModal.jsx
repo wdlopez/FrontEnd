@@ -19,13 +19,11 @@ const GenericAddModal = ({
   const handleCreate = async (formData) => {
     setLoading(true);
     try {
-
       const payload = {};
       Object.keys(formData).forEach(key => {
         let value = formData[key];
         if (typeof value === 'string') {
           value = value.trim();
-
           if (key.includes('email') || key === 'mail') {
             value = value.toLowerCase();
           }
@@ -33,8 +31,7 @@ const GenericAddModal = ({
         payload[key] = value;
       });
 
-
-      await service.create(payload);
+      const response = await service.create(payload);
 
       Swal.fire(
         "¡Creado!", 
@@ -43,7 +40,9 @@ const GenericAddModal = ({
       );
       
       setIsOpen(false);
-      if (onSuccess) onSuccess();
+      
+      if (onSuccess) onSuccess(response); 
+      
     } catch (error) {
       console.error(`Error creando ${config.name}:`, error);
       const msg = error.response?.data?.message;

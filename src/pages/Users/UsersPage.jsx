@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
+import Swal from 'sweetalert2';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
 import ConfirmActionModal from '../../components/organisms/Forms/ConfirmActionModal';
 import GenericEditModal from '../../components/organisms/Forms/GenericEditModal';
 import GenericAddModal from '../../components/organisms/Forms/GenericAddModal';
+import AssignClientModal from "../../components/organisms/Forms/AssignClientModal";
 import Alerts from '../../components/molecules/Alerts';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import UserService from '../../services/User/user.service';
@@ -21,16 +23,21 @@ const UsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(USER_CONFIG);
 
-  // Modales
+  // Estados de Modales
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
+  // Estado para el encadenamiento de creación
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [createdUser, setCreatedUser] = useState(null);
+
+  // Estados de selección y edición
   const [selectedUser, setSelectedUser] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
-  
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+
   const formColumns = dynamicConfig.columns.filter(col => !col.hideInForm);
 
   const breadcrumbPaths = [
@@ -40,7 +47,7 @@ const UsersPage = () => {
 
   const hasInitialized = useRef(false);
 
-  // 1. Cargar datos de la tabla y opciones de los Selects
+  // 1. Cargar datos
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -51,14 +58,13 @@ const UsersPage = () => {
         ProviderService.getAll()
       ]);
 
-      // --- Procesar Usuarios para la Tabla ---
       if (usersRes.status === 'fulfilled') {
         const dataList = normalizeList(usersRes.value);
         const formattedUsers = mapBackendToTable(dataList, USER_CONFIG);
         setUsers(formattedUsers);
       }
 
-      // --- Inyectar Opciones Dinámicas en la Configuración ---
+      // Configuración dinámica de Selects
       const newConfig = { ...USER_CONFIG };
       
       if (rolesRes.status === 'fulfilled') {
@@ -102,7 +108,42 @@ const UsersPage = () => {
     }
   }, []);
 
-  // Acciones de Fila
+  const handleUserCreated = (response) => {
+  setIsAddModalOpen(false);
+  fetchData();
+  
+  console.log("Respuesta completa del servidor:", response);
+
+  // Intentamos extraer el objeto de datos
+  const data = response?.data || response;
+
+  const userId = data?.id || data?.userId || (Array.isArray(data) ? data[0]?.id : null);
+
+  if (userId) {
+    setCreatedUser({
+      id: userId,
+      name: data?.firstName ? `${data.firstName} ${data.lastName || ''}` : "Nuevo Usuario"
+    });
+
+    Swal.fire({
+      title: "¡Usuario Creado!",
+      text: "¿Deseas asociar este usuario a un cliente ahora?",
+      icon: "success",
+      showCancelButton: true,
+      confirmButtonText: "Sí, asociar cliente",
+      cancelButtonText: "No, finalizar",
+      confirmButtonColor: "#2563EB",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setShowAssignModal(true);
+      }
+    });
+  } else {
+    console.error("No se pudo obtener el ID. Verifica que GenericAddModal pase el resultado al onSuccess.");
+  }
+};
+
+  // Acciones de Tabla
   const openEditModal = (row) => {
     if (row?.id) {
       setEditUserId(row.id);
@@ -136,7 +177,7 @@ const UsersPage = () => {
     }
   };
 
-  // Preparar mapeos para InteractiveTable
+  // Mapeos para InteractiveTable
   const columnMapping = {};
   const selectColumns = {};
   const nonEditableColumns = [];
@@ -200,14 +241,27 @@ const UsersPage = () => {
         )}
       </div>
 
-      {/* Modal de Creación Genérico */}
+      {/* Modal de Creación de Usuario */}
       <GenericAddModal 
         fields={formColumns}
         isOpen={isAddModalOpen}
         setIsOpen={setIsAddModalOpen}
         service={UserService}
         config={dynamicConfig}
-        onSuccess={fetchData}
+        onSuccess={handleUserCreated} // <--- Aquí conectamos el flujo
+      />
+
+      {/* Nuevo Modal de Asignación de Cliente */}
+      <AssignClientModal
+        isOpen={showAssignModal}
+        setIsOpen={setShowAssignModal}
+        predefinedUserId={createdUser?.id}
+        predefinedUserName={createdUser?.name}
+        onSuccess={() => {
+          // Opcional: Si quieres mostrar una notificación extra al cerrar el segundo modal
+          // El propio modal ya muestra un SweetAlert de éxito
+          console.log("Relación usuario-cliente creada");
+        }}
       />
 
       {/* Modal de Edición Genérico */}
