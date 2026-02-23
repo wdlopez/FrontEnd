@@ -16,6 +16,7 @@ import ClientsPage from './pages/Clients/ClientsPage';
 import ViewOneClient from './components/organisms/Views/ViewOneClient';
 import ContractsPage from './pages/Contracts/General/ContractsPage';
 import SuppliersPage from './pages/Suppliers/SuppliersPage';
+import ViewOneSupplier from './components/organisms/Views/ViewOneSupplier';
 import SupplierContactPage from './pages/Suppliers/Contacts/SuppliersContactPage';
 import SuppliersRiskPage from './pages/Suppliers/Risks/SuppliersRiskPage';
 import ServicesPage from './pages/Contracts/Services/ServicesPage';
@@ -71,6 +72,7 @@ function App() {
               <Route path="/settings/userNroles/:id" element={<ViewOneUser />} />
               <Route path="/contract/general" element={<ContractsPage />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
+              <Route path="/suppliers/:id" element={<ViewOneSupplier />} />
               <Route path="/suppliers/contacts" element={<SupplierContactPage />} />
               <Route path="/suppliers/risks" element={<SuppliersRiskPage />} />
               <Route path="/contract/services" element={<ServicesPage />} />

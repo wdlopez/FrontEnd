@@ -84,7 +84,8 @@ const GenericViewPage = ({
       col.backendKey &&
       col.backendKey !== "id" &&
       col.backendKey !== "actions" &&
-      col.backendKey !== "active",
+      col.backendKey !== "active" &&
+      col.backendKey !== "index",
   );
 
   if (loading) {

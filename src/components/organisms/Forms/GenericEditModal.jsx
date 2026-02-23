@@ -18,7 +18,7 @@ const GenericEditModal = ({
   const [initialData, setInitialData] = useState(null);
 
   const formFields = config?.columns
-    ?.filter(col => col.backendKey && col.editable !== false && col.backendKey !== 'id' && col.backendKey !== 'active' && col.type !== 'password' && col.backendKey !== 'roleId' && col.backendKey !== 'entityId' && col.backendKey !== 'providerId')
+    ?.filter(col => col.backendKey && col.editable !== false && col.backendKey !== 'id' && col.backendKey !== 'active' && col.type !== 'password' && col.backendKey !== 'roleId' && col.backendKey !== 'entityId' && col.backendKey !== 'providerId' && col.backendKey !== 'status')
     .map(col => {
       const field = {
         name: col.backendKey,

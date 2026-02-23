@@ -6,31 +6,38 @@ const ProviderService = {
     return response.data; 
   },
 
-  getProviderById: async (providerId) => {
+  getById: async (providerId) => {
     const response = await apiProviders.get(`/providers/${providerId}`);
     return response.data;
   },
 
-  createProvider: async (providerData) =>{
+  create: async (providerData) =>{
     const response = await apiProviders.post('/providers', providerData);
     return response.data;
   },
 
-  updateProvider: async (id, providerData) => {
+  update: async (id, providerData) => {
     const response = await apiProviders.put(`/providers/${id}`, providerData);
     return response.data;
   },
 
   
-  deleteProvider: async (id) => {
+  delete: async (id) => {
     const response = await apiProviders.delete(`/providers/${id}`);
     return response.data;
   },
 
-  restoreProvider: async (id) => {
+  restore: async (id) => {
     const response = await apiProviders.patch(`/providers/${id}/restore`);
     return response.data;
-  }
+  },
+
+  getAllProviders: () => ProviderService.getAll(),
+  getProviderById: (id) => ProviderService.getById(id),
+  createProvider: (data) => ProviderService.create(data),
+  updateProvider: (id, data) => ProviderService.update(id, data),
+  deleteProvider: (id) => ProviderService.delete(id),
+  restoreProvider: (id) => ProviderService.restore(id)
 };
 
 export default ProviderService;
