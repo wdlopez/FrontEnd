@@ -114,6 +114,10 @@ const GenericEditModal = ({
             return obj;
           }
 
+          // Normalizar booleanos en edición
+          if (value === "true") value = true;
+          if (value === "false") value = false;
+
           obj[key] = value;
           return obj;
         }, {});

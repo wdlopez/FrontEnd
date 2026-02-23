@@ -32,8 +32,10 @@ const GenericAddModal = ({
         }
         if (typeof value === 'string') {
           value = value.trim();
+          if (value === 'true') value = true;
+          if (value === 'false') value = false;
           if (key.includes('email') || key === 'mail') {
-            value = value.toLowerCase();
+            value = typeof value === 'string' ? value.toLowerCase() : value;
           }
         }
         payload[key] = value;

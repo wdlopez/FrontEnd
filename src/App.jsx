@@ -22,6 +22,7 @@ import SupplierContactPage from './pages/Suppliers/Contacts/SuppliersContactPage
 import SuppliersRiskPage from './pages/Suppliers/Risks/SuppliersRiskPage';
 import ServicesPage from './pages/Contracts/Services/ServicesPage';
 import ClausesPage from './pages/Contracts/Clauses/ClausesPage';
+import ViewOneClause from './components/organisms/Views/ViewOneClause';
 import WorkOrdersPage from './pages/Contracts/WorkOrders/WorkOrdesPage';
 import SchemasPage from './pages/Contracts/Schemas/SchemasPage';
 import SchemasProvidersPage from './pages/Suppliers/Schemas/SchemasProvidersPage';
@@ -79,6 +80,7 @@ function App() {
               <Route path="/suppliers/risks" element={<SuppliersRiskPage />} />
               <Route path="/contract/services" element={<ServicesPage />} />
               <Route path="/contract/clauses" element={<ClausesPage />} />
+              <Route path="/contract/clauses/:id" element={<ViewOneClause />} />
               <Route path="/contract/workOrders" element={<WorkOrdersPage />} />
               <Route path="/contract/schemas" element={<SchemasPage />} />
               <Route path="/suppliers/schemas" element={<SchemasProvidersPage />} />
