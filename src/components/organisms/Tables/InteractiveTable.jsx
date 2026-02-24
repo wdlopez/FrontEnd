@@ -143,6 +143,7 @@ function InteractiveTable({
   
   // Combinar columnas ocultas por props y por usuario
   const allHiddenColumns = [...hiddenColumns, ...userHiddenColumns, ...configHiddenColumns];
+  const showActionColumn = !!configModalC?.parameterConnec;
 
   const displayedColumns = columns.filter(
     (col) =>
@@ -349,7 +350,7 @@ function InteractiveTable({
                 <div ref={columnMenuRef} style={{ position: 'fixed', left: menuPos.left, top: menuPos.top, zIndex: 2000 }} className="w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl max-h-[300px] overflow-y-auto">
                   <div className="p-2">
                     <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 px-2 uppercase tracking-wider">Columnas Visibles</div>
-                    {columns.filter(col => col.toLowerCase() !== "id" && col !== parameterState && col !== configModalC.parameterConnec && !allHiddenColumns.includes(col)).map(col => (
+                    {columns.filter(col => col.toLowerCase() !== "id" && col !== parameterState && col !== configModalC.parameterConnec).map(col => (
                       <label key={col} className="flex items-center px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors">
                         <input
                           type="checkbox"
@@ -374,7 +375,7 @@ function InteractiveTable({
             >
               <colgroup>
                 {/* Checkbox (selección) */}
-                <col style={{ width: "60px" }} />
+                {showActionColumn && <col style={{ width: "60px" }} />}
 
                 {/* Columnas dinámicas */}
                 {displayedColumns.map((col, index) => (
@@ -383,7 +384,7 @@ function InteractiveTable({
                     style={
                       index === 0
                         ? { width: "60px", minWidth: "60px", maxWidth: "60px" } // primera columna
-                        : { minWidth: "150px" }
+                        : { width: "auto" }
                     }
                   />
                 ))}
@@ -395,16 +396,19 @@ function InteractiveTable({
               <thead className="bg-customBluee text-white dark:bg-dark1 dark:text-gray-200 text-xs uppercase">
                 <tr>
                   {/* Checkbox Sticky */}
-                  <th className="sticky left-0 z-30 w-[60px] min-w-[60px] px-4 py-3 bg-customBlue dark:bg-dark1 border-r border-blue-400 dark:border-gray-600">
-                    {/* <input type="checkbox" className="accent-white" onChange={handleSelectAll} /> */}
-                  </th>
+                  {showActionColumn && (
+                    <th className="sticky left-0 z-30 w-[60px] min-w-[60px] px-4 py-3 bg-customBlue dark:bg-dark1 border-r border-blue-400 dark:border-gray-600">
+                      {/* <input type="checkbox" className="accent-white" onChange={handleSelectAll} /> */}
+                    </th>
+                  )}
 
                   {/* Columnas */}
                   {displayedColumns.map((col, index) => {
                     // Primera columna de datos es sticky (después del checkbox)
                     const isSticky = index === 0;
+                    const stickyLeft = showActionColumn ? "left-[60px]" : "left-0";
                     const stickyClass = isSticky 
-                      ? "sticky left-[60px] z-30 border-r-2 border-r-blue-300 dark:border-r-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.2)] bg-customBlue dark:bg-dark1" 
+                      ? `sticky ${stickyLeft} z-30 border-r-2 border-r-blue-300 dark:border-r-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.2)] bg-customBlue dark:bg-dark1` 
                       : "border-r border-blue-400 dark:border-gray-600 last:border-r-0";
 
                     return (
@@ -453,37 +457,40 @@ function InteractiveTable({
               <tbody>
                 {currentData.map((row, rowIndex) => (
                   <tr key={rowIndex} className="group odd:bg-gray-50 even:bg-white dark:odd:bg-dark4 dark:even:bg-dark3 hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors">
-                    <td
-                      className={`
-                        px-4 py-3 border-r border-gray-200 dark:border-gray-700 last:border-r-0 cursor-pointer align-top
-                        sticky left-0 z-20 w-[60px] min-w-[60px]
-                        bg-white group-odd:bg-gray-50 group-hover:bg-blue-50
-                        dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800
-                        transition-colors
-                      `}
-                      onClick={() => setSelectedCell({ rowIndex, colIndex: -1 })}
-                    >
-                      {configModalC?.parameterConnec ? (
-                        <MenuModal
-                          icon={configModalC.icon}
-                          styleBtn={configModalC.styleBtn}
-                          elementsRedirect={
-                            row[configModalC.parameterConnec] || []
-                          }
-                        />
-                      ) : (
-                        <>
-                          {/* <input type="checkbox" className="row-checkbox" /> */}
-                        </>
-                      )}
-                    </td>
+                    {showActionColumn && (
+                      <td
+                        className={`
+                          px-4 py-3 border-r border-gray-200 dark:border-gray-700 last:border-r-0 cursor-pointer align-top
+                          sticky left-0 z-20 w-[60px] min-w-[60px]
+                          bg-white group-odd:bg-gray-50 group-hover:bg-blue-50
+                          dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800
+                          transition-colors
+                        `}
+                        onClick={() => setSelectedCell({ rowIndex, colIndex: -1 })}
+                      >
+                        {configModalC?.parameterConnec ? (
+                          <MenuModal
+                            icon={configModalC.icon}
+                            styleBtn={configModalC.styleBtn}
+                            elementsRedirect={
+                              row[configModalC.parameterConnec] || []
+                            }
+                          />
+                        ) : (
+                          <>
+                            {/* <input type="checkbox" className="row-checkbox" /> */}
+                          </>
+                        )}
+                      </td>
+                    )}
                     {displayedColumns.map((col, colIndex) => {
                       const isSticky = colIndex === 0;
+                      const stickyLeft = showActionColumn ? "left-[60px]" : "left-0";
                       const stickyClass = isSticky 
-                        ? "sticky left-[60px] z-20 border-r-2 border-r-gray-300 dark:border-r-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] bg-white group-odd:bg-gray-50 group-hover:bg-blue-50 dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800" 
+                        ? `sticky ${stickyLeft} z-20 border-r-2 border-r-gray-300 dark:border-r-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] bg-white group-odd:bg-gray-50 group-hover:bg-blue-50 dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800` 
                         : "";
                       
-                      const widthClass = widthMap.get(col) || "min-w-[150px] max-w-[300px]";
+                      const widthClass = widthMap.get(col) || "whitespace-nowrap min-w-[80px] max-w-[400px]";
                       
                       return (
                         <td

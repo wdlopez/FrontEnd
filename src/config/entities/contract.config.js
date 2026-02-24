@@ -23,6 +23,13 @@ export const CONTRACT_CONFIG = {
       editable: true,
     },
     {
+      header: "Descripción",
+      backendKey: "description",
+      editable: true,
+      type: "textarea",
+      required: false,
+    },
+    {
       header: "Cliente",
       backendKey: "client_id", // El modal genérico usará esto para el POST
       type: "select",

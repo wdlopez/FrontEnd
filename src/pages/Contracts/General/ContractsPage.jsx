@@ -60,9 +60,9 @@ function ContractPage() {
       ]);
 
       if (contractsRes.status === "fulfilled") {
-        const response = contractsRes.value;
-        const dataList = normalizeList(response);
-        setContracts(mapBackendToTable(dataList, CONTRACT_CONFIG));
+        // const response = contractsRes.value;
+        // const dataList = normalizeList(response);
+        // setContracts(mapBackendToTable(dataList, CONTRACT_CONFIG));
       }
 
       // Clonamos config para no mutar la constante importada
@@ -71,26 +71,56 @@ function ContractPage() {
         columns: CONTRACT_CONFIG.columns.map((c) => ({ ...c })),
       };
 
+      let clients = [];
       if (clientsRes.status === "fulfilled") {
-        const clients = normalizeList(clientsRes.value);
+        clients = normalizeList(clientsRes.value);
         const clientCol = newConfig.columns.find((c) => c.backendKey === "client_id");
         if (clientCol) {
           clientCol.options = (clients || []).map((c) => ({
             value: c.id,
             label: c.name,
           }));
+          // Mapeo para mostrar nombre en la tabla
+          clientCol.mapFrom = (item) => {
+             const client = clients.find(c => c.id === item.client_id);
+             return client ? client.name : item.client_id;
+          };
         }
       }
 
+      let providers = [];
       if (providersRes.status === "fulfilled") {
-        const providers = normalizeList(providersRes.value);
+        providers = normalizeList(providersRes.value);
         const providerCol = newConfig.columns.find((c) => c.backendKey === "provider_id");
         if (providerCol) {
           providerCol.options = (providers || []).map((p) => ({
             value: p.id,
             label: p.legal_name || p.name,
           }));
+          // Mapeo para mostrar nombre en la tabla
+          providerCol.mapFrom = (item) => {
+             const provider = providers.find(p => p.id === item.provider_id);
+             return provider ? (provider.legal_name || provider.name) : item.provider_id;
+          };
         }
+      }
+
+      // Formateo de fechas
+      const dateCols = newConfig.columns.filter(c => c.type === 'date');
+      dateCols.forEach(col => {
+          col.mapFrom = (item) => {
+              const val = item[col.backendKey];
+              if (!val) return "";
+              // Formato legible (ej: 24/02/2026)
+              return new Date(val).toLocaleDateString("es-CO"); 
+          };
+      });
+
+      // Ahora sí mapeamos los datos con la nueva configuración enriquecida
+      if (contractsRes.status === "fulfilled") {
+        const response = contractsRes.value;
+        const dataList = normalizeList(response);
+        setContracts(mapBackendToTable(dataList, newConfig));
       }
 
       setDynamicConfig(newConfig);

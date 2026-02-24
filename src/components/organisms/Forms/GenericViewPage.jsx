@@ -5,22 +5,48 @@ import Alerts from "../../molecules/Alerts";
 import InfoTooltip from "../../atoms/InfoToolTip";
 import GenericEditModal from "./GenericEditModal";
 
-const DetailField = ({ label, value, type }) => {
-  let displayValue = value || "-";
+const DetailField = ({ label, value, type, options, mapFrom }) => {
+  let displayValue = value;
 
-  if (type === "date" && value) {
-    displayValue = new Date(value).toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
+  if (value === null || value === undefined || value === "") {
+    displayValue = "-";
+  } else {
+    // 1. Si hay un mapFrom específico para vista (aunque mapFrom suele ser para tabla)
+    // Podríamos usarlo si es una función simple que no depende de 'index'
+    if (typeof mapFrom === 'function') {
+        try {
+            // Pasamos el item completo como { [backendKey]: value } simulado o null si no tenemos el item completo aquí
+            // Pero mapFrom espera (item, index). Aquí solo tenemos value.
+            // Mejor no usar mapFrom de tabla directamente aquí a menos que estemos seguros.
+        } catch (e) {}
+    }
 
-  if (type === "currency" && value) {
-    displayValue = new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-    }).format(value);
+    // 2. Si es tipo select y tiene opciones
+    if (type === "select" && Array.isArray(options)) {
+      const option = options.find((opt) => String(opt.value) === String(value));
+      if (option) {
+        displayValue = option.label;
+      }
+    } 
+    // 3. Formato Fecha
+    else if (type === "date") {
+      displayValue = new Date(value).toLocaleDateString("es-CO", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+    // 4. Formato Moneda
+    else if (type === "currency" || (type === "number" && label.toLowerCase().includes("valor"))) {
+      displayValue = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD", // Podría ser dinámico si tuviéramos la moneda del item
+      }).format(value);
+    }
+    // 5. Booleanos
+    else if (typeof value === 'boolean') {
+        displayValue = value ? 'Sí' : 'No';
+    }
   }
 
   return (
@@ -53,7 +79,7 @@ const GenericViewPage = ({
     { name: "Inicio", url: "/dashboard" },
     { name: "Gestión Integral", url: basePath },
     { name: `${entityName}s`, url: basePath },
-    { name: `${entityName} #${id}`, url: null },
+    { name: `${entityName} #${id ? id.substring(0, 8) : ''}`, url: null },
   ];
 
   const fetchData = async () => {
@@ -85,7 +111,7 @@ const GenericViewPage = ({
       col.backendKey !== "id" &&
       col.backendKey !== "actions" &&
       col.backendKey !== "active" &&
-      col.backendKey !== "index",
+      col.backendKey !== "index"
   );
 
   if (loading) {
@@ -142,13 +168,15 @@ const GenericViewPage = ({
                         ID: {data.id}
                       </span>
 
-                      {Object.prototype.hasOwnProperty.call(data, "active") && (
+                      {(data.active !== undefined) && (
                         <span
-                          className={
-                            data.active ? "bg-green-100" : "bg-red-100"
-                          }
+                          className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            (data.active === true || data.active === 1 || data.active === 'active') 
+                                ? "bg-green-100 text-green-700" 
+                                : "bg-red-100 text-red-700"
+                          }`}
                         >
-                          {data.active ? "Activo" : "Inactivo"}
+                          {(data.active === true || data.active === 1 || data.active === 'active') ? "Activo" : "Inactivo"}
                         </span>
                       )}
                     </div>
@@ -175,6 +203,7 @@ const GenericViewPage = ({
                     label={field.header}
                     value={data[field.backendKey]}
                     type={field.type || "text"}
+                    options={field.options}
                   />
                 ))}
 

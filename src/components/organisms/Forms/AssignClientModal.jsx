@@ -13,7 +13,6 @@ const AssignClientModal = ({ isOpen, setIsOpen, predefinedUserId, predefinedUser
   const [formData, setFormData] = useState({
     userId: predefinedUserId || "",
     clientId: "",
-    clientName: "", // El backend lo exige
     isPrincipal: false
   });
 
@@ -39,13 +38,11 @@ const AssignClientModal = ({ isOpen, setIsOpen, predefinedUserId, predefinedUser
 
   const handleClientChange = (e) => {
     const selectedId = e.target.value;
-    const selectedClient = clients.find(c => c.id === selectedId);
 
     setFormData({
       ...formData,
       clientId: selectedId,
-      // Aquí capturamos el nombre automáticamente para cumplir con el DTO
-      clientName: selectedClient ? selectedClient.name : "" 
+      // Aquí capturamos el nombre automáticamente para cumplir con el DTO 
     });
   };
 
@@ -61,7 +58,7 @@ const AssignClientModal = ({ isOpen, setIsOpen, predefinedUserId, predefinedUser
       await UserClientService.create(formData);
       Swal.fire("¡Asignado!", "El usuario ha sido vinculado al cliente correctamente.", "success");
       setIsOpen(false);
-      setFormData({ userId: "", clientId: "", clientName: "", isPrincipal: false });
+      setFormData({ userId: "", clientId: "", isPrincipal: false });
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error(error);
