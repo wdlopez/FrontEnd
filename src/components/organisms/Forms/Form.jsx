@@ -184,8 +184,8 @@ function Form(props, ref) {
               }
 
               return (
-                <div key={idx} className={`${span} flex flex-col gap-2`}>
-                  <label className="text-blue-900 dark:text-blue-300 font-medium mb-1 flex items-center gap-1">
+                <div key={idx} className={`${span} flex flex-col gap-0.5`}>
+                  <label className="text-blue-900 dark:text-blue-300 font-medium mb-0.5 flex items-center gap-1 text-sm">
                     {f.label}{" "}
                     {f.required && <span className="text-red-500">*</span>}
                   </label>
@@ -412,10 +412,10 @@ function Form(props, ref) {
           <button
             type="submit"
             disabled={!isValid}
-            className={`inline-flex items-center px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-700 ${
+            className={`inline-flex items-center px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-white transition-all duration-200 font-bold tracking-wide ${
               isValid 
-                ? 'bg-blue-800 text-white hover:bg-blue-900' 
-                : 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-60'
+                ? 'bg-white text-blue-800 hover:bg-gray-100 shadow-lg transform hover:-translate-y-0.5' 
+                : 'bg-blue-900/50 text-blue-300 border border-blue-700 cursor-not-allowed opacity-70'
             }`}
           >
             {sendMessage}

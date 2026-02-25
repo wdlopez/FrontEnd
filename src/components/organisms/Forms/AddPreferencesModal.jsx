@@ -86,7 +86,7 @@ const AddPreferencesModal = ({ isOpen, setIsOpen, onSuccess }) => {
   return (
     <Modal size="lg" open={isOpen} setOpen={setIsOpen}>
       <div className="flex gap-2 items-center mb-6">
-        <InfoTooltip size="sm" message={getText("formPrefInfo") || "Configura cómo y cuándo se debe notificar a un usuario sobre eventos de un contrato."}>
+        <InfoTooltip size="sm" message={getText("modals.formPrefInfo") || "Configura cómo y cuándo se debe notificar a un usuario sobre eventos de un contrato."}>
           <span className="material-symbols-outlined text-gray-400">tune</span>
         </InfoTooltip>
         <h2 className="text-xl font-bold text-gray-800">Nueva Preferencia</h2>

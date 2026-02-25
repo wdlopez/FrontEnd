@@ -3,7 +3,7 @@ import Modal from "../../molecules/Modal";
 import Form from "./Form";
 import Swal from "sweetalert2";
 import InfoTooltip from "../../atoms/InfoToolTip";
-import { getText } from "../../../utils/text";
+import { getEntityFormInfo } from "../../../utils/text";
 
 const GenericEditModal = ({ 
   isOpen, 
@@ -141,7 +141,7 @@ const GenericEditModal = ({
     <Modal open={isOpen} setOpen={setIsOpen} size="lg">
       <div className="p-1">
         <div className="flex gap-2 items-center mb-6">
-          <InfoTooltip size="sm" message={getText(`form${config.name}`) || "Edite los detalles del registro"} sticky={true}>
+          <InfoTooltip size="sm" message={getEntityFormInfo(config.name, "Edite los detalles del registro")} sticky={true}>
             <span className="material-symbols-outlined text-gray-400">info</span>
           </InfoTooltip>
           <h2 className="text-xl font-bold text-gray-800">Editar {config.name}</h2>

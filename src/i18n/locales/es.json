@@ -65,10 +65,33 @@
     "slasDashboard": "Intrucciones para Dashboard de SLAs",
     "services": "Para editar un campo ten en cuenta que tienes que dar (doble clic) en la casilla, ingresar los datos y dar (Enter) para guardar los cambios\n\n Definición de los campos de la tabla:\n\n#: Un número consecutivo o identificador del servicio.\n\nContrato: El identificador o nombre del contrato al que está asociado el servicio.\n\nTorre de servicio: La torre o área de servicio a la que pertenece el servicio.\n\nCategoría de servicio: La clasificación o tipo de servicio (ej. red eléctrica, topografía, arquitectura).\n\nUnidad de recurso: La unidad de medida para el recurso asociado al servicio (ej. cables, datos del suelo, planos).\n\nLínea base inicial cargos: El valor inicial o base para los cargos del servicio.\n\nMecanismos de cargos: Los métodos o reglas para la aplicación de cargos del servicio (ej. PxQ).\n\nValor del servicio: El monto monetario total o estimado del servicio.\n\nFecha de inicio: La fecha en que el servicio comienza o entra en vigencia.\n\nFecha fin: La fecha en que el servicio termina o expira.\n\nAcciones: Iconos o botones que permiten realizar operaciones sobre el servicio, como ver detalles o eliminar.",
     "credits": "Para editar un campo ten en cuenta que tienes que dar (doble clic) en la casilla, ingresar los datos y dar (Enter) para guardar los cambios.\n\n El proveedor debe ingresar los porcentajes en los campos de los meses.\n\n Definición de los campos de la tabla:\n\n#: Un número consecutivo o identificador del registro.\n\nSLA: El nombre o identificador del Acuerdo de Nivel de Servicio al que se refiere la medición.\n\nMeta mínima: El porcentaje mínimo de cumplimiento esperado para el SLA.\n\nMeta esperada: El porcentaje ideal o esperado de cumplimiento para el SLA.\n\nMeses: Porcentaje de cumplimiento del SLA para cada mes del año (Enero a Diciembre).\n\nAcciones: Iconos o botones que permiten realizar operaciones sobre el registro, como entregar el reporte.",
-    "measurementWindows": "Para editar un campo ten en cuenta que tienes que dar (doble clic) en la casilla, ingresar los datos y dar (Enter) para guardar los cambios\n\n Definición de los campos de la tabla:\n\n#: Un número consecutivo o identificador de la ventana de medición.\n\nTipo de ventana de medición: El tipo o nombre que identifica la ventana de medición (ej. 7x24, 5x8x24, 6x5x30).\n\nDefinición ventana de medición: Una descripción más detallada de la ventana de medición (ej. Medición 7x24, Medición 5x8x24).\n\nPeriodo de inicio: La fecha y hora en que comienza el período de validez de la ventana de medición.\n\nPeriodo de fin: La fecha y hora en que finaliza el período de validez de la ventana de medición.\n\nPeriodo: La duración o descripción del período de la ventana de medición y la inclusiones y exclusiones de la ventana de medición (ej. Varios días, Mensual, Anual, Otro [26.00 días]).\n\nAcciones: Iconos o botones que permiten realizar operaciones sobre la ventana de medición, como ver detalles o eliminar."
+    "measurementWindows": "Para editar un campo ten en cuenta que tienes que dar (doble clic) en la casilla, ingresar los datos y dar (Enter) para guardar los cambios\n\n Definición de los campos de la tabla:\n\n#: Un número consecutivo o identificador de la ventana de medición.\n\nTipo de ventana de medición: El tipo o nombre que identifica la ventana de medición (ej. 7x24, 5x8x24, 6x5x30).\n\nDefinición ventana de medición: Una descripción más detallada de la ventana de medición (ej. Medición 7x24, Medición 5x8x24).\n\nPeriodo de inicio: La fecha y hora en que comienza el período de validez de la ventana de medición.\n\nPeriodo de fin: La fecha y hora en que finaliza el período de validez de la ventana de medición.\n\nPeriodo: La duración o descripción del período de la ventana de medición y la inclusiones y exclusiones de la ventana de medición (ej. Varios días, Mensual, Anual, Otro [26.00 días]).\n\nAcciones: Iconos o botones que permiten realizar operaciones sobre la ventana de medición, como ver detalles o eliminar.",
+    "invoices": "Administra las facturas emitidas por los proveedores asociadas a los contratos.",
+    "payments": "Administra los pagos recibidos y su asociación con las facturas emitidas.",
+    "preferences": "Administra cómo se alertará a los usuarios respecto a los hitos de sus contratos.",
+    "notifications": "Visualiza y administra las alertas y notificaciones enviadas a los usuarios del sistema.",
+    "workOrders": "Seguimiento operativo de requerimientos contractuales"
   },
   "tooltip": {
     "responsable": "El responsable puede ser un cliente o proveedor según corresponda."
+  },
+  "modals": {
+    "formPrefInfo": "Configura cómo y cuándo se debe notificar a un usuario sobre eventos de un contrato.",
+    "slaMeasurementInfo": "Registra el valor real obtenido para evaluar el cumplimiento de un SLA.",
+    "slaCreditInfo": "Asocia una medición fallida con un crédito financiero a favor del cliente.",
+    "providerContactInfo": "Registre personas de contacto específicas para cada proveedor.",
+    "formSchemaInfo": "Gestión de esquemas multitenant de base de datos",
+    "formTrackingInfo": "Registra la interacción del usuario actual con una notificación.",
+    "deliverableSonInfo": "Crea tareas o hitos hijos vinculados a un entregable principal.",
+    "deliverableSonRespInfo": "Asigna un usuario, cliente o proveedor como responsable de este sub-entregable.",
+    "reportAdHocInfo": "Crea una configuración de reporte personalizada para ejecutarla posteriormente.",
+    "invoiceItemInfo": "Agregue conceptos, productos o servicios al detalle de la factura.",
+    "formInvoiceInfo": "Registra los detalles de facturación asociados a los contratos y proveedores",
+    "bestPracticeInfo": "Registra estándares y conocimientos clave para el equipo.",
+    "standardReportInfo": "Define reportes preestablecidos para todos los usuarios.",
+    "docTemplateInfo": "Gestiona los formatos base para la generación automática de documentos.",
+    "riskInfo": "Gestión de Riesgos",
+    "formPaymentInfo": "Registra un nuevo pago y asócialo a una factura existente."
   },
   "common": {
     "logout": "Cerrar sesión",

@@ -109,7 +109,7 @@ const AddItemInvoiceModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("invoiceItemInfo") || "Agregue conceptos, productos o servicios al detalle de la factura."}
+          message={getText("modals.invoiceItemInfo") || "Agregue conceptos, productos o servicios al detalle de la factura."}
         >
           <span className="material-symbols-outlined text-amber-600">receipt_long</span>
         </InfoTooltip>

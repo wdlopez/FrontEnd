@@ -99,6 +99,17 @@ const ClausesPage = ({ id_client }) => {
     setIsEditOpen(true);
   };
 
+  const handleInlineEdit = async ({ row, column, realColumn, newValue }) => {
+    try {
+      await ClauseService.update(row.id, { [realColumn]: newValue });
+      setClauses(prev => prev.map(c =>
+        c.id === row.id ? { ...c, [column]: newValue } : c
+      ));
+    } catch (error) {
+      console.error("Error actualizando campo:", error);
+    }
+  };
+
   const handleDeleteReq = (row) => {
     setSelectedRow({
       id: row.id,
@@ -140,7 +151,7 @@ const ClausesPage = ({ id_client }) => {
       <div className="flex justify-between items-center gap-4">
         <div>
           <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("clausesIntro") || "Administre las cláusulas legales"}>
+            <InfoTooltip size="sm" message={getText("intros.clauses") || "Administre las cláusulas legales"} sticky={true}>
               <span className="material-symbols-outlined text-gray-400">info</span>
             </InfoTooltip>
             <h1 className="text-2xl font-bold text-gray-800">Gestión de {CLAUSE_CONFIG.name}s</h1>
@@ -162,6 +173,7 @@ const ClausesPage = ({ id_client }) => {
             selectColumns={selectColumns}
             nonEditableColumns={nonEditableColumns}
             onEdit={handleEdit}
+            onSubmit={handleInlineEdit}
             onDelete={handleDeleteReq}
             onAdd={() => setIsAddOpen(true)}
             path="/contract/clauses/"

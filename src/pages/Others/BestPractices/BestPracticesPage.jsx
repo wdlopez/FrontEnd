@@ -94,6 +94,12 @@ const BestPracticesPage = () => {
                 columnMapping={columnMapping}
                 actions={true}
                 onEdit={(row) => console.log("Editar práctica", row)}
+                onSubmit={async ({ row, column, realColumn, newValue }) => {
+                  try {
+                    await BestPracticesService.update(row.id, { [realColumn]: newValue });
+                    setPractices(prev => prev.map(p => p.id === row.id ? { ...p, [column]: newValue } : p));
+                  } catch (e) { console.error(e); }
+                }}
                 onDelete={async (row) => {
                   await BestPracticesService.deletePractice(row.id);
                   fetchPractices();

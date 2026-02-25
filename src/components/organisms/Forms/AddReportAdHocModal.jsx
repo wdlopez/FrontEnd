@@ -61,7 +61,7 @@ const AddReportAdHocModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("reportAdHocInfo") || "Crea una configuración de reporte personalizada para ejecutarla posteriormente."}
+          message={getText("modals.reportAdHocInfo") || "Crea una configuración de reporte personalizada para ejecutarla posteriormente."}
         >
           <span className="material-symbols-outlined text-orange-500">analytics</span>
         </InfoTooltip>

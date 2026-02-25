@@ -33,7 +33,9 @@ import ViewOneDeliverable from './components/organisms/Views/ViewOneDeliverable'
 import DeliverablesSonPage from './pages/Deliverables/DeliverablesSon/DeliverablesSonPage';
 import SchemasSlasPage from './pages/SLAs/Schemas/SchemasSlasPage';
 import SlasPage from './pages/SLAs/SlasPage';
+import ViewOneSla from './components/organisms/Views/ViewOneSla';
 import MeasurementWindowsPage from './pages/SLAs/MeasurementWindows/MeasurementWindowsPage';
+import ViewOneMWindow from './components/organisms/Views/ViewOneMWindow';
 import SchemasInvoicesPage from './pages/Invoices/Schemas/SchemasInvoicesPage';
 import InvoicesPage from './pages/Invoices/InvoicesPage';
 import ItemsInvoicePage from './pages/Invoices/Items/ItemsInvoicePage';
@@ -93,7 +95,9 @@ function App() {
               <Route path="/contract/deliverables-son" element={<DeliverablesSonPage />} />
               <Route path="/slas/schemas" element={<SchemasSlasPage />} />
               <Route path="/contract/sla" element={<SlasPage />} />
+              <Route path="/contract/sla/:id" element={<ViewOneSla />} />
               <Route path="/contract/sla/measurement-windows" element={<MeasurementWindowsPage />} />
+              <Route path="/contract/sla/measurement-windows/:id" element={<ViewOneMWindow />} />
               <Route path="/invoices/schemas" element={<SchemasInvoicesPage />} />
               <Route path="/invoices" element={<InvoicesPage />} />
               <Route path="/invoices/items" element={<ItemsInvoicePage />} />

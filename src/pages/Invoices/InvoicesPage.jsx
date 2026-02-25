@@ -89,7 +89,7 @@ const InvoicesPage = () => {
       <div className="flex justify-between items-center">
         <div>
           <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("invoicesIntro") || "Administra las facturas emitidas por los proveedores asociadas a los contratos."}>
+            <InfoTooltip size="sm" message={getText("intros.invoices") || "Administra las facturas emitidas por los proveedores asociadas a los contratos."}>
               <span className="material-symbols-outlined text-gray-400">info</span>
             </InfoTooltip>
             <h1 className="text-2xl font-bold text-gray-800">Gestión de Facturas</h1>
@@ -107,6 +107,12 @@ const InvoicesPage = () => {
             columnMapping={columnMapping}
             actions={true}
             onEdit={(row) => console.log("Editar Factura", row.id)}
+            onSubmit={async ({ row, column, realColumn, newValue }) => {
+              try {
+                await InvoiceService.update(row.id, { [realColumn]: newValue });
+                setInvoices(prev => prev.map(i => i.id === row.id ? { ...i, [column]: newValue } : i));
+              } catch (e) { console.error(e); }
+            }}
             onDelete={handleDelete}
             headerButtons={
               <HeaderActions 

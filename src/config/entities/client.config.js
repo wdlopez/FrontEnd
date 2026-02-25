@@ -9,7 +9,7 @@ export const CLIENT_CONFIG = {
       mapFrom: (item, index) => index + 1
     },
     {
-      header: 'NOMBRE',
+      header: 'Nombre',
       backendKey: 'name',
       possibleKeys: ['name', 'ClientEntity_name'],
       required: true,
@@ -20,7 +20,7 @@ export const CLIENT_CONFIG = {
       allowedChars: /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s&.\-_]/
     },
     {
-      header: 'IDENTIFICACIÓN TRIBUTARIA',
+      header: 'Identificación tributaria',
       backendKey: 'document_file',
       possibleKeys: ['document_file', 'document'],
       type: 'text',
@@ -30,7 +30,7 @@ export const CLIENT_CONFIG = {
       allowedChars: /[a-zA-Z0-9\s\-_.]/ 
     },
     {
-      header: 'CONTACTO DEL CLIENTE',
+      header: 'Contacto del cliente',
       backendKey: 'contact_person',
       possibleKeys: ['contact_person', 'contacto'],
       required: true,
@@ -41,7 +41,7 @@ export const CLIENT_CONFIG = {
       allowedChars: /[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/
     },
     {
-      header: 'INDUSTRIA DEL CLIENTE',
+      header: 'Industria del cliente',
       backendKey: 'category',
       possibleKeys: ['category'],
       required: true,
@@ -65,7 +65,7 @@ export const CLIENT_CONFIG = {
       ]
     },
     {
-      header: 'CORREO',
+      header: 'Correo',
       backendKey: 'email',
       possibleKeys: ['email'],
       required: true,
@@ -73,7 +73,7 @@ export const CLIENT_CONFIG = {
       placeholder: 'correo@ejemplo.com'
     },
     {
-      header: 'CÓDIGO PAÍS Y TELÉFONO',
+      header: 'Código país y teléfono',
       backendKey: 'phone',
       possibleKeys: ['phone'],
       required: true,
@@ -84,7 +84,7 @@ export const CLIENT_CONFIG = {
       allowedChars: /[0-9\s+]/
     },
     {
-      header: 'DIRECCIÓN',
+      header: 'Dirección',
       backendKey: 'address',
       possibleKeys: ['address'],
       required: true,
@@ -95,7 +95,7 @@ export const CLIENT_CONFIG = {
       allowedChars: /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,#\-ºª°_/]/
     },
     {
-      header: 'ESTADO',
+      header: 'Estado',
       backendKey: 'active',
       possibleKeys: ['active'],
       editable: false,

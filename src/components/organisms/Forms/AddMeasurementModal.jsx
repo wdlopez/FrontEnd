@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Modal from "../../molecules/Modal";
 import Form from "../Forms/Form";
 import MeasurementService from "../../../services/Slas/Measurement/measurement.service";
-import SlasService from "../../../services/Slas/slas.service";
+import SlasService from "../../../services/Slas/sla.service";
 import Swal from "sweetalert2";
 import InfoTooltip from "../../atoms/InfoToolTip";
 import { getText } from "../../../utils/text";
@@ -101,7 +101,7 @@ const AddMeasurementModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("slaMeasurementInfo") || "Registra el valor real obtenido para evaluar el cumplimiento de un SLA."}
+          message={getText("modals.slaMeasurementInfo") || "Registra el valor real obtenido para evaluar el cumplimiento de un SLA."}
         >
           <span className="material-symbols-outlined text-blue-600">query_stats</span>
         </InfoTooltip>

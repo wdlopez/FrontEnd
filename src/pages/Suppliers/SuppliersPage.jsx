@@ -69,6 +69,17 @@ const SuppliersPage = () => {
     }
   };
 
+  const handleInlineEdit = async ({ row, column, realColumn, newValue }) => {
+    try {
+      await ProviderService.update(row.id, { [realColumn]: newValue });
+      setProviders(prev => prev.map(p =>
+        p.id === row.id ? { ...p, [column]: newValue } : p
+      ));
+    } catch (error) {
+      console.error("Error actualizando campo:", error);
+    }
+  };
+
   const handleDeleteRequest = (row) => {
     if (row?.id) {
       setSelectedProvider({
@@ -115,7 +126,7 @@ const SuppliersPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("suppliersIntro")} sticky={true}>
+            <InfoTooltip size="sm" message={getText("intros.providers")} sticky={true}>
               <span className="material-symbols-outlined text-gray-400">info</span>
             </InfoTooltip>
             <h1 className="text-2xl font-bold text-gray-800">Gestión de {PROVIDER_CONFIG.name}es</h1>
@@ -135,7 +146,8 @@ const SuppliersPage = () => {
             data={providers}
             config={PROVIDER_CONFIG}
             columnMapping={columnMapping}
-            onEdit={openEditModal} 
+            onEdit={openEditModal}
+            onSubmit={handleInlineEdit}
             onDelete={handleDeleteRequest}
             onAdd={() => setIsAddModalOpen(true)}
             path="/suppliers/"

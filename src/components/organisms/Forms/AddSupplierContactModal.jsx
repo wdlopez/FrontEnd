@@ -112,7 +112,7 @@ const AddSupplierContactModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("providerContactInfo") || "Registre personas de contacto específicas para cada proveedor."}
+          message={getText("modals.providerContactInfo") || "Registre personas de contacto específicas para cada proveedor."}
         >
           <span className="material-symbols-outlined text-indigo-600">contact_phone</span>
         </InfoTooltip>

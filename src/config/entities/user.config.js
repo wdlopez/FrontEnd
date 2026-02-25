@@ -9,7 +9,7 @@ export const USER_CONFIG = {
       mapFrom: (item, index) => index + 1
     },
     {
-      header: 'NOMBRE',
+      header: 'Nombre',
       backendKey: 'firstName',
       required: true,
       type: 'text',
@@ -19,7 +19,7 @@ export const USER_CONFIG = {
       allowedChars: /[a-zA-ZÀ-ÿ\u00f1\u00d1\s'.-]/
     },
     {
-      header: 'APELLIDO',
+      header: 'Apellido',
       backendKey: 'lastName',
       required: true,
       type: 'text',
@@ -29,7 +29,7 @@ export const USER_CONFIG = {
       allowedChars: /[a-zA-ZÀ-ÿ\u00f1\u00d1\s'.-]/
     },
     {
-      header: 'CORREO ELECTRÓNICO',
+      header: 'Correo electrónico',
       backendKey: 'email',
       required: true,
       type: 'email',
@@ -38,7 +38,7 @@ export const USER_CONFIG = {
       validationMessage: 'Por favor proporciona una dirección de correo válida'
     },
     {
-      header: 'CONTRASEÑA',
+      header: 'Contraseña',
       backendKey: 'password',
       required: false,
       type: 'password',
@@ -49,7 +49,7 @@ export const USER_CONFIG = {
       hideInForm: true
     },
     {
-      header: 'ROL',
+      header: 'Rol',
       backendKey: 'roleId',
       type: 'select',
       hideInTable: true,
@@ -60,7 +60,7 @@ export const USER_CONFIG = {
       getValue: (item) => item.role?.name || 'Sin Rol'
     },
     {
-      header: 'ASOCIAR A CLIENTE',
+      header: 'Asociar a cliente',
       backendKey: 'entityId',
       type: 'select',
       required: false,
@@ -70,7 +70,7 @@ export const USER_CONFIG = {
       hideInForm: true
     },
     {
-      header: 'ASOCIAR A PROVEEDOR',
+      header: 'Asociar a proveedor',
       backendKey: 'providerId', 
       type: 'select',
       required: false,
@@ -80,7 +80,7 @@ export const USER_CONFIG = {
       hideInForm: true
     },
     {
-      header: 'ESTADO',
+      header: 'Estado',
       backendKey: 'isActive',
       type: 'boolean',
       editable: false,
@@ -88,7 +88,7 @@ export const USER_CONFIG = {
       getValue: (item) => (item.isActive ? 'Activo' : 'Inactivo')
     },
     {
-      header: 'FECHA DE CREACIÓN',
+      header: 'Fecha de creación',
       backendKey: 'createdAt',
       editable: false,
       type: 'date',

@@ -88,7 +88,7 @@ const AddSchemaSlasModal = ({ isOpen, setIsOpen, onSuccess }) => {
   return (
     <Modal size="md" open={isOpen} setOpen={setIsOpen}>
       <div className="flex gap-2 items-center mb-6">
-        <InfoTooltip size="sm" message={getText("formSchemaInfo") || "Gestión de esquemas multitenant de base de datos"}>
+        <InfoTooltip size="sm" message={getText("modals.formSchemaInfo") || "Gestión de esquemas multitenant de base de datos"}>
           <span className="material-symbols-outlined text-gray-400">dns</span>
         </InfoTooltip>
         <h2 className="text-xl font-bold text-gray-800">Nuevo Esquema de Base de Datos</h2>

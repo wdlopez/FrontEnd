@@ -158,6 +158,17 @@ const UsersPage = () => {
     }
   };
 
+  const handleInlineEdit = async ({ row, column, realColumn, newValue }) => {
+    try {
+      await UserService.update(row.id, { [realColumn]: newValue });
+      setUsers(prev => prev.map(u =>
+        u.id === row.id ? { ...u, [column]: newValue } : u
+      ));
+    } catch (error) {
+      console.error("Error actualizando campo:", error);
+    }
+  };
+
   const handleDeleteRequest = (row) => {
     if (row?.id) {
       setSelectedUser({
@@ -209,7 +220,7 @@ const UsersPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("usersIntro")} sticky={true}>
+            <InfoTooltip size="sm" message={getText("intros.users")} sticky={true}>
               <span className="material-symbols-outlined text-gray-400">info</span>
             </InfoTooltip>
             <h1 className="text-2xl font-bold text-gray-800">Gestión de {dynamicConfig.name}s</h1>
@@ -231,7 +242,8 @@ const UsersPage = () => {
             columnMapping={columnMapping}
             selectColumns={selectColumns}
             nonEditableColumns={nonEditableColumns}
-            onEdit={openEditModal} 
+            onEdit={openEditModal}
+            onSubmit={handleInlineEdit}
             onDelete={handleDeleteRequest}
             onAdd={() => setIsAddModalOpen(true)}
             path="/settings/userNroles/"

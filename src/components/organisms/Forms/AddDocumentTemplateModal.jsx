@@ -73,7 +73,7 @@ const AddDocumentTemplateModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("docTemplateInfo") || "Gestiona los formatos base para la generación automática de documentos."}
+          message={getText("modals.docTemplateInfo") || "Gestiona los formatos base para la generación automática de documentos."}
         >
           <span className="material-symbols-outlined text-blue-500">description</span>
         </InfoTooltip>

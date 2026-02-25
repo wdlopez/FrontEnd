@@ -128,7 +128,7 @@ const AddDeliverableSonModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("deliverableSonInfo") || "Crea tareas o hitos hijos vinculados a un entregable principal."}
+          message={getText("modals.deliverableSonInfo") || "Crea tareas o hitos hijos vinculados a un entregable principal."}
         >
           <span className="material-symbols-outlined text-blue-500">account_tree</span>
         </InfoTooltip>

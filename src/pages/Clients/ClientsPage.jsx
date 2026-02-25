@@ -64,6 +64,19 @@ const ClientsPage = () => {
     }
   };
 
+  const handleInlineEdit = async ({ row, column, realColumn, newValue }) => {
+    try {
+      await ClientService.update(row.id, { [realColumn]: newValue });
+      setClients(prev => prev.map(c =>
+        c.id === row.id ? { ...c, [column]: newValue } : c
+      ));
+      setAlert({ open: true, message: 'Campo actualizado correctamente', type: 'success' });
+    } catch (error) {
+      console.error("Error actualizando campo:", error);
+      setAlert({ open: true, message: 'No se pudo actualizar el campo', type: 'error' });
+    }
+  };
+
   const handleDeleteRequest = (row) => {
     if (row?.id) {
       setSelectedClient({
@@ -101,27 +114,28 @@ const ClientsPage = () => {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <BreadCrumb paths={breadcrumbPaths} />
-      
+    <div className="p-4 space-y-4">
+      <div className="space-y-1">
+        <BreadCrumb paths={breadcrumbPaths} />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <div className="flex gap-2 items-center">
+              <InfoTooltip size="sm" message={getText("intros.clients")} sticky={true}>
+                <span className="material-symbols-outlined text-gray-400">info</span>
+              </InfoTooltip>
+              <h1 className="text-2xl font-bold text-gray-800">Gestión de {CLIENT_CONFIG.name}s</h1>
+            </div>
+            <p className="text-gray-500 text-sm mt-1">Administra la base de datos centralizada.</p>
+          </div>
+        </div>
+      </div>
+
       <Alerts 
         open={alert.open} 
         setOpen={(val) => setAlert(prev => ({ ...prev, open: val }))} 
         message={alert.message} 
         type={alert.type} 
       />
-
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <div>
-          <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("clientsIntro")} sticky={true}>
-              <span className="material-symbols-outlined text-gray-400">info</span>
-            </InfoTooltip>
-            <h1 className="text-2xl font-bold text-gray-800">Gestión de {CLIENT_CONFIG.name}s</h1>
-          </div>
-          <p className="text-gray-500 text-sm">Administra la base de datos centralizada.</p>
-        </div>
-      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
@@ -135,7 +149,8 @@ const ClientsPage = () => {
             columnMapping={columnMapping}
             selectColumns={selectColumns}
             nonEditableColumns={nonEditableColumns}
-            onEdit={openEditModal} 
+            onEdit={openEditModal}
+            onSubmit={handleInlineEdit}
             onDelete={handleDeleteRequest}
             onAdd={() => setIsAddModalOpen(true)}
             path="/client/"

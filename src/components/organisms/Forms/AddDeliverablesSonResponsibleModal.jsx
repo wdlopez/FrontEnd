@@ -107,7 +107,7 @@ const AddDeliverableSonResponsibleModal = ({ isOpen, setIsOpen, onSuccess }) => 
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("deliverableSonRespInfo") || "Asigna un usuario, cliente o proveedor como responsable de este sub-entregable."}
+          message={getText("modals.deliverableSonRespInfo") || "Asigna un usuario, cliente o proveedor como responsable de este sub-entregable."}
         >
           <span className="material-symbols-outlined text-purple-500">assignment_ind</span>
         </InfoTooltip>

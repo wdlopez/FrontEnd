@@ -112,7 +112,7 @@ const NotificationsPage = () => {
       <div className="flex justify-between items-center">
         <div>
           <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("notificationsIntro") || "Visualiza y administra las alertas y notificaciones enviadas a los usuarios del sistema."}>
+            <InfoTooltip size="sm" message={getText("intros.notifications") || "Visualiza y administra las alertas y notificaciones enviadas a los usuarios del sistema."}>
               <span className="material-symbols-outlined text-gray-400">info</span>
             </InfoTooltip>
             <h1 className="text-2xl font-bold text-gray-800">Centro de Notificaciones</h1>

@@ -129,7 +129,7 @@ const AddSupplierRiskModal = ({ isOpen, setIsOpen, onSuccess }) => {
   return (
     <Modal size="lg" open={isOpen} setOpen={setIsOpen}>
       <div className="flex gap-2 items-center mb-6">
-        <InfoTooltip size="sm" message={getText("riskInfo") || "Gestión de Riesgos"}>
+        <InfoTooltip size="sm" message={getText("modals.riskInfo") || "Gestión de Riesgos"}>
           <span className="material-symbols-outlined text-red-500">gpp_maybe</span>
         </InfoTooltip>
         <h2 className="text-xl font-bold text-gray-800">Identificar Riesgo</h2>

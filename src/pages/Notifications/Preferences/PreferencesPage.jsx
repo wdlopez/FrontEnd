@@ -84,7 +84,7 @@ const PreferencePage = () => {
       <div className="flex justify-between items-center">
         <div>
           <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("preferencesIntro") || "Administra cómo se alertará a los usuarios respecto a los hitos de sus contratos."}>
+            <InfoTooltip size="sm" message={getText("intros.preferences") || "Administra cómo se alertará a los usuarios respecto a los hitos de sus contratos."}>
               <span className="material-symbols-outlined text-gray-400">info</span>
             </InfoTooltip>
             <h1 className="text-2xl font-bold text-gray-800">Preferencias de Notificación</h1>
@@ -102,6 +102,12 @@ const PreferencePage = () => {
             columnMapping={columnMapping}
             actions={true}
             onEdit={(row) => console.log("Editar Preferencia", row.id)}
+            onSubmit={async ({ row, column, realColumn, newValue }) => {
+              try {
+                await PreferenceService.update(row.id, { [realColumn]: newValue });
+                setPreferences(prev => prev.map(p => p.id === row.id ? { ...p, [column]: newValue } : p));
+              } catch (e) { console.error(e); }
+            }}
             onDelete={handleDelete}
             headerButtons={
               <HeaderActions 

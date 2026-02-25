@@ -107,6 +107,17 @@ const ServicesPage = ({ id_client }) => {
     if (col.editable === false) nonEditableColumns.push(col.header);
   });
 
+  const handleInlineEdit = async ({ row, column, realColumn, newValue }) => {
+    try {
+      await ServiceService.update(row.id, { [realColumn]: newValue });
+      setServices(prev => prev.map(s =>
+        s.id === row.id ? { ...s, [column]: newValue } : s
+      ));
+    } catch (error) {
+      console.error("Error actualizando campo:", error);
+    }
+  };
+
   const handleEdit = (row) => {
     // Importante: El row trae los datos mapeados (nombres, fechas formateadas).
     // GenericEditModal usa 'entityId' para hacer un getById y obtener los datos crudos para el formulario.
@@ -151,7 +162,7 @@ const ServicesPage = ({ id_client }) => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
             <div className="flex gap-2 items-center">
-                <InfoTooltip size="sm" message={getText("servicesIntro") || "Gestión de servicios contratados por torre y grupo"}>
+                <InfoTooltip size="sm" message={getText("intros.services") || "Gestión de servicios contratados por torre y grupo"} sticky={true}>
                     <span className="material-symbols-outlined text-gray-400">info</span>
                 </InfoTooltip>
                 <h1 className="text-2xl font-bold text-gray-800">Servicios Contratados</h1>
@@ -173,6 +184,7 @@ const ServicesPage = ({ id_client }) => {
               selectColumns={selectColumns}
               nonEditableColumns={nonEditableColumns}
               onEdit={handleEdit}
+              onSubmit={handleInlineEdit}
               onDelete={handleDeleteReq}
               onAdd={() => setIsAddOpen(true)}
               path="/contract/services/"

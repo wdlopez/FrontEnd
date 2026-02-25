@@ -137,6 +137,17 @@ const DeliverablesPage = () => {
     setIsEditOpen(true);
   };
 
+  const handleInlineEdit = async ({ row, column, realColumn, newValue }) => {
+    try {
+      await DeliverableService.update(row.id, { [realColumn]: newValue });
+      setDeliverables(prev => prev.map(d =>
+        d.id === row.id ? { ...d, [column]: newValue } : d
+      ));
+    } catch (error) {
+      console.error("Error actualizando campo:", error);
+    }
+  };
+
   const handleDeleteReq = (row) => {
     setSelectedRow({ 
         id: row.id, 
@@ -177,7 +188,7 @@ const DeliverablesPage = () => {
       <div className="flex justify-between items-center">
         <div>
           <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("deliverablesIntro") || "Administre los entregables contractuales, fechas y responsables."}>
+            <InfoTooltip size="sm" message={getText("intros.deliverables") || "Administre los entregables contractuales, fechas y responsables."} sticky={true}>
               <span className="material-symbols-outlined text-gray-400">info</span>
             </InfoTooltip>
             <h1 className="text-2xl font-bold text-gray-800">Entregables (Deliverables)</h1>
@@ -199,6 +210,7 @@ const DeliverablesPage = () => {
             selectColumns={selectColumns}
             nonEditableColumns={nonEditableColumns}
             onEdit={handleEdit}
+            onSubmit={handleInlineEdit}
             onDelete={handleDeleteReq}
             onAdd={() => setIsAddOpen(true)}
             path="/contract/deliverables/"

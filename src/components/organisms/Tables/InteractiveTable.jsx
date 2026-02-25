@@ -143,6 +143,7 @@ function InteractiveTable({
   
   // Combinar columnas ocultas por props y por usuario
   const allHiddenColumns = [...hiddenColumns, ...userHiddenColumns, ...configHiddenColumns];
+
   const showActionColumn = !!configModalC?.parameterConnec;
 
   const displayedColumns = columns.filter(
@@ -151,6 +152,13 @@ function InteractiveTable({
       col !== parameterState &&
       !allHiddenColumns.includes(col)
   );
+
+  // Columna de numeración secuencial (N°):
+  // 1) Si hay config, busca la columna con key:'index'
+  // 2) Si no hay config (o no tiene esa columna), busca "N°" directamente en las columnas visibles
+  const numberColumnHeader =
+    config?.columns?.find(col => col.key === 'index')?.header ??
+    (displayedColumns.includes("N°") ? "N°" : null);
 
   // Toggle de visibilidad de columna
   const toggleColumn = (columnName) => {
@@ -258,7 +266,7 @@ function InteractiveTable({
   // Edición con doble clic o Enter
   const handleDoubleClick = (rowIndex, colIndex, row) => {
     const colName = displayedColumns[colIndex];
-    if (colIndex === 0) return;
+    if (colName === numberColumnHeader) return;
     if (colName.toLowerCase() === "id" || nonEditableColumns.includes(colName)) return;
     
     setEditableCell({ rowIndex, colIndex });
@@ -278,9 +286,9 @@ function InteractiveTable({
 
     setIsSaving(true);
     try {
-      // Llamar a onEdit con los datos de la fila, la columna y el nuevo valor
-      if (onEdit) {
-        await onEdit({
+      // onSubmit es el handler específico para guardar edición inline de una celda
+      if (onSubmit) {
+        await onSubmit({
           row,
           column: colName,
           newValue,
@@ -375,15 +383,15 @@ function InteractiveTable({
             >
               <colgroup>
                 {/* Checkbox (selección) */}
-                {showActionColumn && <col style={{ width: "60px" }} />}
+                {showActionColumn && <col style={{ width: "40px" }} />}
 
                 {/* Columnas dinámicas */}
                 {displayedColumns.map((col, index) => (
                   <col
                     key={index}
                     style={
-                      index === 0
-                        ? { width: "60px", minWidth: "60px", maxWidth: "60px" } // primera columna
+                      col === numberColumnHeader
+                        ? { width: "1px", whiteSpace: "nowrap" }
                         : { width: "auto" }
                     }
                   />
@@ -393,41 +401,48 @@ function InteractiveTable({
                 <col style={{ minWidth: "100px" }} />
               </colgroup>
 
-              <thead className="bg-customBluee text-white dark:bg-dark1 dark:text-gray-200 text-xs uppercase">
+              <thead className="bg-customBluee text-white dark:bg-dark1 dark:text-gray-200 text-xs">
                 <tr>
                   {/* Checkbox Sticky */}
                   {showActionColumn && (
-                    <th className="sticky left-0 z-30 w-[60px] min-w-[60px] px-4 py-3 bg-customBlue dark:bg-dark1 border-r border-blue-400 dark:border-gray-600">
+                    <th className="sticky left-0 z-30 w-[35px] min-w-[35px] px-1 py-3 bg-customBlue dark:bg-dark1 border-r border-blue-400 dark:border-gray-600 text-center">
                       {/* <input type="checkbox" className="accent-white" onChange={handleSelectAll} /> */}
                     </th>
                   )}
 
+                  {/* Acciones */}
+                  {(onDelete || actionButton || path !== undefined) &&
+                    (
+                      <th className={`sticky ${showActionColumn ? "left-[35px]" : "left-0"} z-30 px-4 py-3 text-center font-bold bg-customBlue dark:bg-dark1 dark:text-gray-200 border-r-2 border-r-blue-300 dark:border-r-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.2)] min-w-[100px]`}>
+                        Acciones
+                      </th>
+                    )}
+
                   {/* Columnas */}
                   {displayedColumns.map((col, index) => {
-                    // Primera columna de datos es sticky (después del checkbox)
-                    const isSticky = index === 0;
-                    const stickyLeft = showActionColumn ? "left-[60px]" : "left-0";
-                    const stickyClass = isSticky 
-                      ? `sticky ${stickyLeft} z-30 border-r-2 border-r-blue-300 dark:border-r-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.2)] bg-customBlue dark:bg-dark1` 
-                      : "border-r border-blue-400 dark:border-gray-600 last:border-r-0";
-
+                    // Primera columna de datos es sticky (después del checkbox y acciones)
+                    // Si hay acciones, la primera columna de datos YA NO es sticky, o se mueve más a la derecha
+                    // Simplificación: Solo Checkbox y Acciones son sticky. ID y demás scrollean.
+                    
                     return (
                       <th
                         key={index}
-                        className={`px-4 py-3 text-left font-bold bg-customBlue dark:bg-dark1 dark:text-gray-200 ${stickyClass}`}
+                        className={`${col === numberColumnHeader ? "whitespace-nowrap px-3 text-center" : "px-4"} py-3 text-left font-bold bg-customBlue dark:bg-dark1 dark:text-gray-200 border-r border-blue-400 dark:border-gray-600 last:border-r-0`}
                       >
                         <div className="flex flex-col gap-1">
-                          <span className="flex items-center gap-2 text-sm font-bold truncate max-w-full" title={col}>
+                          <span className="flex items-center gap-2 text-sm font-bold truncate max-w-full capitalize" title={col}>
                             {col}
                           </span>
                           <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              value={filters[col] || ""}
-                              onChange={(e) => setFilters({ ...filters, [col]: e.target.value })}
-                              className="w-full min-w-[80px] px-2 py-1 border-none rounded bg-blue-700/30 dark:bg-gray-700 text-white dark:text-gray-200 placeholder-blue-200/50 dark:placeholder-gray-500 text-xs focus:ring-1 focus:ring-blue-300 outline-none transition-all"
-                              placeholder="Buscar..."
-                            />
+                            {col !== numberColumnHeader && (
+                              <input
+                                type="text"
+                                value={filters[col] || ""}
+                                onChange={(e) => setFilters({ ...filters, [col]: e.target.value })}
+                                className="w-full min-w-[80px] px-2 py-1 border-none rounded bg-blue-700/30 dark:bg-gray-700 text-white dark:text-gray-200 placeholder-blue-200/50 dark:placeholder-gray-500 text-xs focus:ring-1 focus:ring-blue-300 outline-none transition-all"
+                                placeholder="Buscar..."
+                              />
+                            )}
                             <label className="cursor-pointer hover:bg-blue-700/50 p-1 rounded transition-colors">
                               <input
                                 type="checkbox"
@@ -443,13 +458,7 @@ function InteractiveTable({
                     );
                   })}
 
-                  {/* Acciones */}
-                  {(onDelete || actionButton || path !== undefined) &&
-                    (
-                      <th className="px-4 py-3 text-center font-bold bg-customBlue dark:bg-dark1 dark:text-gray-200 border-l border-blue-400 dark:border-gray-600 min-w-[140px]">
-                        ACCIONES
-                      </th>
-                    )}
+                  {/* Acciones (Eliminado del final) */}
 
                 </tr>
               </thead>
@@ -460,8 +469,8 @@ function InteractiveTable({
                     {showActionColumn && (
                       <td
                         className={`
-                          px-4 py-3 border-r border-gray-200 dark:border-gray-700 last:border-r-0 cursor-pointer align-top
-                          sticky left-0 z-20 w-[60px] min-w-[60px]
+                          px-1 py-3 border-r border-gray-200 dark:border-gray-700 last:border-r-0 cursor-pointer align-top
+                          sticky left-0 z-20 w-[35px] min-w-[35px] text-center
                           bg-white group-odd:bg-gray-50 group-hover:bg-blue-50
                           dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800
                           transition-colors
@@ -483,22 +492,82 @@ function InteractiveTable({
                         )}
                       </td>
                     )}
+
+                    {/* Acciones a la Izquierda */}
+                    {(onDelete || onAdd || actionButton || path !== undefined) &&
+                      <td className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 min-w-[100px] sticky ${showActionColumn ? "left-[35px]" : "left-0"} z-20 bg-white group-odd:bg-gray-50 group-hover:bg-blue-50 dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)]`}>
+                        <div className="flex items-center justify-center gap-2">
+                            {/* Botón Editar */}
+                            {onEdit && (
+                                <button
+                                    onClick={() => onEdit(row)}
+                                    disabled={isSaving}
+                                    className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
+                                    title="Editar"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">edit</span>
+                                </button>
+                            )}
+
+                            {/* Botón Agregar */}
+                            {onAdd && (
+                                <button
+                                    onClick={() => onAdd()}
+                                    className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors"
+                                    title="Agregar"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">add</span>
+                                </button>
+                            )}
+
+                            {/* Botón Eliminar */}
+                            {onDelete && (
+                                <button
+                                    onClick={() => onDelete(row)}
+                                    disabled={isSaving}
+                                    className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
+                                    title="Eliminar"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                                </button>
+                            )}
+
+                            {/* Botón Ver Detalles */}
+                            {path && (
+                                <Link to={`${path}${row.id}`} className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors" title="Ver detalles">
+                                    <span className="material-symbols-outlined text-[20px]">visibility</span>
+                                </Link>
+                            )}
+
+                            {/* Acciones extra */}
+                            {actionButton && (
+                              React.isValidElement(actionButton)
+                                ? React.cloneElement(actionButton, { row })
+                                : typeof actionButton === "function"
+                                  ? actionButton(row)
+                                  : null
+                            )}
+                        </div>
+                      </td>}
+
                     {displayedColumns.map((col, colIndex) => {
-                      const isSticky = colIndex === 0;
-                      const stickyLeft = showActionColumn ? "left-[60px]" : "left-0";
-                      const stickyClass = isSticky 
-                        ? `sticky ${stickyLeft} z-20 border-r-2 border-r-gray-300 dark:border-r-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] bg-white group-odd:bg-gray-50 group-hover:bg-blue-50 dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800` 
-                        : "";
-                      
-                      const widthClass = widthMap.get(col) || "whitespace-nowrap min-w-[80px] max-w-[400px]";
+                      const widthClass = widthMap.get(col) || (col === numberColumnHeader ? "whitespace-nowrap" : "whitespace-nowrap min-w-[80px] max-w-[400px]");
+
+                      // Celda editable: solo cuando hay un handler de guardado inline (onSubmit), la columna no es N° ni está bloqueada
+                      const isCellEditable =
+                        !!onSubmit &&
+                        col !== numberColumnHeader &&
+                        col.toLowerCase() !== "id" &&
+                        !nonEditableColumns.includes(col);
                       
                       return (
                         <td
                           key={colIndex}
                           onClick={() => setSelectedCell({ rowIndex, colIndex })}
-                          onDoubleClick={() => onEdit ? null : handleDoubleClick(rowIndex, colIndex, row)}
+                          onDoubleClick={() => onSubmit ? handleDoubleClick(rowIndex, colIndex, row) : null}
                           onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
-                          className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 last:border-r-0 cursor-pointer align-top ${widthClass} ${stickyClass} transition-colors
+                          title={isCellEditable ? "Doble clic para editar" : ""}
+                          className={`${col === numberColumnHeader ? "px-3 text-center" : "px-4"} py-3 border-r border-gray-200 dark:border-gray-700 last:border-r-0 ${isCellEditable ? "cursor-text" : "cursor-default"} align-top ${widthClass} transition-colors
                         ${((editableCell?.rowIndex === rowIndex && editableCell?.colIndex === colIndex) ||
                               (selectedCell.rowIndex === rowIndex && selectedCell.colIndex === colIndex))
                               ? "!bg-blue-100 dark:!bg-blue-900/40 ring-2 ring-inset ring-blue-400 z-25"
@@ -633,7 +702,7 @@ function InteractiveTable({
                               )
                           ) : (
                             <div
-                              className={`w-full ${isSticky ? '' : 'truncate'} block`}
+                              className={`w-full block`}
                               title={typeof row[col] === 'string' ? row[col] : ''}
                             >
                             <p key={colIndex} className="truncate">
@@ -645,61 +714,6 @@ function InteractiveTable({
                         </td>
                       );
                     })}
-                    {(onDelete || onAdd || actionButton || path !== undefined) &&
-                      <td className="px-4 py-3 border-l border-gray-200 dark:border-gray-700 min-w-[140px]">
-                        <div className="flex items-center justify-center gap-2">
-                            {/* Botón Editar */}
-                            {onEdit && (
-                                <button
-                                    onClick={() => onEdit(row)}
-                                    disabled={isSaving}
-                                    className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
-                                    title="Editar"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">edit</span>
-                                </button>
-                            )}
-
-                            {/* Botón Agregar */}
-                            {onAdd && (
-                                <button
-                                    onClick={() => onAdd()}
-                                    className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors"
-                                    title="Agregar"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">add</span>
-                                </button>
-                            )}
-
-                            {/* Botón Eliminar */}
-                            {onDelete && (
-                                <button
-                                    onClick={() => onDelete(row)}
-                                    disabled={isSaving}
-                                    className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
-                                    title="Eliminar"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">delete</span>
-                                </button>
-                            )}
-
-                            {/* Botón Ver Detalles */}
-                            {path && (
-                                <Link to={`${path}${row.id}`} className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors" title="Ver detalles">
-                                    <span className="material-symbols-outlined text-[20px]">visibility</span>
-                                </Link>
-                            )}
-
-                            {/* Acciones extra */}
-                            {actionButton && (
-                              React.isValidElement(actionButton)
-                                ? React.cloneElement(actionButton, { row })
-                                : typeof actionButton === "function"
-                                  ? actionButton(row)
-                                  : null
-                            )}
-                        </div>
-                      </td>}
                   </tr>
                 ))}
               </tbody>

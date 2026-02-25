@@ -99,7 +99,7 @@ const WorkOrdersPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("woIntro") || "Seguimiento operativo de requerimientos contractuales"}>
+            <InfoTooltip size="sm" message={getText("intros.workOrders") || "Seguimiento operativo de requerimientos contractuales"}>
               <span className="material-symbols-outlined text-gray-400">info</span>
             </InfoTooltip>
             <h1 className="text-2xl font-bold text-gray-800">Órdenes de Trabajo</h1>
@@ -120,6 +120,12 @@ const WorkOrdersPage = () => {
             columnMapping={columnMapping}
             actions={true}
             onEdit={(row) => console.log("Editar WO", row.id)}
+            onSubmit={async ({ row, column, realColumn, newValue }) => {
+              try {
+                await WorkOrderService.update(row.id, { [realColumn]: newValue });
+                setOrders(prev => prev.map(o => o.id === row.id ? { ...o, [column]: newValue } : o));
+              } catch (e) { console.error(e); }
+            }}
             onDelete={(row) => console.log("Eliminar WO", row.id)}
             rowsPerPage={10}
             headerButtons={

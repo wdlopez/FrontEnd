@@ -93,7 +93,7 @@ const AddStandarReportModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("standardReportInfo") || "Define reportes preestablecidos para todos los usuarios."}
+          message={getText("modals.standardReportInfo") || "Define reportes preestablecidos para todos los usuarios."}
         >
           <span className="material-symbols-outlined text-blue-600">assessment</span>
         </InfoTooltip>

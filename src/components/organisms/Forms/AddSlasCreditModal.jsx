@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import Modal from "../../molecules/Modal";
 import Form from "../Forms/Form";
 import SlasCreditService from "../../../services/Slas/Credits/slas-credit.service";
-import MeasurementWindowService from "../../../services/Slas/MeasurementWindows/window.service";
-import SlasService from "../../../services/Slas/slas.service";
+import MeasurementWindowService from "../../../services/Slas/MeasurementWindows/mwindow.service";
+import SlasService from "../../../services/Slas/sla.service";
 import MeasurementService from "../../../services/Slas/Measurement/measurement.service"; // Nuevo servicio
 import Swal from "sweetalert2";
 import InfoTooltip from "../../atoms/InfoToolTip";
@@ -131,7 +131,7 @@ const AddSlasCreditModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("slaCreditInfo") || "Asocia una medición fallida con un crédito financiero a favor del cliente."}
+          message={getText("modals.slaCreditInfo") || "Asocia una medición fallida con un crédito financiero a favor del cliente."}
         >
           <span className="material-symbols-outlined text-green-600">payments</span>
         </InfoTooltip>

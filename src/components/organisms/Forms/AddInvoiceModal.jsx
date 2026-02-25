@@ -91,7 +91,7 @@ const AddInvoicesModal = ({ isOpen, setIsOpen, onSuccess }) => {
   return (
     <Modal size="lg" open={isOpen} setOpen={setIsOpen}>
       <div className="flex gap-2 items-center mb-6">
-        <InfoTooltip size="sm" message={getText("formInvoiceInfo") || "Registra los detalles de facturación asociados a los contratos y proveedores"}>
+        <InfoTooltip size="sm" message={getText("modals.formInvoiceInfo") || "Registra los detalles de facturación asociados a los contratos y proveedores"}>
           <span className="material-symbols-outlined text-gray-400">info</span>
         </InfoTooltip>
         <h2 className="text-xl font-bold text-gray-800">Registrar Factura</h2>

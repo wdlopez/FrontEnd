@@ -79,7 +79,7 @@ const AddBestPracticeModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("bestPracticeInfo") || "Registra estándares y conocimientos clave para el equipo."}
+          message={getText("modals.bestPracticeInfo") || "Registra estándares y conocimientos clave para el equipo."}
         >
           <span className="material-symbols-outlined text-green-600">verified_user</span>
         </InfoTooltip>

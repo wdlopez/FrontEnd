@@ -102,7 +102,7 @@ const AddTrackingNotificationModal = ({ isOpen, setIsOpen, onSuccess }) => {
       <div className="flex gap-2 items-center mb-6">
         <InfoTooltip
           size="sm"
-          message={getText("formTrackingInfo") || "Registra la interacción del usuario actual con una notificación."}
+          message={getText("modals.formTrackingInfo") || "Registra la interacción del usuario actual con una notificación."}
         >
           <span className="material-symbols-outlined text-purple-500">analytics</span>
         </InfoTooltip>

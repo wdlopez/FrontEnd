@@ -156,6 +156,17 @@ function ContractPage() {
     setIsEditOpen(true);
   };
 
+  const handleInlineEdit = async ({ row, column, realColumn, newValue }) => {
+    try {
+      await ContractService.update(row.id, { [realColumn]: newValue });
+      setContracts(prev => prev.map(c =>
+        c.id === row.id ? { ...c, [column]: newValue } : c
+      ));
+    } catch (error) {
+      console.error("Error actualizando campo:", error);
+    }
+  };
+
   const handleDeleteReq = (row) => {
     setSelectedRow({ 
         id: row.id, 
@@ -198,7 +209,7 @@ function ContractPage() {
           <div className="flex justify-between items-center gap-4">
             <div>
               <div className="flex gap-2 items-center">
-                <InfoTooltip message={getText("contractsIntro")}>
+                <InfoTooltip size="sm" message={getText("intros.contracts")} sticky={true}>
                   <span className="material-symbols-outlined text-gray-400">info</span>
                 </InfoTooltip>
                 <h1 className="text-2xl font-bold text-gray-800">Gestión de {CONTRACT_CONFIG.name}s</h1>
@@ -220,6 +231,7 @@ function ContractPage() {
                 selectColumns={selectColumns}
                 nonEditableColumns={nonEditableColumns}
                 onEdit={handleEdit}
+                onSubmit={handleInlineEdit}
                 onDelete={handleDeleteReq}
                 onAdd={() => setIsAddOpen(true)}
                 path="/contract/general/"

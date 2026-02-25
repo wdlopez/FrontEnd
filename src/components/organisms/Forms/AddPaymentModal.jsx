@@ -80,7 +80,7 @@ const AddPaymentModal = ({ isOpen, setIsOpen, onSuccess }) => {
   return (
     <Modal size="lg" open={isOpen} setOpen={setIsOpen}>
       <div className="flex gap-2 items-center mb-6">
-        <InfoTooltip size="sm" message={getText("formPaymentInfo") || "Registra un nuevo pago y asócialo a una factura existente."}>
+        <InfoTooltip size="sm" message={getText("modals.formPaymentInfo") || "Registra un nuevo pago y asócialo a una factura existente."}>
           <span className="material-symbols-outlined text-gray-400">info</span>
         </InfoTooltip>
         <h2 className="text-xl font-bold text-gray-800">Registrar Pago</h2>

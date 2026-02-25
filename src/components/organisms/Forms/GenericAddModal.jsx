@@ -3,7 +3,7 @@ import Modal from "../../molecules/Modal";
 import Form from "./Form";
 import Swal from "sweetalert2";
 import InfoTooltip from "../../atoms/InfoToolTip";
-import { getText } from "../../../utils/text";
+import { getEntityFormInfo } from "../../../utils/text";
 import { generateFormFields } from "../../../utils/entityMapper";
 
 const GenericAddModal = ({ 
@@ -72,7 +72,7 @@ const GenericAddModal = ({
         <div className="flex gap-2 items-center mb-6">
           <InfoTooltip 
             size="sm" 
-            message={getText(`form${config.name}`) || `Complete los campos para registrar un nuevo ${config.name.toLowerCase()}`} 
+            message={getEntityFormInfo(config.name, `Complete los campos para registrar un nuevo ${config.name?.toLowerCase() || ""}`)} 
             sticky={true}
           >
             <span className="material-symbols-outlined text-gray-400">info</span>
