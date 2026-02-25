@@ -1,16 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
-import AddDeliverableModal from '../../components/organisms/Forms/AddDeliverableModal';
 import Alerts from '../../components/molecules/Alerts';
 import Tabs from '../../components/molecules/Tabs';
+import InfoTooltip from '../../components/atoms/InfoToolTip';
+import GenericAddModal from '../../components/organisms/Forms/GenericAddModal';
+import GenericEditModal from '../../components/organisms/Forms/GenericEditModal';
+import ConfirmActionModal from '../../components/organisms/Forms/ConfirmActionModal';
+
 import DeliverablesSonPage from './DeliverablesSon/DeliverablesSonPage';
 import DeliverablesSonResponsiblePage from './DeliverablesSonResponsible/DeliverablesSonResponsiblePage';
+
 import DeliverableService from '../../services/Deliverables/deliverable.service';
-import InfoTooltip from '../../components/atoms/InfoToolTip';
-import { getText } from '../../utils/text';
+import ContractService from '../../services/Contracts/contract.service';
+import ServiceService from '../../services/Contracts/Services/service.service';
+
+import { DELIVERABLE_CONFIG } from '../../config/entities/deliverable.config';
+import { mapBackendToTable } from '../../utils/entityMapper';
 import { normalizeList } from '../../utils/api-helpers';
+import { getText } from '../../utils/text';
 
 const NAV_ITEMS = [
     { key: "deliverables", label: "Entregables" },
@@ -19,10 +28,20 @@ const NAV_ITEMS = [
 ];
 
 const DeliverablesPage = () => {
-  const [deliverables, setDeliverables] = useState([]);
   const [activeTab, setActiveTab] = useState(NAV_ITEMS[0].key);
+  const [deliverables, setDeliverables] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [dynamicConfig, setDynamicConfig] = useState(DELIVERABLE_CONFIG);
+
+  // Estados de Modales
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  // Selección y Alertas
+  const [selectedId, setSelectedId] = useState(null);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
 
   const breadcrumbPaths = [
@@ -30,78 +49,115 @@ const DeliverablesPage = () => {
     { name: "Entregables", url: null }
   ];
 
-  const fetchDeliverables = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await DeliverableService.getAllDeliverables();
-      const rawList = normalizeList(response);
+      // 1. Cargar Entregables
+      const deliverablesRes = await DeliverableService.getAll();
+      
+      // 2. Cargar Contratos y Servicios para los Selects y Mapeo
+      const [contractsRes, servicesRes] = await Promise.allSettled([
+        ContractService.getAll(),
+        ServiceService.getAll()
+      ]);
 
-      const formatted = rawList.map((d, i) => ({
-        ...d,
-        index: i + 1,
-        // Formateo visual
-        priority_display: formatPriority(d.priority),
-        status_display: formatStatus(d.status),
-        due_date_formatted: d.due_date ? new Date(d.due_date).toLocaleDateString() : 'S/F',
-        type_upper: d.type ? d.type.toUpperCase() : '-',
-        // Preview de descripción
-        desc_preview: d.description?.length > 40 ? `${d.description.substring(0, 40)}...` : d.description || '-'
-      }));
+      const newConfig = { ...DELIVERABLE_CONFIG, columns: [...DELIVERABLE_CONFIG.columns] };
+      
+      let contractsList = [];
+      if (contractsRes.status === "fulfilled") {
+        contractsList = normalizeList(contractsRes.value);
+        const contractCol = newConfig.columns.find(c => c.backendKey === 'contract_id');
+        if (contractCol) {
+            contractCol.options = contractsList.map(c => ({
+                value: c.id,
+                label: c.contract_number || c.name || `Contrato ${c.id}`
+            }));
+        }
+      }
 
-      setDeliverables(formatted);
+      let servicesList = [];
+      if (servicesRes.status === "fulfilled") {
+        servicesList = normalizeList(servicesRes.value);
+        const serviceCol = newConfig.columns.find(c => c.backendKey === 'service_id');
+        if (serviceCol) {
+            serviceCol.options = servicesList.map(s => ({
+                value: s.id,
+                label: s.tower ? `${s.tower} - ${s.group}` : (s.name || `Servicio ${s.id}`)
+            }));
+        }
+      }
+
+      // Mapear Entregables
+      if (deliverablesRes) {
+        const rawList = normalizeList(deliverablesRes);
+        
+        // Enriquecer datos con nombres de contrato y servicio
+        const enrichedList = rawList.map(d => {
+            const contract = contractsList.find(c => c.id === d.contract_id);
+            const service = servicesList.find(s => s.id === d.service_id);
+            return {
+                ...d,
+                contract_name: contract ? (contract.contract_number || contract.name) : 'N/A',
+                service_name: service ? (service.tower ? `${service.tower} - ${service.group}` : service.name) : 'N/A'
+            };
+        });
+
+        setDeliverables(mapBackendToTable(enrichedList, newConfig));
+      }
+
+      setDynamicConfig(newConfig);
+
     } catch (error) {
       console.error("Error cargando entregables:", error);
       setAlert({ open: true, message: "Error al cargar los entregables.", type: "error" });
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'deliverables') {
+        fetchData();
+    }
+  }, [activeTab, fetchData]);
+
+  // Mapeo de columnas para InteractiveTable
+  const columnMapping = {};
+  const selectColumns = {};
+  const nonEditableColumns = [];
+
+  dynamicConfig.columns.forEach(col => {
+    if (col.backendKey && !col.hiddenInTable) columnMapping[col.header] = col.backendKey;
+    if (col.options) selectColumns[col.header] = col.options;
+    if (col.editable === false) nonEditableColumns.push(col.header);
+  });
+
+  const handleEdit = (row) => {
+    setSelectedId(row.id);
+    setIsEditOpen(true);
   };
 
-  // Helpers visuales
-  const formatPriority = (priority) => {
-    const map = {
-      low: '🔵 Baja',
-      medium: '🟡 Media',
-      high: '🟠 Alta',
-      critical: '🔴 Crítica'
-    };
-    return map[priority] || priority;
+  const handleDeleteReq = (row) => {
+    setSelectedRow({ 
+        id: row.id, 
+        name: row["Código"] || row["Nombre"] || "Entregable", 
+        state: true 
+    });
+    setIsDeleteOpen(true);
   };
 
-  const formatStatus = (status) => {
-    const map = {
-      pending: '⏳ Pendiente',
-      in_progress: '🔨 En Progreso',
-      completed: '✅ Completado',
-      rejected: '❌ Rechazado'
-    };
-    return map[status] || status;
-  };
-
-  useEffect(() => { fetchDeliverables(); }, []);
-
-  const columnMapping = {
-    'N°': 'index',
-    'Código': 'deliverable_number',
-    'Nombre': 'name',
-    'Tipo': 'type_upper',
-    'Frecuencia': 'frequency',
-    'Prioridad': 'priority_display',
-    'Fecha Límite': 'due_date_formatted',
-    'Estado': 'status_display'
-  };
-
-  const handleDelete = async (row) => {
-    // Aquí puedes implementar SweetAlert para confirmar antes de borrar
-    if (window.confirm(`¿Eliminar el entregable ${row.deliverable_number}?`)) {
-      try {
-        await DeliverableService.deleteDeliverable(row.id);
-        setAlert({ open: true, message: 'Entregable eliminado correctamente', type: 'success' });
-        fetchDeliverables();
-      } catch (error) {
-        console.error("Error eliminando entregable:", error);
-        setAlert({ open: true, message: 'No se pudo eliminar el entregable', type: 'error' });
-      }
+  const handleConfirmDelete = async (data) => {
+    setDeletingLoading(true);
+    try {
+      await DeliverableService.delete(data.id);
+      setAlert({ open: true, message: 'Entregable eliminado correctamente', type: 'success' });
+      setDeliverables(prev => prev.filter(d => d.id !== data.id));
+      setIsDeleteOpen(false);
+    } catch (error) {
+      console.error("Error eliminando entregable:", error);
+      setAlert({ open: true, message: 'No se pudo eliminar el entregable', type: 'error' });
+    } finally {
+      setDeletingLoading(false);
     }
   };
 
@@ -132,26 +188,70 @@ const DeliverablesPage = () => {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
-          <div className="p-10 text-center"><p>Cargando entregables...</p></div>
+          <div className="p-10 text-center flex flex-col items-center">
+            <span className="material-symbols-outlined animate-spin text-4xl mb-2 text-blue-600">progress_activity</span>
+            <p>Cargando entregables...</p>
+          </div>
         ) : (
           <InteractiveTable 
             data={deliverables}
             columnMapping={columnMapping}
-            actions={true}
-            onEdit={(row) => console.log("Editar", row.id)} // Implementar modal de edición si es necesario
-            onDelete={handleDelete}
+            selectColumns={selectColumns}
+            nonEditableColumns={nonEditableColumns}
+            onEdit={handleEdit}
+            onDelete={handleDeleteReq}
+            onAdd={() => setIsAddOpen(true)}
+            path="/contract/deliverables/"
+            rowsPerPage={10}
             headerButtons={
               <HeaderActions 
-                onAdd={() => setIsModalOpen(true)}
+                onAdd={() => setIsAddOpen(true)}
                 addButtonLabel="Nuevo Entregable"
-                onRefresh={fetchDeliverables}
+                showExport={true}
+                onRefresh={fetchData}
               />
             }
           />
         )}
       </div>
 
-      <AddDeliverableModal isOpen={isModalOpen} setIsOpen={setIsModalOpen} onSuccess={fetchDeliverables} />
+      {/* MODALES */}
+      <GenericAddModal 
+        isOpen={isAddOpen} 
+        setIsOpen={setIsAddOpen} 
+        service={DeliverableService}
+        config={dynamicConfig}
+        onSuccess={fetchData}
+        initialValues={{
+          status: "pending",
+          active: true,
+          priority: "medium",
+          type: "report",
+          frequency: "monthly",
+          penalty: false,
+          value_penalty: 0,
+          punctuality: "A tiempo"
+        }}
+      />
+
+      <GenericEditModal 
+        isOpen={isEditOpen} 
+        setIsOpen={setIsEditOpen} 
+        entityId={selectedId} 
+        service={DeliverableService} 
+        config={dynamicConfig} 
+        onSuccess={fetchData}
+      />
+
+      <ConfirmActionModal 
+        isOpen={isDeleteOpen} 
+        setIsOpen={setIsDeleteOpen} 
+        data={selectedRow} 
+        onConfirm={handleConfirmDelete}
+        loading={deletingLoading}
+        entityName={DELIVERABLE_CONFIG.name}
+      />
+
       </>
       ) : activeTab === 'deliverables-son' ? (
         <DeliverablesSonPage />
