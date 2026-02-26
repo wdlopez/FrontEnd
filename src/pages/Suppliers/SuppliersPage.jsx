@@ -113,8 +113,10 @@ const SuppliersPage = () => {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <BreadCrumb paths={breadcrumbPaths} />
+    <div className="p-4 space-y-4">
+      <div className="space-y-2">
+        <BreadCrumb paths={breadcrumbPaths} />
+      </div>
       
       <Alerts 
         open={alert.open} 
@@ -136,6 +138,23 @@ const SuppliersPage = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Barra de acciones sobre la tabla */}
+        <div className="flex flex-wrap items-center justify-center gap-3 px-4 pt-3 pb-2 border-b border-gray-100">
+          <HeaderActions 
+            AddComponent={
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[20px]">add</span>
+                <span>Nuevo {PROVIDER_CONFIG.name}</span>
+              </button>
+            }
+            showExport={true} 
+            onRefresh={fetchData}
+          />
+        </div>
+
         {loading ? (
           <div className="p-10 text-center text-gray-500">
             <span className="material-symbols-outlined animate-spin text-4xl text-blue-600">progress_activity</span>
@@ -152,14 +171,6 @@ const SuppliersPage = () => {
             onAdd={() => setIsAddModalOpen(true)}
             path="/suppliers/"
             rowsPerPage={10}
-            headerButtons={
-              <HeaderActions 
-                onAdd={() => setIsAddModalOpen(true)}
-                addButtonLabel={`Nuevo ${PROVIDER_CONFIG.name}`}
-                showExport={true} 
-                onRefresh={fetchData}
-              />
-            }
           />
         )}
       </div>

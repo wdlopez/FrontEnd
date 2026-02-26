@@ -173,9 +173,11 @@ const DeliverablesPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <Tabs activeKey={activeTab} items={NAV_ITEMS} onChange={setActiveTab} />
-      <BreadCrumb paths={breadcrumbPaths} />
+    <div className="p-4 space-y-4">
+      <div className="space-y-2">
+        <Tabs activeKey={activeTab} items={NAV_ITEMS} onChange={setActiveTab} />
+        <BreadCrumb paths={breadcrumbPaths} />
+      </div>
       <Alerts 
         open={alert.open} 
         setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })} 
@@ -198,6 +200,23 @@ const DeliverablesPage = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Barra de acciones sobre la tabla */}
+        <div className="flex flex-wrap items-center justify-center gap-3 px-4 pt-3 pb-2 border-b border-gray-100">
+          <HeaderActions 
+            AddComponent={
+              <button
+                onClick={() => setIsAddOpen(true)}
+                className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[20px]">add</span>
+                <span>Nuevo Entregable</span>
+              </button>
+            }
+            showExport={true}
+            onRefresh={fetchData}
+          />
+        </div>
+
         {loading ? (
           <div className="p-10 text-center flex flex-col items-center">
             <span className="material-symbols-outlined animate-spin text-4xl mb-2 text-blue-600">progress_activity</span>
@@ -215,14 +234,6 @@ const DeliverablesPage = () => {
             onAdd={() => setIsAddOpen(true)}
             path="/contract/deliverables/"
             rowsPerPage={10}
-            headerButtons={
-              <HeaderActions 
-                onAdd={() => setIsAddOpen(true)}
-                addButtonLabel="Nuevo Entregable"
-                showExport={true}
-                onRefresh={fetchData}
-              />
-            }
           />
         )}
       </div>

@@ -10,7 +10,7 @@ import ClientService from '../../services/Clients/client.service';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import { getText } from '../../utils/text';
 import { CLIENT_CONFIG } from '../../config/entities/client.config';
-import { mapBackendToTable, mapTableToBackend } from '../../utils/entityMapper';
+import { mapBackendToTable } from '../../utils/entityMapper';
 import { normalizeList } from '../../utils/api-helpers';
 
 const ClientsPage = () => {
@@ -130,7 +130,7 @@ const ClientsPage = () => {
         </div>
       </div>
 
-      <Alerts 
+      <Alerts
         open={alert.open} 
         setOpen={(val) => setAlert(prev => ({ ...prev, open: val }))} 
         message={alert.message} 
@@ -138,6 +138,23 @@ const ClientsPage = () => {
       />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Barra de acciones sobre la tabla */}
+        <div className="flex flex-wrap items-center justify-center gap-3 px-4 pt-3 pb-2 border-b border-gray-100">
+          <HeaderActions
+            AddComponent={
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[20px]">add</span>
+                <span>Nuevo {CLIENT_CONFIG.name}</span>
+              </button>
+            }
+            onRefresh={fetchClients}
+            showExport={true}
+          />
+        </div>
+
         {loading ? (
           <div className="p-10 text-center text-gray-500">
             <span className="material-symbols-outlined animate-spin text-4xl text-blue-600">progress_activity</span>
@@ -155,14 +172,6 @@ const ClientsPage = () => {
             onAdd={() => setIsAddModalOpen(true)}
             path="/client/"
             rowsPerPage={10}
-            headerButtons={
-              <HeaderActions 
-                onAdd={() => setIsAddModalOpen(true)}
-                addButtonLabel={`Nuevo ${CLIENT_CONFIG.name}`}
-                showExport={true} 
-                onRefresh={fetchClients}
-              />
-            }
           />
         )}
       </div>
