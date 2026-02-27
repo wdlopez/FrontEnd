@@ -5,6 +5,8 @@ import InteractiveTable from '../../components/organisms/Tables/InteractiveTable
 import AddInvoicesModal from '../../components/organisms/Forms/AddInvoiceModal';
 import Alerts from '../../components/molecules/Alerts';
 import InvoiceService from '../../services/Invoices/invoice.service';
+import { useAuth } from "../../context/AuthContext";
+import { useSelectedClient } from "../../context/ClientSelectionContext";
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import { getText } from '../../utils/text';
 import { normalizeList } from '../../utils/api-helpers';
@@ -22,6 +24,9 @@ const InvoicesPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
 
+  const { user } = useAuth();
+  const { selectedClient } = useSelectedClient();
+
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
     { name: "Detalle de Ítems", url: "/invoices/items" },
@@ -35,7 +40,24 @@ const InvoicesPage = () => {
       const response = await InvoiceService.getAllInvoices();
       const rawList = normalizeList(response);
 
-      const formatted = rawList.map((inv, i) => ({
+      const role = user?.role || null;
+      const isSuperAdmin =
+        role === "super_admin" || role === 1 || role === "1";
+
+      let filteredList = rawList;
+      if (isSuperAdmin && selectedClient?.id) {
+        const clientIdStr = String(selectedClient.id);
+        filteredList = rawList.filter((inv) => {
+          const invoiceClientId =
+            inv.client_id || inv.clientId || inv.client?.id || null;
+          return (
+            invoiceClientId != null &&
+            String(invoiceClientId) === clientIdStr
+          );
+        });
+      }
+
+      const formatted = filteredList.map((inv, i) => ({
         ...inv,
         index: i + 1,
         amount_display: `${inv.currency || 'USD'} $${Number(inv.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,

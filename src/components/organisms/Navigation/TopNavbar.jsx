@@ -11,27 +11,73 @@ import Toolbar from "./toolBar";
 import DarkModeToggle from "../../atoms/darckModeBtn";
 import useUnreadNotifications from "../../../hooks/useUnreadNotifications";
 import { useAuth } from "../../../context/AuthContext";
+import { useSelectedClient } from "../../../context/ClientSelectionContext";
 //import { listContract } from "../../../pages/Deliverables/delLists";
 
-function TopBar({ name, darkMode, setDarkMode }) {
+function TopBar({ darkMode, setDarkMode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [clients, setClients] = useState([]);
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [contratsList, setContractList] = useState([]);
+  // Estado reservado para futuras funcionalidades de filtrado de contratos
+  // const [contratsList, setContractList] = useState([]);
   const [modalContract, setModalContract] = useState(false);
   const [nameContract] = useState(null);
   const [selectedContracts, setSelectedContracts] = useState([]);
   const navigate = useNavigate();
   const profileButtonRef = useRef(null);
   const { unreadCount } = useUnreadNotifications();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, currentKeyClient } = useAuth();
+  const { selectedClient, setSelectedClient, clearSelection } =
+    useSelectedClient();
   const userRol = user?.role;
+  const isSuperAdmin =
+    userRol === "super_admin" || userRol === 1 || userRol === "1";
+
+  const isClientScopedRole =
+    typeof userRol === "string" && userRol.startsWith("client_");
+
+  // Normaliza el nombre del esquema para alinearlo con la convención del backend.
+  // Ejemplos:
+  //  - "Microsoft"        -> "schema_microsoft"
+  //  - "Andrea fashion"   -> "schema_andrea_fashion"
+  //  - "Schema_ACME PROD" -> "schema_acme_prod"
+  const buildSchemaNameForClient = (client) => {
+    if (!client) return null;
+
+    // 1) Tomamos un valor base que pueda representar el esquema,
+    //    priorizando campos específicos si existen.
+    const rawBase =
+      client.schema ||
+      client.schema_name ||
+      client.key_client ||
+      client.slug ||
+      client.name ||
+      client.legal_name ||
+      client.company_name;
+
+    if (!rawBase) return null;
+
+    // 2) Normalizamos: quitamos tildes, pasamos a minúsculas y
+    //    convertimos espacios/símbolos en "_".
+    let normalized = String(rawBase)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // elimina acentos
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "_") // todo lo que no sea [a-z0-9] -> "_"
+      .replace(/^_+|_+$/g, ""); // sin guiones bajos al inicio/fin
+
+    if (!normalized) return null;
+
+    // 3) Aseguramos el prefijo "schema_" sin duplicarlo
+    normalized = normalized.replace(/^schema_+/, "");
+
+    return `schema_${normalized}`;
+  };
 
   const handleClients = async () => {
-
-    // Validar si el usuario tiene permiso para ver todos los clientes
-    if (userRol === 'super_admin' || userRol === 'client_contract_admin' || userRol === 1 || userRol === "1") {
+    // Solo el super_admin global puede cambiar de cliente desde el topbar
+    if (isSuperAdmin) {
       try {
         const response = await ClientService.getAllClients();
         let clientsData = [];
@@ -49,36 +95,26 @@ function TopBar({ name, darkMode, setDarkMode }) {
         }
 
         const clientsList = [
-          { value: 0, label: "Ver todos los clientes" },
-          // Ajustamos el mapeo basándonos en la respuesta del backend (ResponseDto: id, name)
-          ...clientsData.map((c) => ({ value: c.id, label: c.name }))
+          { value: 0, label: "Ver todos los clientes", schema: null },
+          // Ajustamos el mapeo basándonos en la respuesta del backend.
+          // Intentamos inferir el campo de esquema a partir de varias propiedades posibles
+          // y, si no existe, lo normalizamos a la convención "schema_{cliente}".
+          ...clientsData.map((c) => ({
+            value: c.id,
+            label: c.name,
+            schema: buildSchemaNameForClient(c),
+          })),
         ];
 
         setClients(clientsList);
-
-        const savedClientId = sessionStorage.getItem('selected_client_id');
-        if (savedClientId) {
-          // Comparación robusta convirtiendo ambos a string (para soportar UUIDs y números)
-          const savedClient = clientsList.find(c => String(c.value) === String(savedClientId));
-          if (savedClient) {
-            setSelectedClient(savedClient.label);
-          }
-        }
       } catch (error) {
         console.error("Error al cargar clientes en TopBar:", error);
         setClients([]);
       }
     }
 
-    try {
-      const contracts = await listContract(userRol);
-      const adjusted = contracts.length > 0
-        ? [{ ...contracts[0], label: "Seleccionar todos" }, ...contracts.slice(1)]
-        : [];
-      setContractList(adjusted);
-    } catch (error) {
-      setContractList([]);
-    }
+    // TODO: si en el futuro se reactiva el listado de contratos desde aquí,
+    // este bloque deberá rehacerse usando servicios tipados.
   };
 
   const handleOpenModal = () => {
@@ -89,58 +125,52 @@ function TopBar({ name, darkMode, setDarkMode }) {
   const handleSubmit = (data) => {
     if (data.client === 0 || data.client === "0") {
       // Si selecciona "Ver todos los clientes"
-      sessionStorage.removeItem('selected_client_id');
-      sessionStorage.removeItem('selected_client_name');
-      setSelectedClient(null);
+      clearSelection();
       setIsModalOpen(false);
-      navigate('/Contract/general');
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      navigate("/contract/general");
     } else {
       const selectedClientData = clients.find((c) => c.value === data.client);
       if (selectedClientData) {
-        setSelectedClient(selectedClientData.label);
-        // Guardar ID como string (UUID)
-        sessionStorage.setItem('selected_client_id', data.client);
-        sessionStorage.setItem('selected_client_name', selectedClientData.label);
-        navigate(`/Contract/client/${data.client}`);
+        setSelectedClient({
+          id: selectedClientData.value,
+          name: selectedClientData.label,
+          schema: selectedClientData.schema ?? null,
+        });
+        navigate(`/contract/client/${data.client}`);
       }
       setIsModalOpen(false);
     }
   };
   // Modificamos el manejador de selección
   const handleContractSelect = (data) => {
-    const contIds = data.cont.map(id => parseInt(id, 10));
+    const contIds = data.cont.map((id) => parseInt(id, 10));
 
     if (contIds.includes(0)) {
       // Seleccionar todos los contratos (excluyendo la opción 0)
-
-      sessionStorage.removeItem('selected_contract_ids');
-      sessionStorage.removeItem('selected_contract_names');
+      sessionStorage.removeItem("selected_contract_ids");
+      sessionStorage.removeItem("selected_contract_names");
       setSelectedContracts([]);
     } else {
-      // Filtrar contratos seleccionados
-      const selected = contratsList.filter(c => contIds.includes(c.value));
-      const selectedIds = selected.map(c => c.value);
-      const selectedNames = selected.map(c => c.label);
-      console.log(selectedIds);
-      sessionStorage.setItem('selected_contract_ids', JSON.stringify(selectedIds));
-      sessionStorage.setItem('selected_contract_names', JSON.stringify(selectedNames));
-      setSelectedContracts(selectedNames);
+      // Persistimos solo los IDs seleccionados; los nombres se resolverán
+      // en las pantallas específicas de contratos.
+      sessionStorage.setItem(
+        "selected_contract_ids",
+        JSON.stringify(contIds),
+      );
     }
 
     setModalContract(false);
-    // navigate('/Contract/deliverables');
     setTimeout(() => window.location.reload(), 100);
   };
 
 
   useEffect(() => {
-    if (!authLoading && userRol) {
+    if (!authLoading && userRol && isSuperAdmin) {
+      // Cargamos la lista de clientes disponible para el super_admin
       handleClients();
     }
-  }, [userRol, authLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, userRol, isSuperAdmin]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -153,21 +183,19 @@ function TopBar({ name, darkMode, setDarkMode }) {
   }, []);
 
   useEffect(() => {
-    const savedClientName = sessionStorage.getItem('selected_client_name');
-    // console.log(savedClientName)
-    if (savedClientName) {
-
-      setSelectedClient(savedClientName);
+    const raw = sessionStorage.getItem("selected_contract_names");
+    if (!raw) return;
+    try {
+      const savedNames = JSON.parse(raw) || [];
+      setSelectedContracts(savedNames);
+    } catch {
+      setSelectedContracts([]);
     }
-
-    const savedNames = JSON.parse(sessionStorage.getItem('selected_contract_names')) || [];
-    setSelectedContracts(savedNames);
   }, []);
 
   const handleCloseSession = () => {
-    // Limpiar el client_id al cerrar sesión
-    sessionStorage.removeItem('selected_client_id');
-    sessionStorage.removeItem('selected_client_name');
+    // Limpiar el client_id y contratos seleccionados al cerrar sesión
+    clearSelection();
     sessionStorage.removeItem('selected_contract_names');
     sessionStorage.removeItem('selected_contract_ids');
     //logoutService.logout();
@@ -188,37 +216,68 @@ function TopBar({ name, darkMode, setDarkMode }) {
 
       <div className="flex items-center justify-end space-x-4 text-nowrap">
         <div className="flex flex-col">
-          <p>{user?.name || "Usuario"}</p>
+          <p>
+            {user?.fullName ||
+              [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+              user?.email ||
+              "Usuario"}
+          </p>
           <Toolbar message={userRol} position="top">
-            <p>{userRol === 'super_admin' ? 'Super Administrador' : userRol === 'client_contract_admin' ? 'Administrador de Contratos' : 'Usuario'}</p>
+            <p>
+              {userRol === "super_admin"
+                ? "Super Administrador Global"
+                : userRol === "client_superadmin"
+                  ? "Administrador de Cliente"
+                  : userRol === "client_contract_admin"
+                    ? "Administrador de Contratos"
+                    : "Usuario"}
+            </p>
           </Toolbar>
         </div>
 
-         {userRol === 'super_admin' || userRol === 'client_contract_admin' ? (
+        {/* Selector de cliente */}
+        {isSuperAdmin ? (
+          // Super admin global: puede seleccionar y cambiar cliente
           <div className="flex flex-col justify-center">
             <p>Cliente:</p>
-            {selectedClient === null ? (
+            {!selectedClient || !selectedClient.name ? (
               <button onClick={handleOpenModal} className="btn btn-primary">
                 Seleccionar
               </button>
             ) : (
-              <Toolbar message={'Doble clic para cambiar de cliente'} position="top">
-                <div onDoubleClick={handleOpenModal} className="px-2 py-1 rounded-md hover:bg-gray-500">
-                  <p className="rounded-md border-gray-600">{selectedClient}</p>
+              <Toolbar
+                message={"Doble clic para cambiar de cliente"}
+                position="top"
+              >
+                <div
+                  onDoubleClick={handleOpenModal}
+                  className="px-2 py-1 rounded-md hover:bg-gray-500 cursor-pointer"
+                >
+                  <p className="rounded-md border-gray-600">
+                    {selectedClient?.name || "Seleccionar"}
+                  </p>
                 </div>
               </Toolbar>
             )}
           </div>
+        ) : isClientScopedRole ? (
+          // Roles client_* (ej. client_superadmin, client_contract_admin, etc.):
+          // muestran solo el cliente asociado y NO se puede modificar.
+          <div className="flex flex-col justify-center">
+            <p className="text-xs opacity-70">Cliente:</p>
+            <b className="text-sm">
+              {currentKeyClient || selectedClient || "Asociado por token"}
+            </b>
+          </div>
         ) : (
+          // Otros roles (por ejemplo, proveedores u otros tipos)
           <div className="flex gap-4">
-            {/* Cambiamos clientName por user?.client_name (o el campo que use tu API) */}
             {user?.client_name && (
               <div className="flex flex-col">
                 <p className="text-xs opacity-70">Cliente:</p>
                 <b className="text-sm">{user.client_name}</b>
               </div>
             )}
-            {/* Cambiamos provider por user?.provider_name */}
             {user?.provider_name && (
               <div className="flex flex-col">
                 <p className="text-xs opacity-70">Proveedor:</p>
@@ -311,14 +370,32 @@ function TopBar({ name, darkMode, setDarkMode }) {
 
       {/* Modal para seleccionar cliente */}
       <Modal open={isModalOpen} setOpen={setIsModalOpen}>
-        <h2 className="mb-3"><b>Seleccione un Cliente</b></h2>
-        <div>
-          <Form
-            sendMessage="Seleccionar"
-            gridLayout={false}
-            fields={[{ name: 'client', type: 'select', label: 'Lista de Clientes', options: clients }]}
-            onSubmit={handleSubmit}
-          />
+        <h2 className="mb-3">
+          <b>Seleccione un Cliente</b>
+        </h2>
+        <div className="mt-2 flex flex-col gap-3">
+          <label className="text-sm font-medium text-gray-700">
+            Lista de Clientes
+          </label>
+          <select
+            className="border p-2 rounded-md text-black focus:ring-2 focus:ring-blue-500 outline-none"
+            defaultValue=""
+            onChange={(e) => {
+              const value = e.target.value;
+              if (!value) return;
+              const parsedValue = Number.isNaN(Number(value))
+                ? value
+                : Number(value);
+              handleSubmit({ client: parsedValue });
+            }}
+          >
+            <option value="">Seleccione un cliente...</option>
+            {clients.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
         </div>
       </Modal>
       {/* modal de contrato */}
@@ -332,7 +409,7 @@ function TopBar({ name, darkMode, setDarkMode }) {
               name: 'cont',
               type: 'checkbox',
               label: 'Lista de Contratos',
-              options: contratsList
+              options: []
             }]}
             onSubmit={handleContractSelect}
           />

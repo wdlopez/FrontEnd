@@ -5,7 +5,7 @@ import AuthService from "../services/auth/auth.service";
 const AuthContext = createContext();
 
 // Helper para decodificar el payload de un JWT (base64url)
-const parseJwtPayload = (token) => {
+export const parseJwtPayload = (token) => {
   if (!token) return null;
 
   try {
@@ -23,6 +23,18 @@ const parseJwtPayload = (token) => {
     console.error("Error decodificando JWT:", error);
     return null;
   }
+};
+
+// Helpers puros para reutilizar en servicios/páginas
+export const isGlobalAdminRole = (role) => role === "super_admin";
+
+export const hasClientScopeRole = (role) =>
+  role === "client_superadmin" || role === "client_contract_admin";
+
+export const getCurrentClientIdFromUser = (user) => {
+  if (!user) return null;
+  if (Array.isArray(user.clientId)) return user.clientId[0] ?? null;
+  return user.clientId ?? null;
 };
 
 export const AuthProvider = ({ children }) => {
@@ -116,7 +128,9 @@ export const AuthProvider = ({ children }) => {
             : [authData.clientId];
         }
 
-        const rawKeyClientFromToken = payload.key_client;
+        // key_client puede venir como string o array en el token
+        const rawKeyClientFromToken =
+          payload.key_client ?? payload.keyClient ?? authData.key_client;
         let key_client = null;
         if (Array.isArray(rawKeyClientFromToken)) {
           key_client = rawKeyClientFromToken;
@@ -149,9 +163,12 @@ export const AuthProvider = ({ children }) => {
     return false;
   };
 
-  const currentUserClientId = Array.isArray(user?.clientId)
-    ? user.clientId[0]
-    : user?.clientId ?? null;
+  const currentUserClientId = getCurrentClientIdFromUser(user);
+  const currentClientId = currentUserClientId;
+  const currentKeyClient = Array.isArray(user?.key_client)
+    ? user.key_client[0]
+    : user?.key_client ?? null;
+  const isGlobalAdmin = isGlobalAdminRole(user?.role);
 
   return (
     <AuthContext.Provider
@@ -162,6 +179,9 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         currentUserClientId,
+        currentClientId,
+        currentKeyClient,
+        isGlobalAdmin,
       }}
     >
       {children}

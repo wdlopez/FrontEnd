@@ -5,6 +5,8 @@ import InteractiveTable from '../../components/organisms/Tables/InteractiveTable
 import AddNotificationModal from '../../components/organisms/Forms/AddNotificationModal';
 import Alerts from '../../components/molecules/Alerts';
 import NotificationService from '../../services/Notifications/notification.service';
+import { useAuth } from "../../context/AuthContext";
+import { useSelectedClient } from "../../context/ClientSelectionContext";
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import { getText } from '../../utils/text';
 import { normalizeList } from '../../utils/api-helpers';
@@ -27,6 +29,9 @@ const NotificationsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
 
+  const { user } = useAuth();
+  const { selectedClient } = useSelectedClient();
+
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
     { name: "Sistema", url: null },
@@ -39,7 +44,24 @@ const NotificationsPage = () => {
       const response = await NotificationService.getAllNotifications();
       const rawList = normalizeList(response);
 
-      const formatted = rawList.map((notif, i) => ({
+      const role = user?.role || null;
+      const isSuperAdmin =
+        role === "super_admin" || role === 1 || role === "1";
+
+      let filteredList = rawList;
+      if (isSuperAdmin && selectedClient?.id) {
+        const clientIdStr = String(selectedClient.id);
+        filteredList = rawList.filter((notif) => {
+          const notifClientId =
+            notif.client_id || notif.clientId || notif.client?.id || null;
+          return (
+            notifClientId != null &&
+            String(notifClientId) === clientIdStr
+          );
+        });
+      }
+
+      const formatted = filteredList.map((notif, i) => ({
         ...notif,
         index: i + 1,
         title_display: notif.notif_title,

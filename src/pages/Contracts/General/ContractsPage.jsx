@@ -30,7 +30,7 @@ const NAV_ITEMS = [
 
 function ContractPage() {
   const { id_client } = useParams();
-  const { user, currentUserClientId } = useAuth();
+  const { user, currentUserClientId, currentClientId, isGlobalAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState(NAV_ITEMS[0].key);
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,12 +52,11 @@ function ContractPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Si venimos de la ruta de un cliente (ej. super admin), filtramos por su ID.
-      // Si el usuario es Administrador de Contratos, no enviamos client_id: el backend usa el JWT.
-      let params = {};
-      if (id_client) {
-        params = { client_id: id_client };
-      }
+      // IMPORTANTE:
+      // El backend de contratos obtiene el cliente desde el JWT + esquema (x-target-schema)
+      // y NO acepta el parámetro client_id en query (lo rechaza con 400).
+      // Por eso siempre llamamos sin filtros en query y aislamos por cliente en frontend.
+      const params = {};
 
       const [contractsRes, clientsRes, providersRes] = await Promise.allSettled([
         ContractService.getAll(params),
@@ -66,9 +65,7 @@ function ContractPage() {
       ]);
 
       if (contractsRes.status === "fulfilled") {
-        // const response = contractsRes.value;
-        // const dataList = normalizeList(response);
-        // setContracts(mapBackendToTable(dataList, CONTRACT_CONFIG));
+        // Ya filtraremos tras construir la config dinámica
       }
 
       // Clonamos config para no mutar la constante importada
@@ -135,7 +132,58 @@ function ContractPage() {
       if (contractsRes.status === "fulfilled") {
         const response = contractsRes.value;
         const dataList = normalizeList(response);
-        setContracts(mapBackendToTable(dataList, newConfig));
+
+        // Aislamiento por cliente en frontend:
+        // 1) Si la ruta incluye :id_client, siempre filtramos por ese cliente.
+        // 2) Si no hay id_client en la ruta, pero el usuario es client_*,
+        //    filtramos por el cliente asociado al token (currentClientId).
+        const role = user?.role || null;
+        const isClientScoped =
+          role === "client_superadmin" || role === "client_contract_admin";
+
+        let filteredList = dataList;
+
+        if (id_client) {
+          const routeClientId = String(id_client);
+          filteredList = dataList.filter((c) => {
+            const contractClientId =
+              c.client_id || c.clientId || c.client?.id || null;
+            return (
+              contractClientId != null &&
+              String(contractClientId) === routeClientId
+            );
+          });
+        } else if (!isGlobalAdmin && isClientScoped && currentClientId) {
+          const effectiveClientId = String(currentClientId);
+          filteredList = dataList.filter((c) => {
+            const contractClientId =
+              c.client_id || c.clientId || c.client?.id || null;
+            return (
+              contractClientId != null &&
+              String(contractClientId) === effectiveClientId
+            );
+          });
+        }
+
+        if (import.meta.env.DEV) {
+          console.debug(
+            "[ContractsPage] role:",
+            role,
+            "currentClientId:",
+            currentClientId,
+            "id_client (ruta):",
+            id_client,
+            "contratos totales:",
+            dataList.length,
+            "contratos filtrados:",
+            filteredList.length
+          );
+        }
+
+        setContracts(mapBackendToTable(filteredList, newConfig));
+      } else {
+        // Si la llamada a contratos falla, limpiamos la tabla
+        setContracts([]);
       }
 
       setDynamicConfig(newConfig);

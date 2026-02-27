@@ -18,6 +18,7 @@ import DashbRiesgos from "./DashBRiesgos";
 const ROLES = {
   SUPER_ADMIN: "super_admin",
   CONTRACT_ADMIN: "client_contract_admin",
+  CLIENT_SUPERADMIN: "client_superadmin",
   CLIENT_PERFORMANCE_RESP: "client_performance_resp",
   CLIENT_FINANCE_RESP: "client_finance_resp",
   CLIENT_REPORTS_RESP: "client_reports_resp",
@@ -49,7 +50,10 @@ const DashboardIndex = () => {
 
         if (user.role === ROLES.SUPER_ADMIN) {
           data = await DashboardService.getSuperAdminSummary();
-        } else if (user.role === ROLES.CONTRACT_ADMIN) {
+        } else if (
+          user.role === ROLES.CONTRACT_ADMIN ||
+          user.role === ROLES.CLIENT_SUPERADMIN
+        ) {
           data = await DashboardService.getContractAdminSummary(
             user.role,
             user.id,
@@ -82,7 +86,7 @@ const DashboardIndex = () => {
   if (loading)
     return <div className="p-10 text-center">Cargando tablero...</div>;
 
-  // CASO 1: SUPER ADMINISTRADOR
+  // CASO 1: SUPER ADMINISTRADOR GLOBAL
   if (user.role === ROLES.SUPER_ADMIN) {
     return (
       <div className="space-y-6">
@@ -132,41 +136,62 @@ const DashboardIndex = () => {
     );
   }
 
-  // CASO 2: ADMIN DE CONTRATOS
-  if (user.role === ROLES.CONTRACT_ADMIN) {
+  // CASO 2: SUPER ADMINISTRADOR DE CLIENTE
+  if (user.role === ROLES.CLIENT_SUPERADMIN) {
     return (
       <div className="space-y-6">
-        {/* Botones de acceso rápido para Contract Admin */}
+        {/* Sección de Bienvenida con botones de acceso rápido para el cliente */}
         <div className="p-6 space-y-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">
-              Hola, {user.role}
+              Hola, {user.fullName || "Administrador de Cliente"}
             </h1>
             <p className="text-gray-600 mt-2">
-              Bienvenido a ContractX. Comienza gestionando clientes y contratos.
+              Bienvenido a ContractX. Gestiona usuarios, clientes y el
+              desempeño de tus contratos.
             </p>
           </div>
+
           <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <WelcomeClient 
-              setMsg={setAlertMessage} 
-              setOpenAlert={setAlertOpen} 
-              setAlert={setAlertType} 
+            <WelcomeClient
+              setMsg={setAlertMessage}
+              setOpenAlert={setAlertOpen}
+              setAlert={setAlertType}
               count={dashboardData.clientsCount}
             />
-            {/* Solo mostramos WelcomeUser para super_admin, o si quieres habilitarlo para contract_admin también, quita el condicional */}
-            {user.role === ROLES.SUPER_ADMIN && (
-              <WelcomeUser 
-                setMsg={setAlertMessage} 
-                setOpenAlert={setAlertOpen} 
-                setAlert={setAlertType} 
-                count={dashboardData.usersCount}
-              />
-            )}
+            <WelcomeUser
+              setMsg={setAlertMessage}
+              setOpenAlert={setAlertOpen}
+              setAlert={setAlertType}
+              count={dashboardData.usersCount}
+            />
           </div>
         </div>
 
-        {/* Dashboard de Contract Admin */}
+        {/* Alertas Globales del Dashboard */}
+        <Alerts
+          open={alertOpen}
+          setOpen={setAlertOpen}
+          message={alertMessage}
+          type={alertType}
+        />
+
+        {/* Dashboard DAC de contratos (antes en admin de contratos) */}
+        <DashBContratoAdmin
+          user={user}
+          contracts={dashboardData.contracts}
+          slas={dashboardData.slas}
+        />
+      </div>
+    );
+  }
+
+  // CASO 3: ADMIN DE CONTRATOS (solo dashboard de contratos)
+  if (user.role === ROLES.CONTRACT_ADMIN) {
+    return (
+      <div className="space-y-6">
+        {/* Solo el dashboard asociado a contratos */}
         <DashBContratoAdmin
           user={user}
           contracts={dashboardData.contracts}

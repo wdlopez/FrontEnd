@@ -5,7 +5,15 @@ import UserClientService from "../../../services/Clients/user-clients.service";
 import Swal from "sweetalert2";
 import { normalizeList } from "../../../utils/api-helpers";
 
-const AssignClientModal = ({ isOpen, setIsOpen, predefinedUserId, predefinedUserName, onSuccess }) => {
+const AssignClientModal = ({
+  isOpen,
+  setIsOpen,
+  predefinedUserId,
+  predefinedUserName,
+  onSuccess,
+  defaultClientId,
+  lockClient = false,
+}) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -21,16 +29,28 @@ const AssignClientModal = ({ isOpen, setIsOpen, predefinedUserId, predefinedUser
     if (isOpen) {
       loadClients();
       if (predefinedUserId) {
-        setFormData(prev => ({ ...prev, userId: predefinedUserId }));
+        setFormData((prev) => ({ ...prev, userId: predefinedUserId }));
+      }
+      // Si se pasa un cliente por defecto, lo fijamos en el formulario
+      if (defaultClientId) {
+        setFormData((prev) => ({ ...prev, clientId: defaultClientId }));
       }
     }
-  }, [isOpen, predefinedUserId]);
+  }, [isOpen, predefinedUserId, defaultClientId]);
 
   const loadClients = async () => {
     try {
       const response = await ClientService.getAll();
       const normalizedData = normalizeList(response);
-      setClients(Array.isArray(normalizedData) ? normalizedData : []);
+      let list = Array.isArray(normalizedData) ? normalizedData : [];
+
+      // Si viene un cliente fijo (ej. desde token de client_superadmin),
+      // limitamos la lista a ese cliente.
+      if (defaultClientId && lockClient) {
+        list = list.filter((c) => c.id === defaultClientId);
+      }
+
+      setClients(list);
     } catch (error) {
       console.error("Error cargando clientes", error);
     }
@@ -85,6 +105,7 @@ const AssignClientModal = ({ isOpen, setIsOpen, predefinedUserId, predefinedUser
               value={formData.clientId}
               onChange={handleClientChange}
               required
+              disabled={lockClient}
             >
               <option value="">Seleccione un cliente...</option>
               {(clients || []).map((client) => (

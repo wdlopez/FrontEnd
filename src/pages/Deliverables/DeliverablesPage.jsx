@@ -15,6 +15,8 @@ import DeliverablesSonResponsiblePage from './DeliverablesSonResponsible/Deliver
 import DeliverableService from '../../services/Deliverables/deliverable.service';
 import ContractService from '../../services/Contracts/contract.service';
 import ServiceService from '../../services/Contracts/Services/service.service';
+import { useAuth } from "../../context/AuthContext";
+import { useSelectedClient } from "../../context/ClientSelectionContext";
 
 import { DELIVERABLE_CONFIG } from '../../config/entities/deliverable.config';
 import { mapBackendToTable } from '../../utils/entityMapper';
@@ -48,6 +50,9 @@ const DeliverablesPage = () => {
     { name: "Inicio", url: "/dashboard" },
     { name: "Entregables", url: null }
   ];
+
+  const { user } = useAuth();
+  const { selectedClient } = useSelectedClient();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -90,9 +95,25 @@ const DeliverablesPage = () => {
       // Mapear Entregables
       if (deliverablesRes) {
         const rawList = normalizeList(deliverablesRes);
-        
+
+        const role = user?.role || null;
+        const isSuperAdmin =
+          role === "super_admin" || role === 1 || role === "1";
+
+        let filteredDeliverables = rawList;
+        if (isSuperAdmin && selectedClient?.id) {
+          const clientIdStr = String(selectedClient.id);
+          filteredDeliverables = rawList.filter((d) => {
+            const delClientId =
+              d.client_id || d.clientId || d.client?.id || null;
+            return (
+              delClientId != null && String(delClientId) === clientIdStr
+            );
+          });
+        }
+
         // Enriquecer datos con nombres de contrato y servicio
-        const enrichedList = rawList.map(d => {
+        const enrichedList = filteredDeliverables.map(d => {
             const contract = contractsList.find(c => c.id === d.contract_id);
             const service = servicesList.find(s => s.id === d.service_id);
             return {

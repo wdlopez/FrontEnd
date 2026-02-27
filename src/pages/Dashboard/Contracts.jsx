@@ -46,7 +46,7 @@ function WelcomeContract({ setMsg, setOpenAlert, setAlert, rol }) {
     return (
         <>
             {anyContract !== 0 ?
-                <Link to={'/Contract/general'}>
+                <Link to={'/contract/general'}>
                     <button className="btn btn-primary">
                         Ir a Contratos
                     </button>

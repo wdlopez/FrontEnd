@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { chartColors } from "../../config/colorPalette";
 import { normalizeList } from "../../utils/api-helpers";
 import { useAuth } from "../../context/AuthContext";
+import { useSelectedClient } from "../../context/ClientSelectionContext";
 import ContractService from "../../services/Contracts/contract.service";
 import SlaService from "../../services/Slas/sla.service";
 import DeliverableService from "../../services/Deliverables/deliverable.service";
@@ -20,7 +21,8 @@ const formatMoney = (n) =>
   });
 
 function DashBContratoAdmin({ user: userFromProps }) {
-  const { user: authUser, currentUserClientId } = useAuth();
+  const { user: authUser, currentUserClientId, isGlobalAdmin } = useAuth();
+  const { selectedClient } = useSelectedClient();
   const effectiveUser = authUser || userFromProps;
 
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ function DashBContratoAdmin({ user: userFromProps }) {
   // Secciones DAC: 1.1 Entregables, 1.2 SLAs, 1.3 Finanzas, 1.4 Gobierno
   const [activeSection, setActiveSection] = useState("dac11");
 
-  const clientId = currentUserClientId;
+  const clientId = currentUserClientId || selectedClient?.id || null;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,7 +75,35 @@ function DashBContratoAdmin({ user: userFromProps }) {
         ]);
 
         if (contractsRes.status === "fulfilled") {
-          setContracts(normalizeList(contractsRes.value));
+          const contractsList = normalizeList(contractsRes.value);
+
+          const role = effectiveUser?.role || null;
+          const isClientScoped =
+            role === "client_superadmin" || role === "client_contract_admin";
+
+          let filteredContracts = contractsList;
+          if (!isGlobalAdmin && isClientScoped && clientId) {
+            filteredContracts = contractsList.filter((c) => {
+              const contractClientId =
+                c.client_id || c.clientId || c.client?.id || null;
+              return contractClientId === clientId;
+            });
+          }
+
+          if (import.meta.env.DEV) {
+            console.debug(
+              "[DashBAdminContractC] role:",
+              role,
+              "currentClientId:",
+              clientId,
+              "contratos totales:",
+              contractsList.length,
+              "contratos filtrados:",
+              filteredContracts.length
+            );
+          }
+
+          setContracts(filteredContracts);
         } else {
           setContracts([]);
         }
@@ -187,7 +217,9 @@ function DashBContratoAdmin({ user: userFromProps }) {
           Bienvenido, {effectiveUser?.firstName || "Administrador"}
         </h3>
         <p className="text-gray-500 font-medium">
-          Administrador de Contratos – Vista DAC
+          {effectiveUser?.role === "client_superadmin"
+            ? "Administrador de Cliente – Vista DAC de contratos"
+            : "Administrador de Contratos – Vista DAC"}
         </p>
       </div>
 

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ClientSelectionProvider } from './context/ClientSelectionContext';
 
 // Importamos el "Guardia de Seguridad" que creamos en el paso anterior
 import ProtectedRoutes from './router/ProtectedRoutes'; 
@@ -52,8 +53,9 @@ import EmailLogsPage from './pages/Reports/Emails/EmailLogsPage';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+      <ClientSelectionProvider>
+        <BrowserRouter>
+          <Routes>
           {/* =======================================================
               1. RUTAS PÚBLICAS (SIN Layout Global)
               ======================================================== */}
@@ -77,6 +79,7 @@ function App() {
               <Route path="/settings/userNroles" element={<UsersPage />} />
               <Route path="/settings/userNroles/:id" element={<ViewOneUser />} />
               <Route path="/contract/general" element={<ContractsPage />} />
+              <Route path="/contract/client/:id_client" element={<ContractsPage />} />
               <Route path="/contract/general/:id" element={<ViewOneContract />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
               <Route path="/suppliers/:id" element={<ViewOneSupplier />} />
@@ -118,6 +121,7 @@ function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
+      </ClientSelectionProvider>
     </AuthProvider>
   );
 }

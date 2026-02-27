@@ -22,7 +22,7 @@ const integralControl = [
 
 ];
 const changes = [
-  { name: "Solicitudes de Cambio (CRs)", path: "/Contract/deliverables"},
+  { name: "Solicitudes de Cambio (CRs)", path: "/contract/deliverables"},
   { name: "Ejecución de Órdenes de Trabajo (OTs)", path: "/contract/workOrders"},
 ];
 

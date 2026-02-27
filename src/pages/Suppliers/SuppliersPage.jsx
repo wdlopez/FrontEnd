@@ -8,6 +8,8 @@ import GenericAddModal from '../../components/organisms/Forms/GenericAddModal';
 import Alerts from '../../components/molecules/Alerts';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import ProviderService from '../../services/Providers/provider.service';
+import { useAuth } from "../../context/AuthContext";
+import { useSelectedClient } from "../../context/ClientSelectionContext";
 import { PROVIDER_CONFIG } from '../../config/entities/provider.config';
 import { mapBackendToTable } from '../../utils/entityMapper';
 import { normalizeList } from '../../utils/api-helpers';
@@ -29,6 +31,8 @@ const SuppliersPage = () => {
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
 
   const hasInitialized = useRef(false);
+  const { user, isGlobalAdmin } = useAuth();
+  const { selectedClient } = useSelectedClient();
 
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
@@ -42,9 +46,26 @@ const SuppliersPage = () => {
     try {
       const response = await ProviderService.getAll();
       const dataList = normalizeList(response);
-      
+
+      const role = user?.role || null;
+      const isSuperAdmin =
+        role === "super_admin" || role === 1 || role === "1";
+
+      let filteredList = dataList;
+      if (isSuperAdmin && selectedClient?.id) {
+        const clientIdStr = String(selectedClient.id);
+        filteredList = dataList.filter((p) => {
+          const providerClientId =
+            p.client_id || p.clientId || p.client?.id || null;
+          return (
+            providerClientId != null &&
+            String(providerClientId) === clientIdStr
+          );
+        });
+      }
+
       // Usamos el mapper genérico con la configuración de proveedores
-      const formattedProviders = mapBackendToTable(dataList, PROVIDER_CONFIG);
+      const formattedProviders = mapBackendToTable(filteredList, PROVIDER_CONFIG);
       setProviders(formattedProviders);
     } catch (error) {
       console.error("Error cargando proveedores:", error);

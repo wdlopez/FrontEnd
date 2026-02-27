@@ -19,6 +19,7 @@ import { USER_CONFIG } from '../../config/entities/user.config';
 import { mapBackendToTable } from '../../utils/entityMapper';
 import { normalizeList } from '../../utils/api-helpers';
 import { getText } from '../../utils/text';
+import { useAuth } from "../../context/AuthContext";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -44,6 +45,12 @@ const UsersPage = () => {
 
   // Estado para valores iniciales del formulario de creación (flujo guiado)
   const [addInitialValues, setAddInitialValues] = useState({});
+
+  // Auth: aislamiento por cliente
+  const { user, currentClientId, isGlobalAdmin } = useAuth();
+  const role = user?.role || null;
+  const isClientScopedRole =
+    role === "client_superadmin" || role === "client_contract_admin";
 
   // Router: leer parámetros de la URL para el flujo guiado
   const location = useLocation();
@@ -76,7 +83,52 @@ const UsersPage = () => {
       if (usersRes.status === 'fulfilled') {
         const usersResponse = usersRes.value;
         const dataList = normalizeList(usersResponse);
-        const formattedUsers = mapBackendToTable(dataList, USER_CONFIG);
+
+        // Aislamiento por cliente en frontend para roles client-scoped.
+        // IMPORTANTE: solo filtramos si la respuesta realmente trae campos de cliente (clientId / entityId);
+        // en muchos casos el backend ya está aislando por tenant (key_client) y no envía esos campos.
+        let filteredList = dataList;
+        const role = user?.role || null;
+        const isClientScoped =
+          role === "client_superadmin" || role === "client_contract_admin";
+
+        const hasClientFields = dataList.some(
+          (u) =>
+            u.clientId !== undefined ||
+            u.client_id !== undefined ||
+            u.entityId !== undefined ||
+            u.entity_id !== undefined,
+        );
+
+        if (!isGlobalAdmin && isClientScoped && currentClientId && hasClientFields) {
+          filteredList = dataList.filter((u) => {
+            const userClientId = u.clientId || u.client_id || null;
+            const userEntityId = u.entityId || u.entity_id || null;
+            const matchesClientId = userClientId === currentClientId;
+            const matchesEntityId =
+              typeof userEntityId === "string" &&
+              (userEntityId === `c_${currentClientId}` ||
+                userEntityId === currentClientId);
+            return matchesClientId || matchesEntityId;
+          });
+        }
+
+        if (import.meta.env.DEV) {
+          console.debug(
+            "[UsersPage] role:",
+            role,
+            "currentClientId:",
+            currentClientId,
+            "hasClientFields:",
+            hasClientFields,
+            "users total:",
+            dataList.length,
+            "users filtrados:",
+            filteredList.length,
+          );
+        }
+
+        const formattedUsers = mapBackendToTable(filteredList, USER_CONFIG);
         setUsers(formattedUsers);
 
         const meta = usersResponse?.data || {};
@@ -98,7 +150,18 @@ const UsersPage = () => {
       if (clientsRes.status === 'fulfilled') {
         const clientCol = newConfig.columns.find(c => c.backendKey === 'entityId');
         if (clientCol) {
-          clientCol.options = normalizeList(clientsRes.value).map(c => ({ 
+          let clients = normalizeList(clientsRes.value);
+
+          const role = user?.role || null;
+          const isClientScoped =
+            role === "client_superadmin" || role === "client_contract_admin";
+
+          // Si el usuario está acotado a un cliente, solo mostramos su cliente
+          if (!isGlobalAdmin && isClientScoped && currentClientId) {
+            clients = clients.filter((c) => c.id === currentClientId);
+          }
+
+          clientCol.options = (clients || []).map(c => ({ 
             value: `c_${c.id}`, 
             label: `Cliente: ${c.name}` 
           }));
@@ -106,6 +169,10 @@ const UsersPage = () => {
           // Si venimos del flujo guiado de creación de cliente,
           // mostramos el campo de cliente en el formulario de usuario y lo bloqueamos.
           if (actionParam === 'create_admin' && clientIdParam) {
+            clientCol.hideInForm = false;
+            clientCol.disabled = true;
+          } else if (!isGlobalAdmin && isClientScoped && currentClientId) {
+            // Para client_superadmin / client_contract_admin, mostrar su cliente pero sin permitir cambiarlo
             clientCol.hideInForm = false;
             clientCol.disabled = true;
           }
@@ -289,11 +356,23 @@ const UsersPage = () => {
   });
 
   const getUserExtraPayload = () => {
+    // Flujo guiado desde creación de cliente
     if (actionParam === 'create_admin' && clientIdParam) {
       return {
         entityId: `c_${clientIdParam}`,
       };
     }
+
+    // Aislamiento por cliente para roles client-scoped
+    const role = user?.role || null;
+    const isClientScoped =
+      role === "client_superadmin" || role === "client_contract_admin";
+    if (!isGlobalAdmin && isClientScoped && currentClientId) {
+      return {
+        entityId: `c_${currentClientId}`,
+      };
+    }
+
     return {};
   };
 
@@ -382,9 +461,16 @@ const UsersPage = () => {
         setIsOpen={setShowAssignModal}
         predefinedUserId={createdUser?.id}
         predefinedUserName={createdUser?.name}
+        // Para roles client_superadmin / client_contract_admin, fijamos el cliente del token
+        defaultClientId={
+          !isGlobalAdmin && isClientScopedRole && currentClientId
+            ? currentClientId
+            : undefined
+        }
+        lockClient={
+          !isGlobalAdmin && isClientScopedRole && currentClientId != null
+        }
         onSuccess={() => {
-          // Opcional: Si quieres mostrar una notificación extra al cerrar el segundo modal
-          // El propio modal ya muestra un SweetAlert de éxito
           console.log("Relación usuario-cliente creada");
         }}
       />

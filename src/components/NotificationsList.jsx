@@ -161,7 +161,7 @@ export default function NotificationsList() {
       );
     } else if (selectedRawNotif.assigned_entity_type === "deliverable") {
       const c = selectedRawNotif;
-      window.location.href = `/Contract/deliverables/${c.assigned_entity_id}`
+      window.location.href = `/contract/deliverables/${c.assigned_entity_id}`
       // return (
       //   <div>
       //     <h2><b>{c.notif_title}</b></h2>

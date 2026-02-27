@@ -4,10 +4,15 @@ const DEFAULT_PASSWORD = "Password2026!";
 
 const UserService = {
 
-  getAll: async ({ page = 1, limit = 10 } = {}) => {
-    const response = await api.get('/users', {
-      params: { page, limit }
-    }); 
+  // Listado de usuarios. Permite page/limit y params extra para futuros filtros.
+  getAll: async ({ page = 1, limit = 10, ...restParams } = {}) => {
+    const params = { page, limit, ...restParams };
+    if (import.meta.env.DEV) {
+      console.debug("[UserService.getAll] params:", params);
+    }
+    const response = await api.get("/users", {
+      params,
+    });
     return response.data;
   },
 

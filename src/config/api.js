@@ -18,6 +18,30 @@ const createApiInstance = (baseURL) => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Si el usuario es super_admin y hay un esquema seleccionado,
+      // añadimos automáticamente el header x-target-schema.
+      try {
+        const rawUser = Cookies.get('user_data');
+        if (rawUser) {
+          const parsed = JSON.parse(rawUser);
+          const isSuperAdmin =
+            parsed?.role === 'super_admin' ||
+            parsed?.role === 1 ||
+            parsed?.role === '1';
+          if (isSuperAdmin) {
+            const selectedSchema =
+              window.localStorage?.getItem('selected_schema') || null;
+            if (selectedSchema) {
+              config.headers['x-target-schema'] = selectedSchema;
+            }
+          }
+        }
+      } catch (e) {
+        // En caso de error al leer user_data, no rompemos la petición.
+        // console.error("Error leyendo user_data para x-target-schema:", e);
+      }
+
       return config;
     },
     (error) => Promise.reject(error)
@@ -27,10 +51,21 @@ const createApiInstance = (baseURL) => {
   instance.interceptors.response.use(
     (response) => response,
     (error) => {
+      // Antes se forzaba logout en cualquier 401, lo que era muy agresivo
+      // y podía sacar al usuario al login por errores de cabeceras (x-target-schema, etc.).
+      // Ahora solo redirigimos a login si el 401 viene claramente de endpoints de auth.
       if (error.response && error.response.status === 401) {
-        Cookies.remove('auth_token');
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        const url = error.config?.url || "";
+        const isAuthEndpoint =
+          url.includes("/auth") ||
+          url.includes("/login") ||
+          url.includes("/validate/session");
+
+        if (isAuthEndpoint) {
+          Cookies.remove("auth_token");
+          if (window.location.pathname !== "/login") {
+            window.location.href = "/login";
+          }
         }
       }
       return Promise.reject(error);

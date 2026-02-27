@@ -3,8 +3,11 @@ import api from '../../config/api';
 const ClientService = {
 
   getAll: async (params = {}) => {
-    const response = await api.get('/client', { params });
-    return response.data; 
+    if (import.meta.env.DEV) {
+      console.debug("[ClientService.getAll] params:", params);
+    }
+    const response = await api.get("/client", { params });
+    return response.data;
   },
 
   getById: async (id) => {

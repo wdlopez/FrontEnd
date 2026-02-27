@@ -13,6 +13,8 @@ import SlaService from '../../services/Slas/sla.service';
 import ContractService from '../../services/Contracts/contract.service';
 import ServiceService from '../../services/Contracts/Services/service.service';
 import MWindowService from '../../services/Slas/MeasurementWindows/mwindow.service';
+import { useAuth } from "../../context/AuthContext";
+import { useSelectedClient } from "../../context/ClientSelectionContext";
 
 import { SLA_CONFIG } from '../../config/entities/sla.config';
 import { mapBackendToTable } from '../../utils/entityMapper';
@@ -51,6 +53,9 @@ const SlasPage = () => {
     { name: "Inicio", url: "/dashboard" },
     { name: "SLAs", url: null }
   ];
+
+  const { user } = useAuth();
+  const { selectedClient } = useSelectedClient();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -106,8 +111,24 @@ const SlasPage = () => {
       // Mapear SLAs
       if (slasRes) {
         const rawList = normalizeList(slasRes);
-        
-        const enrichedList = rawList.map(s => {
+
+        const role = user?.role || null;
+        const isSuperAdmin =
+          role === "super_admin" || role === 1 || role === "1";
+
+        let filteredSlas = rawList;
+        if (isSuperAdmin && selectedClient?.id) {
+          const clientIdStr = String(selectedClient.id);
+          filteredSlas = rawList.filter((s) => {
+            const slaClientId =
+              s.client_id || s.clientId || s.client?.id || null;
+            return (
+              slaClientId != null && String(slaClientId) === clientIdStr
+            );
+          });
+        }
+
+        const enrichedList = filteredSlas.map(s => {
             const contract = contractsList.find(c => c.id === s.contract_id);
             const service = servicesList.find(srv => srv.id === s.service_id);
             const mWindow = mWindowsList.find(w => w.id === s.mwindow_id);
