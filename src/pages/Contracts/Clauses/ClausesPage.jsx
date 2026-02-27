@@ -14,7 +14,7 @@ import { mapBackendToTable } from '../../../utils/entityMapper';
 import { normalizeList } from '../../../utils/api-helpers';
 import { getText } from '../../../utils/text';
 
-const ClausesPage = ({ id_client }) => {
+const ClausesPage = ({ id_client, embedded = false }) => {
   const [clauses, setClauses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(CLAUSE_CONFIG);
@@ -135,13 +135,28 @@ const ClausesPage = ({ id_client }) => {
   };
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Si es página independiente, mostrar breadcrumb. Si es tab, quizás no. */}
-      {!id_client && (
-        <div className="space-y-2">
+    <div className={`${embedded ? 'pt-0 px-4 pb-4' : 'p-4'} space-y-4`}>
+      {/* Breadcrumb sobre el fondo gris general (solo en página independiente) */}
+      <div className="space-y-1">
+        {!id_client && (
           <BreadCrumb paths={[{ name: "Inicio", url: "/dashboard" }, { name: "Cláusulas", url: null }]} />
+        )}
+
+        {/* Solo el bloque del título tiene fondo blanco horizontal */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+          <div className="flex justify-between items-center gap-4">
+            <div>
+              <div className="flex gap-2 items-center">
+                <InfoTooltip size="sm" message={getText("intros.clauses") || "Administre las cláusulas legales"} sticky={true}>
+                  <span className="material-symbols-outlined text-gray-400">info</span>
+                </InfoTooltip>
+                <h1 className="text-2xl font-bold text-gray-800">Gestión de {CLAUSE_CONFIG.name}s</h1>
+              </div>
+              <p className="text-gray-500 text-sm">Control de obligaciones y estados críticos.</p>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
       
       <Alerts 
         open={alert.open} 
@@ -149,18 +164,6 @@ const ClausesPage = ({ id_client }) => {
         message={alert.message} 
         type={alert.type} 
       />
-
-      <div className="flex justify-between items-center gap-4">
-        <div>
-          <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("intros.clauses") || "Administre las cláusulas legales"} sticky={true}>
-              <span className="material-symbols-outlined text-gray-400">info</span>
-            </InfoTooltip>
-            <h1 className="text-2xl font-bold text-gray-800">Gestión de {CLAUSE_CONFIG.name}s</h1>
-          </div>
-          <p className="text-gray-500 text-sm">Control de obligaciones y estados críticos.</p>
-        </div>
-      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
@@ -200,17 +203,13 @@ const ClausesPage = ({ id_client }) => {
       </div>
 
       {/* MODALES GENÉRICOS */}
-      <GenericAddModal 
-        isOpen={isAddOpen} 
-        setIsOpen={setIsAddOpen} 
-        service={ClauseService} 
-        config={dynamicConfig} 
+      <GenericAddModal
+        isOpen={isAddOpen}
+        setIsOpen={setIsAddOpen}
+        service={ClauseService}
+        config={dynamicConfig}
         onSuccess={fetchData}
-        // Si estuviéramos dentro de un contrato, aquí pasaríamos { contract_id: id }
-        initialValues={{
-          is_critical: false,
-          compliance_status: "pending"
-        }} 
+        getExtraPayload={() => ({ is_critical: false, compliance_status: "compliant" })}
       />
 
       <GenericEditModal 

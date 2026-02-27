@@ -109,6 +109,7 @@ export const CONTRACT_CONFIG = {
         { label: "Terminado", value: "terminated" },
       ],
       editable: true,
+      hideInForm: true, // No mostrar en modal crear/editar; por defecto se envía "draft" al crear
     },
   ],
 };

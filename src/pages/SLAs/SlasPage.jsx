@@ -214,10 +214,29 @@ const SlasPage = () => {
 
   return (
     <div className="p-4 space-y-4">
+      {/* Tabs y breadcrumb sobre el fondo gris general */}
       <div className="space-y-2">
         <Tabs activeKey={activeTab} items={NAV_ITEMS} onChange={setActiveTab} />
         <BreadCrumb paths={breadcrumbPaths} />
+
+        {/* Solo el bloque del título tiene fondo blanco horizontal */}
+        {activeTab === 'slas' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="flex gap-2 items-center">
+                  <InfoTooltip size="sm" message={getText("intros.slas") || "Gestione los Acuerdos de Nivel de Servicio y sus métricas de cumplimiento"} sticky={true}>
+                    <span className="material-symbols-outlined text-gray-400">info</span>
+                  </InfoTooltip>
+                  <h1 className="text-2xl font-bold text-gray-800">Service Level Agreements (SLA)</h1>
+                </div>
+                <p className="text-gray-500 text-sm">Configuración de métricas de rendimiento y calidad por servicio.</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
       <Alerts 
         open={alert.open} 
         setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })} 
@@ -227,18 +246,6 @@ const SlasPage = () => {
 
       {activeTab === 'slas' ? (
       <>
-      <div className="flex justify-between items-center">
-        <div>
-          <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("intros.slas") || "Gestione los Acuerdos de Nivel de Servicio y sus métricas de cumplimiento"} sticky={true}>
-              <span className="material-symbols-outlined text-gray-400">info</span>
-            </InfoTooltip>
-            <h1 className="text-2xl font-bold text-gray-800">Service Level Agreements (SLA)</h1>
-          </div>
-          <p className="text-gray-500 text-sm">Configuración de métricas de rendimiento y calidad por servicio.</p>
-        </div>
-      </div>
-
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
           <div className="p-10 text-center flex flex-col items-center">

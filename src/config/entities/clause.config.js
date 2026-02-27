@@ -9,7 +9,17 @@ export const CLAUSE_CONFIG = {
       mapFrom: (item, index) => index + 1,
     },
     {
-      header: "Número",
+      header: "Contract ID",
+      backendKey: "contract_id",
+      type: "select",
+      required: true,
+      options: [], // Se llena dinámicamente
+      hideInTable: true,
+      editable: true,
+      placeholder: "Seleccione un contrato",
+    },
+    {
+      header: "Número de cláusula",
       backendKey: "clause_number",
       type: "text",
       editable: true,
@@ -19,7 +29,7 @@ export const CLAUSE_CONFIG = {
       placeholder: "Ej: 2.1",
     },
     {
-      header: "Título",
+      header: "Título de la cláusula",
       backendKey: "title",
       type: "text",
       editable: true,
@@ -29,7 +39,7 @@ export const CLAUSE_CONFIG = {
       placeholder: "Ej: Obligaciones de las partes",
     },
     {
-      header: "Contenido",
+      header: "Descripción de la cláusula",
       backendKey: "content",
       type: "textarea",
       editable: true,
@@ -46,7 +56,7 @@ export const CLAUSE_CONFIG = {
       ],
       editable: true,
       required: false,
-      defaultValue: false,
+      hideInForm: true, // No mostrar en modal crear/editar; por defecto false al crear
       mapFrom: (item) => (item.is_critical ? "Sí" : "No"),
     },
     {
@@ -60,18 +70,7 @@ export const CLAUSE_CONFIG = {
       ],
       editable: true,
       required: false,
-      defaultValue: "compliant",
-    },
-    // Campos ocultos necesarios para lógica interna
-    {
-      header: "Contract ID",
-      backendKey: "contract_id",
-      type: "select",
-      required: true,
-      options: [], // Se llena dinámicamente
-      hideInTable: true,
-      editable: true,
-      placeholder: "Seleccione un contrato",
+      hideInForm: true, // No mostrar en modal crear/editar; por defecto "compliant" al crear
     },
   ],
 };

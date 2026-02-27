@@ -101,93 +101,98 @@ const MeasurementWindowsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <Alerts 
-        open={alert.open} 
-        setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })} 
-        message={alert.message} 
-        type={alert.type} 
-      />
-
-      <div className="flex justify-between items-center">
-        <div>
-          <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("intros.measurementWindows") || "Gestione los horarios y periodos de medición para los cálculos de disponibilidad"} sticky={true}>
-              <span className="material-symbols-outlined text-gray-400">info</span>
-            </InfoTooltip>
-            <h1 className="text-2xl font-bold text-gray-800">Ventanas de Medición</h1>
+    <div className="p-4 space-y-4">
+      {/* Encabezado con fondo blanco horizontal */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="flex gap-2 items-center">
+              <InfoTooltip size="sm" message={getText("intros.measurementWindows") || "Gestione los horarios y periodos de medición para los cálculos de disponibilidad"} sticky={true}>
+                <span className="material-symbols-outlined text-gray-400">info</span>
+              </InfoTooltip>
+              <h1 className="text-2xl font-bold text-gray-800">Ventanas de Medición</h1>
+            </div>
+            <p className="text-gray-500 text-sm">Parámetros temporales y excepciones para el cumplimiento de niveles de servicio.</p>
           </div>
-          <p className="text-gray-500 text-sm">Parámetros temporales y excepciones para el cumplimiento de niveles de servicio.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {loading ? (
-          <div className="p-10 text-center">Cargando ventanas...</div>
-        ) : (
-          <InteractiveTable 
-            data={windows}
-            columnMapping={columnMapping}
-            selectColumns={selectColumns}
-            nonEditableColumns={nonEditableColumns}
-            onEdit={handleEdit}
-            onSubmit={handleInlineEdit}
-            onDelete={handleDeleteReq}
-            onAdd={() => setIsAddOpen(true)}
-            path="/contract/sla/measurement-windows/"
-            rowsPerPage={10}
-            headerButtons={
-              <HeaderActions
-                AddComponent={
-                  <button
-                    onClick={() => setIsAddOpen(true)}
-                    className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">add</span>
-                    <span>Nueva Ventana</span>
-                  </button>
-                }
-                showExport={true}
-                onRefresh={fetchData}
-              />
-            }
-          />
-        )}
+      <div className="space-y-6">
+        <Alerts 
+          open={alert.open} 
+          setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })} 
+          message={alert.message} 
+          type={alert.type} 
+        />
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          {loading ? (
+            <div className="p-10 text-center">Cargando ventanas...</div>
+          ) : (
+            <InteractiveTable 
+              data={windows}
+              columnMapping={columnMapping}
+              selectColumns={selectColumns}
+              nonEditableColumns={nonEditableColumns}
+              onEdit={handleEdit}
+              onSubmit={handleInlineEdit}
+              onDelete={handleDeleteReq}
+              onAdd={() => setIsAddOpen(true)}
+              path="/contract/sla/measurement-windows/"
+              rowsPerPage={10}
+              headerButtons={
+                <HeaderActions
+                  AddComponent={
+                    <button
+                      onClick={() => setIsAddOpen(true)}
+                      className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">add</span>
+                      <span>Nueva Ventana</span>
+                    </button>
+                  }
+                  showExport={true}
+                  onRefresh={fetchData}
+                />
+              }
+            />
+          )}
+        </div>
+
+        {/* MODALES */}
+        <GenericAddModal 
+          isOpen={isAddOpen} 
+          setIsOpen={setIsAddOpen} 
+          service={MWindowService}
+          config={dynamicConfig}
+          onSuccess={fetchData}
+          initialValues={{
+            active: 1,
+            period: "daily",
+            type_window: "standard",
+            exclusions: "{}",
+            inclusions: "{}"
+          }}
+        />
+
+        <GenericEditModal 
+          isOpen={isEditOpen} 
+          setIsOpen={setIsEditOpen} 
+          entityId={selectedId} 
+          service={MWindowService} 
+          config={dynamicConfig} 
+          onSuccess={fetchData}
+        />
+
+        <ConfirmActionModal 
+          isOpen={isDeleteOpen} 
+          setIsOpen={setIsDeleteOpen} 
+          data={selectedRow} 
+          onConfirm={handleConfirmDelete}
+          loading={deletingLoading}
+          entityName={MWINDOW_CONFIG.name}
+        />
       </div>
-
-      {/* MODALES */}
-      <GenericAddModal 
-        isOpen={isAddOpen} 
-        setIsOpen={setIsAddOpen} 
-        service={MWindowService}
-        config={dynamicConfig}
-        onSuccess={fetchData}
-        initialValues={{
-          active: 1,
-          period: "daily",
-          type_window: "standard",
-          exclusions: "{}",
-          inclusions: "{}"
-        }}
-      />
-
-      <GenericEditModal 
-        isOpen={isEditOpen} 
-        setIsOpen={setIsEditOpen} 
-        entityId={selectedId} 
-        service={MWindowService} 
-        config={dynamicConfig} 
-        onSuccess={fetchData}
-      />
-
-      <ConfirmActionModal 
-        isOpen={isDeleteOpen} 
-        setIsOpen={setIsDeleteOpen} 
-        data={selectedRow} 
-        onConfirm={handleConfirmDelete}
-        loading={deletingLoading}
-        entityName={MWINDOW_CONFIG.name}
-      />
     </div>
   );
 };

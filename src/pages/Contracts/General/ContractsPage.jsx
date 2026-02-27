@@ -18,9 +18,16 @@ import { PROVIDER_CONFIG } from "../../../config/entities/provider.config";
 import { mapBackendToTable } from "../../../utils/entityMapper";
 import { normalizeList } from "../../../utils/api-helpers";
 import { getText } from "../../../utils/text";
+import { filterByPeriod } from "../../../hooks/dateFilter";
 
 import ServicePage from "../Services/ServicesPage";
 import ClausesPage from "../Clauses/ClausesPage";
+
+const PERIOD_OPTIONS = ["7D", "MTD", "YTD", "1Y", "ALL"];
+const DATE_FIELD_OPTIONS = [
+  { value: "end_date", label: "Fecha de Fin" },
+  { value: "start_date", label: "Fecha de Inicio" },
+];
 
 const NAV_ITEMS = [
   { key: "contract", label: "Contratos" },
@@ -33,8 +40,11 @@ function ContractPage() {
   const { user, currentUserClientId, currentClientId, isGlobalAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState(NAV_ITEMS[0].key);
   const [contracts, setContracts] = useState([]);
+  const [originContracts, setOriginContracts] = useState([]); // lista raw para filtro por período
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(CONTRACT_CONFIG);
+  const [selectedPeriod, setSelectedPeriod] = useState("ALL");
+  const [selectedDateField, setSelectedDateField] = useState("end_date");
   const hasInitialized = useRef(false);
 
   // Estados de Modales
@@ -180,9 +190,11 @@ function ContractPage() {
           );
         }
 
+        setOriginContracts(filteredList);
         setContracts(mapBackendToTable(filteredList, newConfig));
       } else {
         // Si la llamada a contratos falla, limpiamos la tabla
+        setOriginContracts([]);
         setContracts([]);
       }
 
@@ -225,6 +237,9 @@ function ContractPage() {
       setContracts(prev => prev.map(c =>
         c.id === row.id ? { ...c, [column]: newValue } : c
       ));
+      setOriginContracts(prev => prev.map(c =>
+        c.id === row.id ? { ...c, [realColumn]: newValue } : c
+      ));
     } catch (error) {
       console.error("Error actualizando campo:", error);
     }
@@ -245,6 +260,7 @@ function ContractPage() {
       await ContractService.delete(data.id);
       setAlert({ open: true, message: "Contrato eliminado", type: "success" });
       setContracts(prev => prev.filter(c => c.id !== data.id));
+      setOriginContracts(prev => prev.filter(c => c.id !== data.id));
       setIsDeleteOpen(false);
     } catch (e) {
       console.error("Error al eliminar contrato:", e);
@@ -254,10 +270,36 @@ function ContractPage() {
     }
   };
 
+  // Filtro por período (7D, MTD, YTD, 1Y, ALL) sobre la lista raw
+  const filteredByPeriod = filterByPeriod(originContracts, selectedPeriod, selectedDateField);
+  const contractsToShow = mapBackendToTable(filteredByPeriod, dynamicConfig);
+
   return (
-    <div className="p-4 space-y-4">
-      <div className="space-y-2">
+    <div className="p-4">
+      {/* Tabs y breadcrumb sobre el fondo gris general */}
+      <div className={`space-y-2 ${activeTab === 'contract' ? 'mb-4' : 'mb-2'}`}>
         <Tabs activeKey={activeTab} items={NAV_ITEMS} onChange={setActiveTab} />
+
+        {activeTab === 'contract' && (
+          <>
+            <BreadCrumb paths={[{ name: "Inicio", url: "/dashboard" }, { name: "Contratos", url: null }]} />
+
+            {/* Solo el bloque del título tiene fondo blanco horizontal */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+              <div className="flex justify-between items-center gap-4">
+                <div>
+                  <div className="flex gap-2 items-center">
+                    <InfoTooltip size="sm" message={getText("intros.contracts")} sticky={true}>
+                      <span className="material-symbols-outlined text-gray-400">info</span>
+                    </InfoTooltip>
+                    <h1 className="text-2xl font-bold text-gray-800">Gestión de {CONTRACT_CONFIG.name}s</h1>
+                  </div>
+                  <p className="text-gray-500 text-sm">Administra los acuerdos legales y términos comerciales.</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <Alerts
@@ -268,22 +310,41 @@ function ContractPage() {
       />
 
       {activeTab === 'contract' && (
+        <div className="space-y-4 mt-0">
         <>
-          <BreadCrumb paths={[{ name: "Inicio", url: "/dashboard" }, { name: "Contratos", url: null }]} />
-          
-          <div className="flex justify-between items-center gap-4">
-            <div>
-              <div className="flex gap-2 items-center">
-                <InfoTooltip size="sm" message={getText("intros.contracts")} sticky={true}>
-                  <span className="material-symbols-outlined text-gray-400">info</span>
-                </InfoTooltip>
-                <h1 className="text-2xl font-bold text-gray-800">Gestión de {CONTRACT_CONFIG.name}s</h1>
-              </div>
-              <p className="text-gray-500 text-sm">Administra los acuerdos legales y términos comerciales.</p>
-            </div>
-          </div>
-
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Filtro por período: centrado, sobre los botones de acción (como en versión 0) */}
+            <div className="flex flex-col items-center justify-center gap-2 px-4 pt-3 pb-3 border-b border-gray-100">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Filtrar por:
+                <select
+                  className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 text-sm bg-white dark:bg-dark3 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={selectedDateField}
+                  onChange={(e) => setSelectedDateField(e.target.value)}
+                >
+                  {DATE_FIELD_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex flex-wrap justify-center gap-2">
+                {PERIOD_OPTIONS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSelectedPeriod(key)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      selectedPeriod === key
+                        ? "bg-[#4178BE] text-white hover:bg-[#3669a8] dark:bg-blue-500 dark:text-white dark:hover:bg-blue-600"
+                        : "bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-dark4 dark:text-gray-300 dark:hover:bg-dark3"
+                    }`}
+                  >
+                    {key === "ALL" ? "All" : key}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {loading ? (
               <div className="p-10 text-center text-gray-500">
                 <span className="material-symbols-outlined animate-spin text-4xl text-blue-600">progress_activity</span>
@@ -291,7 +352,7 @@ function ContractPage() {
               </div>
             ) : (
               <InteractiveTable
-                data={contracts}
+                data={contractsToShow}
                 columnMapping={columnMapping}
                 selectColumns={selectColumns}
                 nonEditableColumns={nonEditableColumns}
@@ -320,10 +381,11 @@ function ContractPage() {
             )}
           </div>
         </>
+        </div>
       )}
 
-      {activeTab === 'services' && <ServicePage id_client={id_client} />}
-      {activeTab === 'clauses' && <ClausesPage id_client={id_client} />}
+      {activeTab === 'services' && <ServicePage id_client={id_client} embedded />}
+      {activeTab === 'clauses' && <ClausesPage id_client={id_client} embedded />}
 
       {/* MODALES */}
       <GenericAddModal 
@@ -340,10 +402,9 @@ function ContractPage() {
           currency: "USD",
           language: "es",
           country: "Colombia",
-          status: "draft",
         }}
         getExtraPayload={() => {
-          const basePayload = user?.id ? { created_by: user.id } : {};
+          const basePayload = { status: "draft", ...(user?.id ? { created_by: user.id } : {}) };
           const defaultClientId = id_client || currentUserClientId;
           if (defaultClientId) {
             return { ...basePayload, client_id: defaultClientId };

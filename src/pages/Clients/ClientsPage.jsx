@@ -159,17 +159,22 @@ const ClientsPage = () => {
 
   return (
     <div className="p-4 space-y-4">
+      {/* Breadcrumb como antes, sobre el fondo gris general */}
       <div className="space-y-1">
         <BreadCrumb paths={breadcrumbPaths} />
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-          <div>
-            <div className="flex gap-2 items-center">
-              <InfoTooltip size="sm" message={getText("intros.clients")} sticky={true}>
-                <span className="material-symbols-outlined text-gray-400">info</span>
-              </InfoTooltip>
-              <h1 className="text-2xl font-bold text-gray-800">Gestión de {CLIENT_CONFIG.name}s</h1>
+
+        {/* Solo la franja del título tiene fondo blanco horizontal (InfoTooltip + título + descripción) */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div>
+              <div className="flex gap-2 items-center">
+                <InfoTooltip size="sm" message={getText("intros.clients")} sticky={true}>
+                  <span className="material-symbols-outlined text-gray-400">info</span>
+                </InfoTooltip>
+                <h1 className="text-2xl font-bold text-gray-800">Gestión de {CLIENT_CONFIG.name}s</h1>
+              </div>
+              <p className="text-gray-500 text-sm mt-1">Administra la base de datos centralizada.</p>
             </div>
-            <p className="text-gray-500 text-sm mt-1">Administra la base de datos centralizada.</p>
           </div>
         </div>
       </div>

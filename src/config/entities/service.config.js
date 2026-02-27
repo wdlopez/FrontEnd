@@ -9,7 +9,17 @@ export const SERVICE_CONFIG = {
       mapFrom: (item, index) => index + 1,
     },
     {
-      header: "Torre",
+      header: "Contrato",
+      backendKey: "contract_id",
+      type: "select",
+      editable: true,
+      required: true,
+      hiddenInTable: false,
+      options: [], // Se llenará dinámicamente
+      mapFrom: (item) => item.contract_name || item.contract_id,
+    },
+    {
+      header: "Torre de servicio",
       backendKey: "tower",
       editable: true,
       required: true,
@@ -17,7 +27,7 @@ export const SERVICE_CONFIG = {
       validationMessage: "Máx 50 caracteres",
     },
     {
-      header: "Grupo",
+      header: "Categoría de servicio",
       backendKey: "group",
       editable: true,
       required: true,
@@ -25,7 +35,7 @@ export const SERVICE_CONFIG = {
       validationMessage: "Máx 50 caracteres",
     },
     {
-      header: "Unidad",
+      header: "Unidad de recurso",
       backendKey: "resource_u",
       editable: true,
       required: true,
@@ -33,19 +43,19 @@ export const SERVICE_CONFIG = {
       validationMessage: "Máx 50 caracteres",
     },
     {
-      header: "Modelo",
+      header: "Mecanismos de cargos",
       backendKey: "charges_model",
       type: "select",
       options: [
-        { value: 1, label: "Fee" },
-        { value: 0, label: "No-Fee" },
+        { value: 1, label: "ACR/RRC" },
+        { value: 0, label: "PxQ" },
       ],
       editable: true,
       required: true,
-      mapFrom: (item) => (item.charges_model === 1 ? "Fee" : "No-Fee"),
+      mapFrom: (item) => (item.charges_model === 1 ? "ACR/RRC" : "PxQ"),
     },
     {
-      header: "Baseline",
+      header: "Linea base",
       backendKey: "baseline",
       type: "number",
       editable: true,
@@ -64,7 +74,7 @@ export const SERVICE_CONFIG = {
         }).format(item.value),
     },
     {
-      header: "Total",
+      header: "Valor total del servicio",
       backendKey: "sum_total",
       type: "number",
       editable: true, // Requerido por el backend
@@ -103,17 +113,8 @@ export const SERVICE_CONFIG = {
       ],
       editable: true,
       required: true,
+      hideInForm: true, // No mostrar en modal crear/editar; por defecto se envía true (activo) al crear
       mapFrom: (item) => (item.active === true ? "Activo" : "Inactivo"),
-    },
-    {
-      header: "Contrato",
-      backendKey: "contract_id",
-      type: "select",
-      editable: true,
-      required: true,
-      hiddenInTable: false,
-      options: [], // Se llenará dinámicamente
-      mapFrom: (item) => item.contract_name || item.contract_id,
     },
   ],
 };

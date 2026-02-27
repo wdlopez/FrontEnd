@@ -9,7 +9,7 @@ export const CLIENT_CONFIG = {
       mapFrom: (item, index) => index + 1
     },
     {
-      header: 'Nombre',
+      header: 'Nombre del cliente',
       backendKey: 'name',
       possibleKeys: ['name', 'ClientEntity_name'],
       required: true,
@@ -30,7 +30,7 @@ export const CLIENT_CONFIG = {
       allowedChars: /[a-zA-Z0-9\s\-_.]/ 
     },
     {
-      header: 'Contacto del cliente',
+      header: 'Nombre Contacto del cliente',
       backendKey: 'contact_person',
       possibleKeys: ['contact_person', 'contacto'],
       required: true,
@@ -41,7 +41,7 @@ export const CLIENT_CONFIG = {
       allowedChars: /[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/
     },
     {
-      header: 'Industria del cliente',
+      header: 'Categoría de cliente',
       backendKey: 'category',
       possibleKeys: ['category'],
       required: true,
@@ -65,7 +65,7 @@ export const CLIENT_CONFIG = {
       ]
     },
     {
-      header: 'Correo',
+      header: 'Correo del cliente',
       backendKey: 'email',
       possibleKeys: ['email'],
       required: true,

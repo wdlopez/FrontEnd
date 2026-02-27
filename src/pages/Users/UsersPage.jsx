@@ -378,8 +378,24 @@ const UsersPage = () => {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="space-y-2">
+      {/* Breadcrumb sobre el fondo gris general */}
+      <div className="space-y-1">
         <BreadCrumb paths={breadcrumbPaths} />
+
+        {/* Solo el bloque del título tiene fondo blanco horizontal */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+              <div className="flex gap-2 items-center">
+                <InfoTooltip size="sm" message={getText("intros.users")} sticky={true}>
+                  <span className="material-symbols-outlined text-gray-400">info</span>
+                </InfoTooltip>
+                <h1 className="text-2xl font-bold text-gray-800">Gestión de {dynamicConfig.name}s</h1>
+              </div>
+              <p className="text-gray-500 text-sm">Administra los accesos y roles del sistema.</p>
+            </div>
+          </div>
+        </div>
       </div>
       
       <Alerts 
@@ -388,18 +404,6 @@ const UsersPage = () => {
         message={alert.message} 
         type={alert.type} 
       />
-
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <div>
-          <div className="flex gap-2 items-center">
-            <InfoTooltip size="sm" message={getText("intros.users")} sticky={true}>
-              <span className="material-symbols-outlined text-gray-400">info</span>
-            </InfoTooltip>
-            <h1 className="text-2xl font-bold text-gray-800">Gestión de {dynamicConfig.name}s</h1>
-          </div>
-          <p className="text-gray-500 text-sm">Administra los accesos y roles del sistema.</p>
-        </div>
-      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (

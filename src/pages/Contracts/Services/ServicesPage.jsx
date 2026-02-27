@@ -15,7 +15,7 @@ import { mapBackendToTable } from '../../../utils/entityMapper';
 import { normalizeList } from '../../../utils/api-helpers';
 import { getText } from '../../../utils/text';
 
-const ServicesPage = ({ id_client }) => {
+const ServicesPage = ({ id_client, embedded = false }) => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(SERVICE_CONFIG);
@@ -150,28 +150,33 @@ const ServicesPage = ({ id_client }) => {
   };
 
   return (
-      <div className="p-4 space-y-4">
-        <div className="space-y-2">
+      <div className={`${embedded ? 'pt-0 px-4 pb-4' : 'p-4'} space-y-4`}>
+        {/* Breadcrumb sobre el fondo gris general */}
+        <div className="space-y-1">
           <BreadCrumb paths={breadcrumbPaths} />
+
+          {/* Solo el bloque del título tiene fondo blanco horizontal */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <div>
+                <div className="flex gap-2 items-center">
+                    <InfoTooltip size="sm" message={getText("intros.services") || "Gestión de servicios contratados por torre y grupo"} sticky={true}>
+                        <span className="material-symbols-outlined text-gray-400">info</span>
+                    </InfoTooltip>
+                    <h1 className="text-2xl font-bold text-gray-800">Servicios</h1>
+                </div>
+                <p className="text-gray-500 text-sm">Detalle operativo de los servicios asociados a contratos.</p>
+              </div>
+            </div>
+          </div>
         </div>
+
         <Alerts 
           open={alert.open} 
           setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })} 
           message={alert.message} 
           type={alert.type} 
         />
-
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div>
-            <div className="flex gap-2 items-center">
-                <InfoTooltip size="sm" message={getText("intros.services") || "Gestión de servicios contratados por torre y grupo"} sticky={true}>
-                    <span className="material-symbols-outlined text-gray-400">info</span>
-                </InfoTooltip>
-                <h1 className="text-2xl font-bold text-gray-800">Servicios Contratados</h1>
-            </div>
-            <p className="text-gray-500 text-sm">Detalle operativo de los servicios asociados a contratos.</p>
-          </div>
-        </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           {loading ? (
@@ -218,11 +223,11 @@ const ServicesPage = ({ id_client }) => {
           config={dynamicConfig}
           onSuccess={fetchData}
           initialValues={{
-            active: true,
             charges_model: 1,
             currency: "USD",
             country: "Colombia"
           }}
+          getExtraPayload={() => ({ active: true })}
         />
 
         <GenericEditModal 
