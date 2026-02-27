@@ -1,8 +1,9 @@
 import { apiContracts } from '../../../config/api';
 
 const WorkOrderService = {
-    getAllOrders: async () => {
-        const response = await apiContracts.get('/work-order');
+    // Permite pasar filtros (por ejemplo clientId) sin romper los usos actuales
+    getAllOrders: async (params = {}) => {
+        const response = await apiContracts.get('/work-order', { params });
         return response.data;
     },
 

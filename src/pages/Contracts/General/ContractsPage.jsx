@@ -14,6 +14,7 @@ import ContractService from "../../../services/Contracts/contract.service";
 import ClientService from "../../../services/Clients/client.service";
 import ProviderService from "../../../services/Providers/provider.service";
 import { CONTRACT_CONFIG } from "../../../config/entities/contract.config";
+import { PROVIDER_CONFIG } from "../../../config/entities/provider.config";
 import { mapBackendToTable } from "../../../utils/entityMapper";
 import { normalizeList } from "../../../utils/api-helpers";
 import { getText } from "../../../utils/text";
@@ -29,7 +30,7 @@ const NAV_ITEMS = [
 
 function ContractPage() {
   const { id_client } = useParams();
-  const { user } = useAuth();
+  const { user, currentUserClientId } = useAuth();
   const [activeTab, setActiveTab] = useState(NAV_ITEMS[0].key);
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,7 @@ function ContractPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isAddProviderOpen, setIsAddProviderOpen] = useState(false);
 
   // Selección y Alertas
   const [selectedId, setSelectedId] = useState(null);
@@ -50,8 +52,12 @@ function ContractPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Si venimos de la ruta de un cliente, filtramos por su ID
-      const params = id_client ? { client_id: id_client } : {};
+      // Si venimos de la ruta de un cliente (ej. super admin), filtramos por su ID.
+      // Si el usuario es Administrador de Contratos, no enviamos client_id: el backend usa el JWT.
+      let params = {};
+      if (id_client) {
+        params = { client_id: id_client };
+      }
 
       const [contractsRes, clientsRes, providersRes] = await Promise.allSettled([
         ContractService.getAll(params),
@@ -85,6 +91,11 @@ function ContractPage() {
              const client = clients.find(c => c.id === item.client_id);
              return client ? client.name : item.client_id;
           };
+
+          // Si hay cliente por defecto (ruta o token), el campo queda visible pero no editable
+          if (id_client || currentUserClientId) {
+            clientCol.disabled = true;
+          }
         }
       }
 
@@ -93,10 +104,14 @@ function ContractPage() {
         providers = normalizeList(providersRes.value);
         const providerCol = newConfig.columns.find((c) => c.backendKey === "provider_id");
         if (providerCol) {
-          providerCol.options = (providers || []).map((p) => ({
+          const providerOptions = (providers || []).map((p) => ({
             value: p.id,
             label: p.legal_name || p.name,
           }));
+          providerCol.options = [
+            ...providerOptions,
+            { value: "__create_provider__", label: "+ Crear proveedor" },
+          ];
           // Mapeo para mostrar nombre en la tabla
           providerCol.mapFrom = (item) => {
              const provider = providers.find(p => p.id === item.provider_id);
@@ -221,23 +236,6 @@ function ContractPage() {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Barra de acciones sobre la tabla */}
-            <div className="flex flex-wrap items-center justify-center gap-3 px-4 pt-3 pb-2 border-b border-gray-100">
-              <HeaderActions
-                AddComponent={
-                  <button
-                    onClick={() => setIsAddOpen(true)}
-                    className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">add</span>
-                    <span>Nuevo {dynamicConfig.name}</span>
-                  </button>
-                }
-                onRefresh={fetchData}
-                showExport={true}
-              />
-            </div>
-
             {loading ? (
               <div className="p-10 text-center text-gray-500">
                 <span className="material-symbols-outlined animate-spin text-4xl text-blue-600">progress_activity</span>
@@ -255,6 +253,21 @@ function ContractPage() {
                 onAdd={() => setIsAddOpen(true)}
                 path="/contract/general/"
                 rowsPerPage={10}
+                headerButtons={
+                  <HeaderActions
+                    AddComponent={
+                      <button
+                        onClick={() => setIsAddOpen(true)}
+                        className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">add</span>
+                        <span>Nuevo {dynamicConfig.name}</span>
+                      </button>
+                    }
+                    onRefresh={fetchData}
+                    showExport={true}
+                  />
+                }
               />
             )}
           </div>
@@ -272,13 +285,39 @@ function ContractPage() {
         config={dynamicConfig}
         onSuccess={fetchData}
         initialValues={{
-          ...(id_client ? { client_id: id_client } : {}),
+          // Cliente por defecto: ruta (ej. super admin desde un cliente) o cliente del token (ej. admin de contratos / usuario con cliente asociado)
+          ...((id_client || currentUserClientId)
+            ? { client_id: id_client || currentUserClientId }
+            : {}),
           currency: "USD",
           language: "es",
           country: "Colombia",
           status: "draft",
         }}
-        getExtraPayload={() => (user?.id ? { created_by: user.id } : {})}
+        getExtraPayload={() => {
+          const basePayload = user?.id ? { created_by: user.id } : {};
+          const defaultClientId = id_client || currentUserClientId;
+          if (defaultClientId) {
+            return { ...basePayload, client_id: defaultClientId };
+          }
+          return basePayload;
+        }}
+        fieldSpecialOption={{
+          field: "provider_id",
+          value: "__create_provider__",
+          onTrigger: () => setIsAddProviderOpen(true),
+        }}
+      />
+
+      <GenericAddModal
+        isOpen={isAddProviderOpen}
+        setIsOpen={setIsAddProviderOpen}
+        service={ProviderService}
+        config={PROVIDER_CONFIG}
+        onSuccess={() => {
+          fetchData();
+          setIsAddProviderOpen(false);
+        }}
       />
 
       <GenericEditModal 

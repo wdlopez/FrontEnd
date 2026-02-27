@@ -1,8 +1,9 @@
 import { apiInvoices } from '../../config/api';
 
 const InvoiceService = {
-  getAllInvoices: async () => {
-    const response = await apiInvoices.get('/Invoice');
+  // Permite pasar filtros (por ejemplo clientId) sin romper los usos actuales
+  getAllInvoices: async (params = {}) => {
+    const response = await apiInvoices.get('/Invoice', { params });
     return response.data; 
   },
 

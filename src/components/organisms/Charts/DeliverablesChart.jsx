@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { typeDel, delFrequency, delCategory } from "../../../pages/Deliverables/delLists";
-import { downloadDeliverableFile } from "../../../services/deliverables-service/getFileDel-service";
 import formatSimpleDate from "../../../utils/formatSimpleDate";
 // ELIMINADO: Se elimina la importación de ContractStateChart
 // import ContractStateChart from "./ContractStateChart";

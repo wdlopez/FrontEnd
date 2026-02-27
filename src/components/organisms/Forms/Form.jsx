@@ -24,6 +24,7 @@ function Form(props, ref) {
     onDelete = null,
     showDelete = false,
     checkboxSelectAllOptions = false,
+    onSpecialSelectOption,
   } = props;
 
   // 1. Preparamos los valores iniciales igual que antes
@@ -50,6 +51,7 @@ function Form(props, ref) {
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors, isDirty, isValid },
   } = useForm({
     defaultValues: initialFormState,
@@ -116,13 +118,13 @@ function Form(props, ref) {
     });
   };
 
-  // Clases de estilo (manteniendo las tuyas)
+  // Clases de estilo: bordes neutros (gris/blanco), botones se mantienen azules
   const inputBase =
     "w-full rounded-[8px] bg-white dark:bg-gray-700 border px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none";
   const inputClass = (name) =>
     errors[name]
       ? `${inputBase} border-red-500 ring-red-500`
-      : `${inputBase} border-blue-200 dark:border-blue-700 focus:border-blue-800 focus:ring-1 focus:ring-blue-700`;
+      : `${inputBase} border-gray-200 dark:border-gray-600 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 dark:focus:border-gray-500 dark:focus:ring-gray-500`;
   const textareaClass = (name) => `${inputClass(name)} min-h-[120px]`;
   const selectClass = (name) => `${inputClass(name)} appearance-none`;
 
@@ -292,10 +294,18 @@ function Form(props, ref) {
                     // Select nativo
                     <select
                       className={selectClass(f.name)}
+                      disabled={f.disabled}
                       {...register(f.name, {
                         ...validationRules,
                         onChange: (e) => {
                           const val = e.target.value;
+
+                          // Opción especial: abrir modal (ej. "Crear proveedor")
+                          if (onSpecialSelectOption && f.name === onSpecialSelectOption.field && val === onSpecialSelectOption.value) {
+                            onSpecialSelectOption.callback();
+                            setValue(f.name, "");
+                            return;
+                          }
 
                           // 1. Ejecutar el onChange específico del campo (EL QUE NECESITAMOS)
                           if (f.onChange) {
@@ -363,7 +373,7 @@ function Form(props, ref) {
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gradient-to-r from-blue-900 to-blue-800 border-t border-blue-700 flex justify-end gap-3">
+        <div className="px-6 py-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-600 flex justify-end gap-3">
           {showDelete && onDelete && (
             <button
               type="button"
@@ -404,7 +414,7 @@ function Form(props, ref) {
                 },
               })
             }
-            className="inline-flex items-center px-4 py-2 border border-blue-800 rounded-md text-blue-800 bg-white hover:bg-blue-50"
+            className="inline-flex items-center px-4 py-2 border border-blue-600 rounded-md text-blue-600 bg-white hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-900/20"
           >
             Borrar
           </button>
@@ -412,10 +422,10 @@ function Form(props, ref) {
           <button
             type="submit"
             disabled={!isValid}
-            className={`inline-flex items-center px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-white transition-all duration-200 font-bold tracking-wide ${
-              isValid 
-                ? 'bg-white text-blue-800 hover:bg-gray-100 shadow-lg transform hover:-translate-y-0.5' 
-                : 'bg-blue-900/50 text-blue-300 border border-blue-700 cursor-not-allowed opacity-70'
+            className={`inline-flex items-center px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-bold tracking-wide ${
+              isValid
+                ? "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-md hover:shadow-lg"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-70 focus:ring-gray-400"
             }`}
           >
             {sendMessage}

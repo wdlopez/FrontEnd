@@ -76,7 +76,8 @@ export const generateFormFields = (config) => {
         placeholder: col.placeholder || '',
         options: col.options || [],
         pattern: col.validation,
-        patternMessage: col.validationMessage || `${col.header} tiene un formato inválido`
+        patternMessage: col.validationMessage || `${col.header} tiene un formato inválido`,
+        disabled: col.disabled || false,
       };
 
       // Agregar handler onInput si hay caracteres permitidos (allowedChars)

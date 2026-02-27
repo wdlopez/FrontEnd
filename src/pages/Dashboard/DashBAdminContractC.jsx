@@ -1,330 +1,412 @@
-import React, { useMemo } from "react";
-
-import { Bar, Pie } from "react-chartjs-2";
-
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from "chart.js";
-
+import React, { useEffect, useState } from "react";
 import { chartColors } from "../../config/colorPalette";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-);
-
-// --- UTILIDADES Y CONSTANTES FUERA DEL COMPONENTE ---
-
-const calculateDays = (a, b) => Math.floor((b - a) / (1000 * 60 * 60 * 24));
+import { normalizeList } from "../../utils/api-helpers";
+import { useAuth } from "../../context/AuthContext";
+import ContractService from "../../services/Contracts/contract.service";
+import SlaService from "../../services/Slas/sla.service";
+import DeliverableService from "../../services/Deliverables/deliverable.service";
+import InvoiceService from "../../services/Invoices/invoice.service";
+import WorkOrderService from "../../services/Contracts/WorkOrders/orders.service";
+import DeliverablesChart from "../../components/organisms/Charts/DeliverablesChart";
+import SlaChart from "../../components/organisms/Charts/SlaChart";
+import KpiCard from "../../components/molecules/KpiCard";
+import WelcomeWidget from "./components/WelcomeWidget";
 
 const formatMoney = (n) =>
   n.toLocaleString("es-CO", {
     style: "currency",
-
     currency: "COP",
-
     minimumFractionDigits: 0,
   });
 
-const classifySLA = (p, min, exp) => {
-  const pct = Number(p),
-    m = Number(min),
-    e = Number(exp);
+function DashBContratoAdmin({ user: userFromProps }) {
+  const { user: authUser, currentUserClientId } = useAuth();
+  const effectiveUser = authUser || userFromProps;
 
-  if (isNaN(pct) || isNaN(m) || isNaN(e)) return null;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (pct < m) return "red";
+  const [contracts, setContracts] = useState([]);
+  const [slasRaw, setSlasRaw] = useState([]);
+  const [deliverablesRaw, setDeliverablesRaw] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [workOrders, setWorkOrders] = useState([]);
 
-  if (pct < e) return "yellow";
+  const [delStateList, setDelStateList] = useState([]);
+  const [delPriorityList, setDelPriorityList] = useState([]);
 
-  return "green";
-};
+  // Secciones DAC: 1.1 Entregables, 1.2 SLAs, 1.3 Finanzas, 1.4 Gobierno
+  const [activeSection, setActiveSection] = useState("dac11");
 
-const STATUS_OPTIONS = [
-  { value: 1, label: "Activo" },
+  const clientId = currentUserClientId;
 
-  { value: 0, label: "Cancelado" },
-
-  { value: 2, label: "Vencido" },
-
-  { value: 3, label: "En Negociación" },
-];
-
-// --- COMPONENTE PRINCIPAL ---
-
-function DashBContratoAdmin({ user, contracts = [], slas = [] }) {
-  // 1. Datos de SLAs por Servicio
-
-  const portfolioData = useMemo(() => {
-    const counts = {};
-
-    slas.forEach((sl) => {
-      const tower = sl.servicelevels?.services?.service_tower || "Desconocido";
-
-      counts[tower] = (counts[tower] || 0) + 1;
-    });
-
-    const labels = Object.keys(counts);
-
-    return {
-      labels,
-
-      datasets: [
-        {
-          label: "Número de SLAs por Servicio",
-
-          data: labels.map((label) => counts[label]),
-
-          backgroundColor: labels.map(
-            (_, idx) => chartColors.status[idx % chartColors.status.length],
-          ),
-        },
-      ],
-    };
-  }, [slas]);
-
-  // 2. KPIs de contrato (Lógica de fechas corregida para el compilador)
-
-  const kpis = useMemo(() => {
-    // Definimos una fecha de referencia estable para este ciclo de renderizado
-
-    const referenceDate = new Date();
-
-    let totalValue = 0,
-      totalAnnual = 0,
-      expiredAnnual = 0,
-      expired90Value = 0;
-
-    // Usamos un bucle for...of que es más fácil de analizar para el compilador que forEach
-
-    for (const c of contracts) {
-      const start = new Date(c.start_date);
-
-      const end = new Date(c.end_date);
-
-      const value = Number(c.total_value) || 0;
-
-      const durationDays = calculateDays(start, end);
-
-      const durationYears = durationDays / 365;
-
-      const annualValue = durationYears > 0 ? value / durationYears : value;
-
-      totalValue += value;
-
-      totalAnnual += annualValue;
-
-      if (end < referenceDate) {
-        expiredAnnual += annualValue;
-
-        if (calculateDays(end, referenceDate) <= 90) {
-          expired90Value += value;
-        }
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!clientId) {
+        setLoading(false);
+        setError(
+          "No se encontró un cliente asociado al usuario. Contacta al administrador."
+        );
+        return;
       }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // El backend del Administrador de Contratos obtiene el cliente del JWT;
+        // no enviar client_id en query (el API rechaza ese param por whitelist).
+        const query = {};
+
+        const [
+          contractsRes,
+          slasRes,
+          deliverablesRes,
+          invoicesRes,
+          workOrdersRes,
+        ] = await Promise.allSettled([
+          ContractService.getAll(query),
+          SlaService.getAll(query),
+          DeliverableService.getAll(query),
+          InvoiceService.getAllInvoices(query),
+          WorkOrderService.getAllOrders(query),
+        ]);
+
+        if (contractsRes.status === "fulfilled") {
+          setContracts(normalizeList(contractsRes.value));
+        } else {
+          setContracts([]);
+        }
+
+        if (slasRes.status === "fulfilled") {
+          setSlasRaw(normalizeList(slasRes.value));
+        } else {
+          setSlasRaw([]);
+        }
+
+        if (deliverablesRes.status === "fulfilled") {
+          setDeliverablesRaw(normalizeList(deliverablesRes.value));
+        } else {
+          setDeliverablesRaw([]);
+        }
+
+        if (invoicesRes.status === "fulfilled") {
+          setInvoices(normalizeList(invoicesRes.value));
+        } else {
+          setInvoices([]);
+        }
+
+        if (workOrdersRes.status === "fulfilled") {
+          setWorkOrders(normalizeList(workOrdersRes.value));
+        } else {
+          setWorkOrders([]);
+        }
+      } catch (err) {
+        console.error("Error cargando dashboard de contratos:", err);
+        setError("No se pudo cargar el resumen del Administrador de Contratos.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [clientId]);
+
+  // Listas dinámicas de estados y prioridades de entregables (para DeliverablesChart)
+  useEffect(() => {
+    if (!Array.isArray(deliverablesRaw) || deliverablesRaw.length === 0) {
+      setDelStateList([]);
+      setDelPriorityList([]);
+      return;
     }
 
-    return [
-      { label: "Suma Total Contratos", value: formatMoney(totalValue) },
+    const stateValues = new Set();
+    const priorityValues = new Set();
 
-      { label: "Valor Anual Contratos", value: formatMoney(totalAnnual) },
-
-      { label: "Anual Expirados", value: formatMoney(expiredAnnual) },
-
-      { label: "Expirados (90 días)", value: formatMoney(expired90Value) },
-    ];
-  }, [contracts]);
-
-  // 3. Gastos por proveedor
-
-  const supplierData = useMemo(() => {
-    const agg = contracts.reduce((acc, contract) => {
-      const name = contract.provider?.prov_name || "Desconocido";
-
-      acc[name] = (acc[name] || 0) + (Number(contract.total_value) || 0);
-
-      return acc;
-    }, {});
-
-    const labels = Object.keys(agg);
-
-    return {
-      labels,
-
-      datasets: [
-        {
-          label: "Gastos por Proveedor",
-
-          data: labels.map((name) => agg[name]),
-
-          backgroundColor: labels.map(
-            (_, idx) => chartColors.status[idx % chartColors.status.length],
-          ),
-        },
-      ],
-    };
-  }, [contracts]);
-
-  // 4. Datos de cumplimiento contractual
-
-  const complianceData = useMemo(() => {
-    const countByStatus = {};
-
-    STATUS_OPTIONS.forEach((opt) => {
-      countByStatus[opt.value] = 0;
-    });
-
-    contracts.forEach((contract) => {
-      if (
-        Object.prototype.hasOwnProperty.call(countByStatus, contract.status)
-      ) {
-        countByStatus[contract.status]++;
+    deliverablesRaw.forEach((d) => {
+      if (d.del_state !== undefined && d.del_state !== null) {
+        stateValues.add(d.del_state);
+      }
+      if (d.del_priority !== undefined && d.del_priority !== null) {
+        priorityValues.add(d.del_priority);
       }
     });
 
-    return {
-      labels: STATUS_OPTIONS.map((opt) => opt.label),
-
-      datasets: [
-        {
-          data: STATUS_OPTIONS.map((opt) => countByStatus[opt.value]),
-
-          backgroundColor: chartColors.status.slice(0, STATUS_OPTIONS.length),
-        },
-      ],
-    };
-  }, [contracts]);
-
-  // 5. Clasificación SLA
-
-  const slaData = useMemo(() => {
-    const tally = {};
-
-    const providerByContract = Object.fromEntries(
-      contracts.map((c) => [
-        Number(c.cont_id),
-        c.provider?.prov_name || "Desconocido",
-      ]),
+    setDelStateList(
+      Array.from(stateValues).map((value) => ({
+        value,
+        label: String(value),
+      })),
     );
 
-    slas.forEach((sl) => {
-      const prov = providerByContract[sl.servicelevels?.cont_id] || 'Desconocido';
+    setDelPriorityList(
+      Array.from(priorityValues).map((value) => ({
+        value,
+        label: String(value),
+      })),
+    );
+  }, [deliverablesRaw]);
 
-      tally[prov] = tally[prov] || { green: 0, yellow: 0, red: 0 };
+  if (loading) {
+    return (
+      <div className="p-6 text-center text-gray-500">
+        Cargando panel de Administrador de Contratos...
+      </div>
+    );
+  }
 
-      sl.sla_credit_pachieve?.forEach((p) => {
-        const cat = classifySLA(
-          p,
-          sl.servicelevels.sla_minimun_target,
-          sl.servicelevels.sla_expect_target,
-        );
+  // Estado vacío: sin contratos aún -> CTA Crear primer contrato
+  if (!loading && contracts.length === 0) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold">
+            Bienvenido, {effectiveUser?.firstName || "Administrador"}
+          </h3>
+          <p className="text-gray-500 font-medium">
+            Aún no tienes contratos configurados para tu cliente.
+          </p>
+        </div>
 
-        if (cat) tally[prov][cat]++;
-      });
-    });
-
-    const providers = Object.keys(tally);
-
-    return {
-      labels: providers,
-
-      datasets: [
-        {
-          label: "Supera Objetivo",
-          data: providers.map((p) => tally[p].green),
-          backgroundColor: chartColors.sla.green,
-        },
-
-        {
-          label: "Mínimo Requerido",
-          data: providers.map((p) => tally[p].yellow),
-          backgroundColor: chartColors.sla.yellow,
-        },
-
-        {
-          label: "Incumplido",
-          data: providers.map((p) => tally[p].red),
-          backgroundColor: chartColors.sla.red,
-        },
-      ],
-    };
-  }, [slas, contracts]);
+        <WelcomeWidget
+          title="Contratos"
+          message="Configura tu primer contrato para habilitar los dashboards ejecutivos, financieros y de gobierno del servicio."
+          linkTo="/contract/general?action=create_first"
+          buttonText="Comenzar: Crear mi primer contrato"
+          count={0}
+          icon="description"
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div>
-        <h3 className="text-lg font-semibold">Bienvenido, {user.firstName}</h3>
-        <p className="text-gray-500 font-medium">Administrador de Contratos</p>
+        <h3 className="text-lg font-semibold">
+          Bienvenido, {effectiveUser?.firstName || "Administrador"}
+        </h3>
+        <p className="text-gray-500 font-medium">
+          Administrador de Contratos – Vista DAC
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {kpis.map((kpi) => (
-          <div
-            key={kpi.label}
-            className="bg-white shadow rounded-lg p-4 text-center"
+      {error && (
+        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Tabs DAC */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex flex-wrap gap-4 text-sm font-medium">
+          <button
+            type="button"
+            onClick={() => setActiveSection("dac11")}
+            className={`pb-2 border-b-2 ${
+              activeSection === "dac11"
+                ? "border-blue-600 text-blue-700"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
           >
-            <h4 className="text-sm uppercase text-gray-500 mb-1">
-              {kpi.label}
-            </h4>
-
-            <p className="text-2xl font-bold">{kpi.value}</p>
-          </div>
-        ))}
+            DAC 1.1 Entregables
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection("dac12")}
+            className={`pb-2 border-b-2 ${
+              activeSection === "dac12"
+                ? "border-blue-600 text-blue-700"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            DAC 1.2 SLAs
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection("finanzas")}
+            className={`pb-2 border-b-2 ${
+              activeSection === "finanzas"
+                ? "border-blue-600 text-blue-700"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            DAC 1.3 Finanzas
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection("gobierno")}
+            className={`pb-2 border-b-2 ${
+              activeSection === "gobierno"
+                ? "border-blue-600 text-blue-700"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            DAC 1.4 Gobierno
+          </button>
+        </nav>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white shadow rounded-lg p-4 h-80">
-          <h4 className="text-lg mb-4">Número de SLAs por Servicio</h4>
-
-          <div className="h-64">
-            <Bar
-              data={portfolioData}
-              options={{ maintainAspectRatio: false }}
+      {/* DAC 1.1 – Resumen de Entregables */}
+      {activeSection === "dac11" && (
+        <div className="space-y-6">
+          <p className="text-sm text-gray-600">
+            Vista ejecutiva de cumplimiento de Entregables (DAC 1.1) para el
+            cliente asignado.
+          </p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <DeliverablesChart
+              deliverables={deliverablesRaw}
+              delStateList={delStateList}
+              delPriority={delPriorityList}
             />
           </div>
         </div>
+      )}
 
-        <div className="bg-white shadow rounded-lg p-4 h-80">
-          <h4 className="text-lg mb-4">Gasto por Proveedor</h4>
-
-          <div className="h-64">
-            <Bar data={supplierData} options={{ maintainAspectRatio: false }} />
+      {/* DAC 1.2 – Resumen de SLAs */}
+      {activeSection === "dac12" && (
+        <div className="space-y-6">
+          <p className="text-sm text-gray-600">
+            Vista ejecutiva del desempeño de los SLAs (DAC 1.2) para el cliente
+            asignado.
+          </p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <SlaChart sla={slasRaw} />
           </div>
         </div>
+      )}
 
-        <div className="bg-white shadow rounded-lg p-4 h-80">
-          <h4 className="text-lg mb-4">Rendimiento SLA</h4>
+      {/* Sección Finanzas */}
+      {activeSection === "finanzas" && (
+        <div className="space-y-6">
+          <p className="text-sm text-gray-600">
+            Resumen de facturación asociada a los contratos del cliente (DAC
+            1.3).
+          </p>
 
-          <div className="h-64">
-            <Bar
-              data={slaData}
-              options={{ indexAxis: "y", maintainAspectRatio: false }}
-            />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+              <h4 className="text-sm font-semibold text-gray-800">
+                Facturas recientes
+              </h4>
+              <span className="text-xs text-gray-500">
+                Muestra hasta 5 facturas filtradas por tu cliente
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              {invoices.length === 0 ? (
+                <p className="p-4 text-sm text-gray-500">
+                  No hay facturas registradas para este cliente.
+                </p>
+              ) : (
+                <table className="min-w-full text-sm text-left text-gray-600">
+                  <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                    <tr>
+                      <th className="px-4 py-2">Factura</th>
+                      <th className="px-4 py-2">Monto</th>
+                      <th className="px-4 py-2">Emisión</th>
+                      <th className="px-4 py-2">Vencimiento</th>
+                      <th className="px-4 py-2">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.slice(0, 5).map((inv) => (
+                      <tr
+                        key={inv.id || inv.invoice_id}
+                        className="border-t border-gray-100 hover:bg-gray-50"
+                      >
+                        <td className="px-4 py-2">
+                          {inv.invoice_number || inv.code || "-"}
+                        </td>
+                        <td className="px-4 py-2">
+                          {formatMoney(Number(inv.amount) || 0)}
+                        </td>
+                        <td className="px-4 py-2">
+                          {inv.issue_date
+                            ? new Date(inv.issue_date).toLocaleDateString(
+                                "es-CO",
+                              )
+                            : "-"}
+                        </td>
+                        <td className="px-4 py-2">
+                          {inv.due_date
+                            ? new Date(inv.due_date).toLocaleDateString("es-CO")
+                            : "-"}
+                        </td>
+                        <td className="px-4 py-2 capitalize">
+                          {inv.status || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
+      )}
 
-        <div className="bg-white shadow rounded-lg p-4 h-80">
-          <h4 className="text-lg mb-4">Cumplimiento Contractual</h4>
+      {/* Sección Gobierno */}
+      {activeSection === "gobierno" && (
+        <div className="space-y-6">
+          <p className="text-sm text-gray-600">
+            Gobierno operativo de contratos: seguimiento de órdenes de trabajo
+            (Work Orders) asociadas (DAC 1.4).
+          </p>
 
-          <div className="h-64">
-            <Pie
-              data={complianceData}
-              options={{ maintainAspectRatio: false }}
-            />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+              <h4 className="text-sm font-semibold text-gray-800">
+                Work Orders pendientes
+              </h4>
+              <span className="text-xs text-gray-500">
+                Muestra hasta 5 órdenes abiertas o en progreso
+              </span>
+            </div>
+            <div>
+              {workOrders.length === 0 ? (
+                <p className="p-4 text-sm text-gray-500">
+                  No hay órdenes de trabajo registradas para este cliente.
+                </p>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {workOrders
+                    .filter(
+                      (wo) =>
+                        wo.status === "open" || wo.status === "in_progress",
+                    )
+                    .slice(0, 5)
+                    .map((wo) => (
+                      <li key={wo.id} className="px-4 py-3 flex justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            {wo.title || `Orden ${wo.id}`}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Vence:{" "}
+                            {wo.due_date
+                              ? new Date(wo.due_date).toLocaleDateString(
+                                  "es-CO",
+                                )
+                              : "Sin fecha definida"}
+                          </p>
+                        </div>
+                        <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 self-start">
+                          {wo.status === "open"
+                            ? "Abierta"
+                            : wo.status === "in_progress"
+                              ? "En progreso"
+                              : wo.status || "Estado"}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -50,6 +50,13 @@ function InteractiveTable({
   const [userHiddenColumns, setUserHiddenColumns] = useState([]);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
 
+  // Menú de acciones por fila (tres líneas) — posición para portal y fila abierta
+  const [openActionsRowIndex, setOpenActionsRowIndex] = useState(null);
+  const [openActionsRow, setOpenActionsRow] = useState(null);
+  const [rowMenuPosition, setRowMenuPosition] = useState({ left: 0, top: 0 });
+  const rowActionsMenuRef = useRef(null);
+  const rowMenuTriggerRef = useRef(null);
+
   // Referencia para cerrar el menú al hacer click fuera
   const columnMenuRef = useRef(null);
   const columnButtonRef = useRef(null);
@@ -59,6 +66,12 @@ function InteractiveTable({
     const handleClickOutside = (event) => {
       if (columnMenuRef.current && !columnMenuRef.current.contains(event.target)) {
         setShowColumnMenu(false);
+      }
+      const insideMenu = rowActionsMenuRef.current?.contains(event.target);
+      const onTrigger = rowMenuTriggerRef.current?.contains(event.target);
+      if (!insideMenu && !onTrigger) {
+        setOpenActionsRowIndex(null);
+        setOpenActionsRow(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -82,6 +95,24 @@ function InteractiveTable({
       window.removeEventListener('scroll', updatePos, true);
     };
   }, [showColumnMenu]);
+
+  // Actualizar posición del menú de acciones al hacer scroll/resize
+  useEffect(() => {
+    if (openActionsRowIndex === null || !rowMenuTriggerRef.current) return;
+    const updatePos = () => {
+      if (rowMenuTriggerRef.current) {
+        const r = rowMenuTriggerRef.current.getBoundingClientRect();
+        setRowMenuPosition({ left: r.left, top: r.bottom });
+      }
+    };
+    updatePos();
+    window.addEventListener("scroll", updatePos, true);
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, true);
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [openActionsRowIndex]);
 
   // console.log(path);
   // Ajusta rowsPerPage según la altura de la ventana (solo cuando la paginación es local)
@@ -397,8 +428,8 @@ function InteractiveTable({
                   />
                 ))}
 
-                {/* Columna de acciones */}
-                <col style={{ minWidth: "100px" }} />
+                {/* Columna de acciones (menú compacto) */}
+                <col style={{ minWidth: "48px", width: "48px" }} />
               </colgroup>
 
               <thead className="bg-customBluee text-white dark:bg-dark1 dark:text-gray-200 text-xs">
@@ -413,7 +444,7 @@ function InteractiveTable({
                   {/* Acciones */}
                   {(onDelete || actionButton || path !== undefined) &&
                     (
-                      <th className={`sticky ${showActionColumn ? "left-[35px]" : "left-0"} z-30 px-4 py-3 text-center font-bold bg-customBlue dark:bg-dark1 dark:text-gray-200 border-r-2 border-r-blue-300 dark:border-r-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.2)] min-w-[100px]`}>
+                      <th className={`sticky ${showActionColumn ? "left-[35px]" : "left-0"} z-30 px-1 py-3 text-center font-bold bg-customBlue dark:bg-dark1 dark:text-gray-200 border-r-2 border-r-blue-300 dark:border-r-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.2)] w-12 min-w-[48px]`}>
                         Acciones
                       </th>
                     )}
@@ -493,60 +524,30 @@ function InteractiveTable({
                       </td>
                     )}
 
-                    {/* Acciones a la Izquierda */}
+                    {/* Acciones: menú de tres líneas; al desplegar solo iconos, render en portal para no dañar tabla */}
                     {(onDelete || onAdd || actionButton || path !== undefined) &&
-                      <td className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 min-w-[100px] sticky ${showActionColumn ? "left-[35px]" : "left-0"} z-20 bg-white group-odd:bg-gray-50 group-hover:bg-blue-50 dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)]`}>
-                        <div className="flex items-center justify-center gap-2">
-                            {/* Botón Editar */}
-                            {onEdit && (
-                                <button
-                                    onClick={() => onEdit(row)}
-                                    disabled={isSaving}
-                                    className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
-                                    title="Editar"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">edit</span>
-                                </button>
-                            )}
-
-                            {/* Botón Agregar */}
-                            {onAdd && (
-                                <button
-                                    onClick={() => onAdd()}
-                                    className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors"
-                                    title="Agregar"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">add</span>
-                                </button>
-                            )}
-
-                            {/* Botón Eliminar */}
-                            {onDelete && (
-                                <button
-                                    onClick={() => onDelete(row)}
-                                    disabled={isSaving}
-                                    className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
-                                    title="Eliminar"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">delete</span>
-                                </button>
-                            )}
-
-                            {/* Botón Ver Detalles */}
-                            {path && (
-                                <Link to={`${path}${row.id}`} className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors" title="Ver detalles">
-                                    <span className="material-symbols-outlined text-[20px]">visibility</span>
-                                </Link>
-                            )}
-
-                            {/* Acciones extra */}
-                            {actionButton && (
-                              React.isValidElement(actionButton)
-                                ? React.cloneElement(actionButton, { row })
-                                : typeof actionButton === "function"
-                                  ? actionButton(row)
-                                  : null
-                            )}
+                      <td className={`px-1 py-3 border-r border-gray-200 dark:border-gray-700 w-12 min-w-[48px] sticky ${showActionColumn ? "left-[35px]" : "left-0"} z-20 bg-white group-odd:bg-gray-50 group-hover:bg-blue-50 dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] align-top`}>
+                        <div className="relative flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              if (openActionsRowIndex === rowIndex) {
+                                setOpenActionsRowIndex(null);
+                                setOpenActionsRow(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setRowMenuPosition({ left: rect.left, top: rect.bottom });
+                                setOpenActionsRowIndex(rowIndex);
+                                setOpenActionsRow(row);
+                                rowMenuTriggerRef.current = e.currentTarget;
+                              }
+                            }}
+                            disabled={isSaving}
+                            className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
+                            title="Acciones"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">menu</span>
+                          </button>
                         </div>
                       </td>}
 
@@ -720,6 +721,70 @@ function InteractiveTable({
             </table>
           </div>
         </div>
+
+        {/* Menú de acciones por fila: render en portal para no superponer la barra de herramientas; solo iconos */}
+        {openActionsRowIndex !== null && openActionsRow &&
+          createPortal(
+            <div
+              ref={rowActionsMenuRef}
+              className="fixed z-[9999] py-1 px-1 flex flex-row items-center gap-1 bg-white dark:bg-dark3 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl"
+              style={{ left: rowMenuPosition.left, top: rowMenuPosition.top + 4 }}
+            >
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={() => { onEdit(openActionsRow); setOpenActionsRowIndex(null); setOpenActionsRow(null); }}
+                  disabled={isSaving}
+                  title="Editar"
+                  className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 disabled:opacity-50 rounded transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">edit</span>
+                </button>
+              )}
+              {onAdd && (
+                <button
+                  type="button"
+                  onClick={() => { onAdd(); setOpenActionsRowIndex(null); setOpenActionsRow(null); }}
+                  title="Crear"
+                  className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">add</span>
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={() => { onDelete(openActionsRow); setOpenActionsRowIndex(null); setOpenActionsRow(null); }}
+                  disabled={isSaving}
+                  title="Eliminar"
+                  className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 disabled:opacity-50 rounded transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+              )}
+              {path && (
+                <Link
+                  to={`${path}${openActionsRow.id}`}
+                  onClick={() => { setOpenActionsRowIndex(null); setOpenActionsRow(null); }}
+                  title="Ver detalles"
+                  className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded transition-colors inline-flex"
+                >
+                  <span className="material-symbols-outlined text-[20px]">visibility</span>
+                </Link>
+              )}
+              {actionButton && (
+                <div onClick={() => { setOpenActionsRowIndex(null); setOpenActionsRow(null); }}>
+                  {React.isValidElement(actionButton)
+                    ? React.cloneElement(actionButton, { row: openActionsRow })
+                    : typeof actionButton === "function"
+                      ? actionButton(openActionsRow)
+                      : null}
+                </div>
+              )}
+            </div>,
+            document.body
+          )}
+
         <Pagination
           currentPage={effectiveCurrentPage}
           totalPages={effectiveTotalPages}

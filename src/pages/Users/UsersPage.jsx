@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
@@ -13,6 +14,7 @@ import UserService from '../../services/User/user.service';
 import RoleService from '../../services/Role/role.service';
 import ClientService from '../../services/Clients/client.service';
 import ProviderService from '../../services/Providers/provider.service';
+import UserClientService from '../../services/Clients/user-clients.service';
 import { USER_CONFIG } from '../../config/entities/user.config';
 import { mapBackendToTable } from '../../utils/entityMapper';
 import { normalizeList } from '../../utils/api-helpers';
@@ -40,6 +42,16 @@ const UsersPage = () => {
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
 
+  // Estado para valores iniciales del formulario de creación (flujo guiado)
+  const [addInitialValues, setAddInitialValues] = useState({});
+
+  // Router: leer parámetros de la URL para el flujo guiado
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const actionParam = searchParams.get('action');
+  const clientIdParam = searchParams.get('clientId');
+  const clientNameParam = searchParams.get('clientName');
+
   const formColumns = dynamicConfig.columns.filter(col => !col.hideInForm);
 
   const breadcrumbPaths = [
@@ -48,6 +60,7 @@ const UsersPage = () => {
   ];
 
   const hasInitialized = useRef(false);
+  const hasHandledCreateAdmin = useRef(false);
 
   // 1. Cargar datos
   const fetchData = async (page = 1) => {
@@ -84,10 +97,19 @@ const UsersPage = () => {
 
       if (clientsRes.status === 'fulfilled') {
         const clientCol = newConfig.columns.find(c => c.backendKey === 'entityId');
-        if (clientCol) clientCol.options = normalizeList(clientsRes.value).map(c => ({ 
-          value: `c_${c.id}`, 
-          label: `Cliente: ${c.name}` 
-        }));
+        if (clientCol) {
+          clientCol.options = normalizeList(clientsRes.value).map(c => ({ 
+            value: `c_${c.id}`, 
+            label: `Cliente: ${c.name}` 
+          }));
+
+          // Si venimos del flujo guiado de creación de cliente,
+          // mostramos el campo de cliente en el formulario de usuario y lo bloqueamos.
+          if (actionParam === 'create_admin' && clientIdParam) {
+            clientCol.hideInForm = false;
+            clientCol.disabled = true;
+          }
+        }
       }
 
       if (providersRes.status === 'fulfilled') {
@@ -115,23 +137,86 @@ const UsersPage = () => {
     }
   }, []);
 
-  const handleUserCreated = (response) => {
-  setIsAddModalOpen(false);
-  fetchData(currentPage);
+  // Efecto: flujo guiado desde la creación de Cliente -> creación de Usuario administrador
+  useEffect(() => {
+    if (actionParam === 'create_admin' && clientIdParam && !hasHandledCreateAdmin.current) {
+      hasHandledCreateAdmin.current = true;
+
+      // Prellenamos el valor de cliente usando el mismo formato que las options (c_{id})
+      setAddInitialValues(prev => ({
+        ...prev,
+        entityId: `c_${clientIdParam}`,
+      }));
+
+      // Abrimos automáticamente el modal de creación de usuario
+      setIsAddModalOpen(true);
+
+      // Mensaje sutil para reforzar el contexto (opcional, sin bloquear)
+      if (clientNameParam) {
+        Swal.fire({
+          title: 'Crear Administrador',
+          text: `Ahora crea el primer usuario administrador para el cliente "${clientNameParam}".`,
+          icon: 'info',
+          timer: 3500,
+          showConfirmButton: false,
+        });
+      }
+    }
+  }, [actionParam, clientIdParam, clientNameParam]);
+
+  const handleUserCreated = async (response) => {
+    setIsAddModalOpen(false);
+    fetchData(currentPage);
   
-  console.log("Respuesta completa del servidor:", response);
+    console.log("Respuesta completa del servidor:", response);
 
-  // Intentamos extraer el objeto de datos
-  const data = response?.data || response;
+    // Intentamos extraer el objeto de datos
+    const data = response?.data || response;
 
-  const userId = data?.id || data?.userId || (Array.isArray(data) ? data[0]?.id : null);
+    const userId = data?.id || data?.userId || (Array.isArray(data) ? data[0]?.id : null);
 
-  if (userId) {
+    if (!userId) {
+      console.error("No se pudo obtener el ID. Verifica que GenericAddModal pase el resultado al onSuccess.");
+      return;
+    }
+
     setCreatedUser({
       id: userId,
       name: data?.firstName ? `${data.firstName} ${data.lastName || ''}` : "Nuevo Usuario"
     });
 
+    // Flujo guiado: venimos de crear un cliente y debemos asociar automáticamente
+    if (actionParam === 'create_admin' && clientIdParam) {
+      try {
+        await UserClientService.create({
+          userId,
+          clientId: clientIdParam,
+          isPrincipal: true,
+        });
+
+        Swal.fire({
+          title: "¡Usuario creado y asignado!",
+          text: clientNameParam
+            ? `El usuario ha sido vinculado automáticamente al cliente "${clientNameParam}".`
+            : "El usuario ha sido vinculado automáticamente al cliente.",
+          icon: "success",
+          timer: 3500,
+          showConfirmButton: false,
+        });
+      } catch (error) {
+        console.error("Error creando relación usuario-cliente:", error);
+        Swal.fire(
+          "Usuario creado",
+          "Se creó el usuario, pero no se pudo crear la relación con el cliente. Puedes asignarlo manualmente más tarde.",
+          "warning"
+        );
+      }
+
+      // No mostramos el AssignClientModal en este flujo guiado
+      return;
+    }
+
+    // Flujo normal: seguimos usando el AssignClientModal opcional
     Swal.fire({
       title: "¡Usuario Creado!",
       text: "¿Deseas asociar este usuario a un cliente ahora?",
@@ -145,10 +230,7 @@ const UsersPage = () => {
         setShowAssignModal(true);
       }
     });
-  } else {
-    console.error("No se pudo obtener el ID. Verifica que GenericAddModal pase el resultado al onSuccess.");
-  }
-};
+  };
 
   // Acciones de Tabla
   const openEditModal = (row) => {
@@ -206,6 +288,15 @@ const UsersPage = () => {
     if (col.editable === false) nonEditableColumns.push(col.header);
   });
 
+  const getUserExtraPayload = () => {
+    if (actionParam === 'create_admin' && clientIdParam) {
+      return {
+        entityId: `c_${clientIdParam}`,
+      };
+    }
+    return {};
+  };
+
   return (
     <div className="p-4 space-y-4">
       <div className="space-y-2">
@@ -232,23 +323,6 @@ const UsersPage = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Barra de acciones sobre la tabla */}
-        <div className="flex flex-wrap items-center justify-center gap-3 px-4 pt-3 pb-2 border-b border-gray-100">
-          <HeaderActions 
-            AddComponent={
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[20px]">add</span>
-                <span>Nuevo {dynamicConfig.name}</span>
-              </button>
-            }
-            showExport={true} 
-            onRefresh={() => fetchData(currentPage)}
-          />
-        </div>
-
         {loading ? (
           <div className="p-10 text-center text-gray-500">
             <span className="material-symbols-outlined animate-spin text-4xl text-blue-600">progress_activity</span>
@@ -271,6 +345,21 @@ const UsersPage = () => {
             serverPage={currentPage}
             serverTotalPages={totalPages}
             onServerPageChange={(page) => fetchData(page)}
+            headerButtons={
+              <HeaderActions
+                AddComponent={
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">add</span>
+                    <span>Nuevo {dynamicConfig.name}</span>
+                  </button>
+                }
+                showExport={true}
+                onRefresh={() => fetchData(currentPage)}
+              />
+            }
           />
         )}
       </div>
@@ -283,6 +372,8 @@ const UsersPage = () => {
         service={UserService}
         config={dynamicConfig}
         onSuccess={handleUserCreated} // <--- Aquí conectamos el flujo
+        initialValues={addInitialValues}
+        getExtraPayload={getUserExtraPayload}
       />
 
       {/* Nuevo Modal de Asignación de Cliente */}

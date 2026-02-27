@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
@@ -14,6 +16,7 @@ import { mapBackendToTable } from '../../utils/entityMapper';
 import { normalizeList } from '../../utils/api-helpers';
 
 const ClientsPage = () => {
+  const navigate = useNavigate();
 
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +116,47 @@ const ClientsPage = () => {
     if (col.editable === false) nonEditableColumns.push(col.header);
   });
 
+  const handleClientCreated = (response) => {
+    // Refrescamos la tabla de clientes
+    fetchClients();
+
+    // Intentamos extraer el objeto de datos de la respuesta
+    const data = response?.data || response;
+
+    // Heurísticas para obtener id y nombre del cliente
+    let clientId = data?.id || data?.clientId || data?.ClientEntity_id;
+    let clientName = data?.name || data?.ClientEntity_name;
+
+    if (Array.isArray(data) && data.length > 0) {
+      clientId = clientId || data[0]?.id || data[0]?.clientId || data[0]?.ClientEntity_id;
+      clientName = clientName || data[0]?.name || data[0]?.ClientEntity_name;
+    }
+
+    if (clientId && clientName) {
+      // Toast guiado hacia la creación del administrador
+      Swal.fire({
+        title: "Client created! Now, let's assign an Administrator.",
+        icon: "success",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+
+      const searchParams = new URLSearchParams({
+        action: "create_admin",
+        clientId: String(clientId),
+        clientName: clientName,
+      });
+
+      // Ruta real del listado de usuarios protegida en App.jsx
+      navigate(`/settings/userNroles?${searchParams.toString()}`);
+    } else {
+      console.warn("No se pudo obtener el ID o el nombre del cliente desde la respuesta:", response);
+    }
+  };
+
   return (
     <div className="p-4 space-y-4">
       <div className="space-y-1">
@@ -138,23 +182,6 @@ const ClientsPage = () => {
       />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Barra de acciones sobre la tabla */}
-        <div className="flex flex-wrap items-center justify-center gap-3 px-4 pt-3 pb-2 border-b border-gray-100">
-          <HeaderActions
-            AddComponent={
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[20px]">add</span>
-                <span>Nuevo {CLIENT_CONFIG.name}</span>
-              </button>
-            }
-            onRefresh={fetchClients}
-            showExport={true}
-          />
-        </div>
-
         {loading ? (
           <div className="p-10 text-center text-gray-500">
             <span className="material-symbols-outlined animate-spin text-4xl text-blue-600">progress_activity</span>
@@ -172,6 +199,14 @@ const ClientsPage = () => {
             onAdd={() => setIsAddModalOpen(true)}
             path="/client/"
             rowsPerPage={10}
+            headerButtons={
+              <HeaderActions
+                onAdd={() => setIsAddModalOpen(true)}
+                addButtonLabel={`Nuevo ${CLIENT_CONFIG.name}`}
+                showExport={true}
+                onRefresh={fetchClients}
+              />
+            }
           />
         )}
       </div>
@@ -182,7 +217,7 @@ const ClientsPage = () => {
         setIsOpen={setIsAddModalOpen}
         service={ClientService}
         config={CLIENT_CONFIG}
-        onSuccess={fetchClients}
+        onSuccess={handleClientCreated}
       />
 
       {/* Modal Genérico de Edición */}

@@ -14,6 +14,7 @@ const GenericAddModal = ({
   onSuccess,
   initialValues = {},
   getExtraPayload,
+  fieldSpecialOption,
 }) => {
   const [loading, setLoading] = useState(false);
   const formFields = generateFormFields(config);
@@ -24,6 +25,7 @@ const GenericAddModal = ({
       const payload = {};
       Object.keys(formData).forEach(key => {
         let value = formData[key];
+        if (value === "__create_provider__") return;
         const field = formFields.find(f => f.name === key);
         if (field?.type === 'number') {
           const parsed = parseFloat(value);
@@ -97,6 +99,7 @@ const GenericAddModal = ({
             onCancel={() => setIsOpen(false)}
             gridLayout={true}
             initialValues={initialValues}
+            onSpecialSelectOption={fieldSpecialOption ? { field: fieldSpecialOption.field, value: fieldSpecialOption.value, callback: fieldSpecialOption.onTrigger } : undefined}
           />
         )}
       </div>
