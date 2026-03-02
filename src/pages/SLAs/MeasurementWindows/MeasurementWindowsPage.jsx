@@ -13,7 +13,7 @@ import { mapBackendToTable } from '../../../utils/entityMapper';
 import { normalizeList } from '../../../utils/api-helpers';
 import { getText } from '../../../utils/text';
 
-const MeasurementWindowsPage = () => {
+const MeasurementWindowsPage = ({ embedded = false }) => {
   const [windows, setWindows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(MWINDOW_CONFIG);
@@ -53,7 +53,9 @@ const MeasurementWindowsPage = () => {
   const nonEditableColumns = [];
 
   dynamicConfig.columns.forEach(col => {
-    if (col.backendKey && !col.hiddenInTable) columnMapping[col.header] = col.backendKey;
+    if (col.backendKey && !col.hiddenInTable && !col.hideInTable) {
+      columnMapping[col.header] = col.backendKey;
+    }
     if (col.options) selectColumns[col.header] = col.options;
     if (col.editable === false) nonEditableColumns.push(col.header);
   });
@@ -101,7 +103,7 @@ const MeasurementWindowsPage = () => {
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className={embedded ? "space-y-4" : "p-4 space-y-4"}>
       {/* Encabezado con fondo blanco horizontal */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
         <div className="flex justify-between items-center">

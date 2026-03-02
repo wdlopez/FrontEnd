@@ -82,12 +82,13 @@ export const MWINDOW_CONFIG = {
       backendKey: "active",
       type: "select",
       options: [
-        { value: 1, label: "Activa" },
-        { value: 0, label: "Inactiva" },
+        { value: 1, label: "Activo" },
+        { value: 0, label: "Inactivo" },
       ],
       editable: true,
       required: false,
-      mapFrom: (item) => (item.active === 1 ? "Activa" : "Inactiva"),
+      hideInForm: true, // No mostrar en modales de creación/edición; por defecto se envía 1 (activo)
+      mapFrom: (item) => (item.active === 1 ? "Activo" : "Inactivo"),
     },
     {
       header: "Fechas de exclusión",
@@ -97,6 +98,9 @@ export const MWINDOW_CONFIG = {
       required: false,
       fullWidth: true,
       hiddenInTable: true,
+      hideInTable: true,
+      hideInForm: true,
+      hideInView: true,
       placeholder: "Selecciona las fechas que se deben excluir de la ventana",
       mapFrom: (item) =>
         Array.isArray(item.exclusions?.dates)
@@ -111,6 +115,9 @@ export const MWINDOW_CONFIG = {
       required: false,
       fullWidth: true,
       hiddenInTable: true,
+      hideInTable: true,
+      hideInForm: true,
+      hideInView: true,
       placeholder: "Selecciona fechas adicionales que sí se deben medir",
       mapFrom: (item) =>
         Array.isArray(item.inclusions?.dates)

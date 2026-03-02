@@ -63,6 +63,8 @@ const GenericViewPage = ({
   entityName,
   basePath,
   titleKey = "name",
+  useEntityNameAsTitle = false,
+  showMetaDates = true,
 }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -111,7 +113,8 @@ const GenericViewPage = ({
       col.backendKey !== "id" &&
       col.backendKey !== "actions" &&
       col.backendKey !== "active" &&
-      col.backendKey !== "index"
+      col.backendKey !== "index" &&
+      !col.hideInView
   );
 
   if (loading) {
@@ -161,7 +164,9 @@ const GenericViewPage = ({
                   </div>
                   <div>
                     <h1 className="text-2xl font-bold text-gray-800">
-                      {data[titleKey] || "Sin nombre"}
+                      {useEntityNameAsTitle
+                        ? entityName
+                        : (data[titleKey] || entityName || "Sin nombre")}
                     </h1>
                     <div className="flex items-center gap-3 mt-2">
                       <span className="text-xs font-mono bg-white px-2 py-1 rounded border border-gray-200 text-gray-500">
@@ -207,14 +212,14 @@ const GenericViewPage = ({
                   />
                 ))}
 
-                {data.createdAt && (
+                {showMetaDates && data.createdAt && (
                   <DetailField
                     label="Fecha de Creación"
                     value={data.createdAt}
                     type="date"
                   />
                 )}
-                {data.updatedAt && (
+                {showMetaDates && data.updatedAt && (
                   <DetailField
                     label="Última Actualización"
                     value={data.updatedAt}

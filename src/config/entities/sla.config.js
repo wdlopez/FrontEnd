@@ -158,7 +158,7 @@ export const SLA_CONFIG = {
       placeholder: "Ej: 1.5",
     },
     {
-      header: "Ventana Mantenimiento",
+      header: "Ventana de medición",
       backendKey: "mwindow_id",
       type: "select", // Idealmente select si tenemos el servicio de ventanas
       editable: true,

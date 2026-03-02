@@ -27,8 +27,8 @@ import SlasCreditsPage from './Credits/SlasCreditsPage';
 
 const NAV_ITEMS = [
     { key: 'slas', label: 'SLAs' },
-    { key: 'measurement', label: 'Mediciones' },
     { key: 'measurement-windows', label: 'Ventanas de medición' },
+    { key: 'measurement', label: 'Mediciones' },
     { key: 'slas-credits', label: 'Créditos SLA' }
 ];
 
@@ -228,7 +228,7 @@ const SlasPage = () => {
                   <InfoTooltip size="sm" message={getText("intros.slas") || "Gestione los Acuerdos de Nivel de Servicio y sus métricas de cumplimiento"} sticky={true}>
                     <span className="material-symbols-outlined text-gray-400">info</span>
                   </InfoTooltip>
-                  <h1 className="text-2xl font-bold text-gray-800">Service Level Agreements (SLA)</h1>
+                  <h1 className="text-2xl font-bold text-gray-800">SLAs</h1>
                 </div>
                 <p className="text-gray-500 text-sm">Configuración de métricas de rendimiento y calidad por servicio.</p>
               </div>
@@ -320,11 +320,11 @@ const SlasPage = () => {
 
       </>
       ) : activeTab === 'measurement' ? (
-        <MeasurementPage />
+        <MeasurementPage embedded />
       ) : activeTab === 'measurement-windows' ? (
-        <MeasurementWindowsPage />
+        <MeasurementWindowsPage embedded />
       ) : activeTab === 'slas-credits' ? (
-        <SlasCreditsPage />
+        <SlasCreditsPage embedded />
       ) : null}
       
     </div>
