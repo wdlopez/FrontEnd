@@ -1,5 +1,35 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import AuthService from '../services/auth/auth.service';
+import { notifyTokensUpdated } from '../context/authTokensBridge';
+
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+const logoutAndRedirect = () => {
+  Cookies.remove('auth_token');
+  Cookies.remove('refresh_token');
+  Cookies.remove('user_data');
+  try {
+    window.localStorage?.removeItem('selected_schema');
+  } catch {
+    // Ignoramos errores de acceso a localStorage
+  }
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
+};
 
 // Función para crear un interceptor genérico
 const createApiInstance = (baseURL) => {
@@ -47,28 +77,101 @@ const createApiInstance = (baseURL) => {
     (error) => Promise.reject(error)
   );
 
-  // Interceptor de response
+  // Interceptor de response con lógica de refresh token y cola de peticiones
   instance.interceptors.response.use(
     (response) => response,
-    (error) => {
-      // Antes se forzaba logout en cualquier 401, lo que era muy agresivo
-      // y podía sacar al usuario al login por errores de cabeceras (x-target-schema, etc.).
-      // Ahora solo redirigimos a login si el 401 viene claramente de endpoints de auth.
-      if (error.response && error.response.status === 401) {
-        const url = error.config?.url || "";
-        const isAuthEndpoint =
-          url.includes("/auth") ||
-          url.includes("/login") ||
-          url.includes("/validate/session");
+    async (error) => {
+      const originalRequest = error.config;
 
-        if (isAuthEndpoint) {
-          Cookies.remove("auth_token");
-          if (window.location.pathname !== "/login") {
-            window.location.href = "/login";
-          }
-        }
+      if (!error.response) {
+        return Promise.reject(error);
       }
-      return Promise.reject(error);
+
+      const status = error.response.status;
+      if (status !== 401) {
+        return Promise.reject(error);
+      }
+
+      const url = originalRequest?.url || '';
+
+      const isAuthPublicEndpoint =
+        url.includes('/auth/signin') ||
+        url.includes('/auth/signup') ||
+        url.includes('/auth/forgot-password') ||
+        url.includes('/auth/reset-password');
+
+      const isRefreshEndpoint = url.includes('/auth/refresh-token');
+
+      // Para endpoints de autenticación públicos no intentamos refrescar
+      if (isAuthPublicEndpoint) {
+        return Promise.reject(error);
+      }
+
+      // Si el error viene del propio refresh-token o ya se reintentó, forzamos logout
+      if (isRefreshEndpoint || originalRequest._retry) {
+        logoutAndRedirect();
+        return Promise.reject(error);
+      }
+
+      const refreshToken = Cookies.get('refresh_token');
+      if (!refreshToken) {
+        logoutAndRedirect();
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token) => {
+              originalRequest.headers = originalRequest.headers || {};
+              if (token) {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+              }
+              resolve(instance(originalRequest));
+            },
+            reject,
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const data = await AuthService.refreshToken(refreshToken);
+        const newAccessToken = data.accessToken;
+        const newRefreshToken = data.refreshToken;
+
+        if (!newAccessToken) {
+          throw new Error('No se recibió accessToken en la respuesta de refresh-token');
+        }
+
+        const cookieOptions = {
+          expires: 1,
+          secure: true,
+          sameSite: 'strict',
+        };
+
+        Cookies.set('auth_token', newAccessToken, cookieOptions);
+        if (newRefreshToken) {
+          Cookies.set('refresh_token', newRefreshToken, cookieOptions);
+        }
+
+        notifyTokensUpdated(newAccessToken, newRefreshToken);
+
+        isRefreshing = false;
+        processQueue(null, newAccessToken);
+
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        return instance(originalRequest);
+      } catch (refreshError) {
+        isRefreshing = false;
+        processQueue(refreshError, null);
+        logoutAndRedirect();
+        return Promise.reject(refreshError);
+      }
     }
   );
 

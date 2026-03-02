@@ -20,6 +20,7 @@ import ViewOneContract from './components/organisms/Views/ViewOneContract';
 import SuppliersPage from './pages/Suppliers/SuppliersPage';
 import ViewOneSupplier from './components/organisms/Views/ViewOneSupplier';
 import SupplierContactPage from './pages/Suppliers/Contacts/SuppliersContactPage';
+import ViewOneProviderContact from './components/organisms/Views/ViewOneProviderContact';
 import SuppliersRiskPage from './pages/Suppliers/Risks/SuppliersRiskPage';
 import ServicesPage from './pages/Contracts/Services/ServicesPage';
 import ViewOneService from './components/organisms/Views/ViewOneService';
@@ -84,7 +85,8 @@ function App() {
               <Route path="/contract/general/:id" element={<ViewOneContract />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
               <Route path="/suppliers/:id" element={<ViewOneSupplier />} />
-              <Route path="/suppliers/contacts" element={<SupplierContactPage />} />
+              <Route path="/suppliers/contacts" element={<SuppliersPage />} />
+              <Route path="/suppliers/contacts/:id" element={<ViewOneProviderContact />} />
               <Route path="/suppliers/risks" element={<SuppliersRiskPage />} />
               <Route path="/contract/services" element={<ServicesPage />} />
               <Route path="/contract/services/:id" element={<ViewOneService />} />

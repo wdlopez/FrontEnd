@@ -1,4 +1,5 @@
 import api from '../../config/api';
+import axios from 'axios';
 
 const AuthService = {
   /**
@@ -32,7 +33,27 @@ const AuthService = {
   resetPassword: async (data) =>{
     const response = await api.post('/auth/reset-password', data);
     return response.data;
-  }
+  },
+
+  /**
+   * Solicita nuevos tokens usando el refresh token.
+   * Este endpoint es público y no debe depender del access token actual.
+   * @param {string} refreshToken
+   */
+  refreshToken: async (refreshToken) => {
+    const baseURL = import.meta.env.VITE_API_URL;
+    const response = await axios.post(
+      `${baseURL}/auth/refresh-token`,
+      { refreshToken },
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  },
 };
 
 export default AuthService;

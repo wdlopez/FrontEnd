@@ -1,0 +1,85 @@
+export const PROVIDER_CONTACT_CONFIG = {
+  name: "Contacto de proveedor",
+  endpoint: "/provider/contact",
+  columns: [
+    {
+      header: "N°",
+      key: "index",
+      editable: false,
+      mapFrom: (item, index) => index + 1,
+    },
+    {
+      header: "Proveedor",
+      backendKey: "provider_id",
+      type: "select",
+      editable: true,
+      required: true,
+      options: [],
+      mapFrom: (item) =>
+        item.provider_name ||
+        (item.provider_id ? `${String(item.provider_id).substring(0, 8)}...` : "N/A"),
+    },
+    {
+      header: "Nombre",
+      backendKey: "first_name",
+      type: "text",
+      editable: true,
+      required: true,
+      placeholder: "Ej: Juan",
+      validation: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/,
+      validationMessage: "El nombre solo puede contener letras y espacios",
+    },
+    {
+      header: "Apellido",
+      backendKey: "last_name",
+      type: "text",
+      editable: true,
+      required: true,
+      placeholder: "Ej: Pérez",
+      validation: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/,
+      validationMessage: "El apellido solo puede contener letras y espacios",
+    },
+    {
+      header: "Correo electrónico",
+      backendKey: "email",
+      type: "email",
+      editable: true,
+      required: true,
+      placeholder: "correo@ejemplo.com",
+    },
+    {
+      header: "Teléfono",
+      backendKey: "phone",
+      type: "text",
+      editable: true,
+      required: true,
+      placeholder: "Ej: +57 3001234567",
+      validation: /^[0-9\s+]+$/,
+      validationMessage:
+        "El teléfono solo puede contener dígitos, espacios y el signo más (+)",
+    },
+    {
+      header: "Cargo",
+      backendKey: "position",
+      type: "text",
+      editable: true,
+      required: true,
+      placeholder: "Ej: Gerente de Ventas",
+      validation: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/,
+      validationMessage: "El cargo solo puede contener letras y espacios",
+    },
+    {
+      header: "Contacto principal",
+      backendKey: "is_primary",
+      type: "select",
+      editable: true,
+      required: false,
+      options: [
+        { value: true, label: "Sí" },
+        { value: false, label: "No" },
+      ],
+      mapFrom: (item) => (item.is_primary ? "Sí" : "No"),
+    },
+  ],
+};
+

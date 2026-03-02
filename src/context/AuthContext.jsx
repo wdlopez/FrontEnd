@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import Cookies from "js-cookie";
 import AuthService from "../services/auth/auth.service";
+import { registerUpdateTokens } from "./authTokensBridge";
 
 const AuthContext = createContext();
 
@@ -41,18 +42,24 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [accessToken, setAccessToken] = useState(null);
+  const [refreshToken, setRefreshToken] = useState(null);
 
   const logout = () => {
     Cookies.remove("auth_token");
+    Cookies.remove("refresh_token");
     Cookies.remove("user_data");
     setUser(null);
     setIsAuthenticated(false);
+    setAccessToken(null);
+    setRefreshToken(null);
   };
 
   // Al cargar la app, verificamos si hay cookie
   useEffect(() => {
     const checkAuth = async () => {
       const token = Cookies.get("auth_token");
+      const storedRefreshToken = Cookies.get("refresh_token");
       const savedUser = Cookies.get("user_data"); // Intentamos recuperar datos guardados
 
       if (token && savedUser) {
@@ -89,6 +96,8 @@ export const AuthProvider = ({ children }) => {
 
           setUser({ ...baseUser, clientId, key_client, role });
           setIsAuthenticated(true);
+          setAccessToken(token);
+          setRefreshToken(storedRefreshToken || null);
         } catch (error) {
           console.error("Error al recuperar sesión:", error);
           logout(); // Si el JSON está mal, limpiamos
@@ -99,6 +108,79 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  const applyTokensToState = (token, newRefreshToken, baseUserFromStorage = null) => {
+    const payload = parseJwtPayload(token) || {};
+    const baseUser =
+      baseUserFromStorage ||
+      user ||
+      (Cookies.get("user_data") ? JSON.parse(Cookies.get("user_data")) : {});
+
+    const rawClientIdFromToken =
+      payload.clientId ?? payload.client_id ?? baseUser.clientId;
+    let clientId = null;
+    if (Array.isArray(rawClientIdFromToken)) {
+      clientId = rawClientIdFromToken;
+    } else if (typeof rawClientIdFromToken === "string") {
+      clientId = [rawClientIdFromToken];
+    } else if (baseUser.clientId) {
+      clientId = Array.isArray(baseUser.clientId)
+        ? baseUser.clientId
+        : [baseUser.clientId];
+    }
+
+    const rawKeyClientFromToken =
+      payload.key_client ?? payload.keyClient ?? baseUser.key_client;
+    let key_client = null;
+    if (Array.isArray(rawKeyClientFromToken)) {
+      key_client = rawKeyClientFromToken;
+    } else if (typeof rawKeyClientFromToken === "string") {
+      key_client = [rawKeyClientFromToken];
+    }
+
+    const roleFromToken = Array.isArray(payload.role)
+      ? payload.role[0]
+      : payload.role;
+
+    const userData = {
+      id: baseUser.userId ?? baseUser.id ?? payload.sub ?? null,
+      firstName: baseUser.firstName ?? payload.firstName ?? "",
+      lastName: baseUser.lastName ?? payload.lastName ?? "",
+      role: baseUser.roles?.[0] || roleFromToken || baseUser.role || null,
+      clientId,
+      providerId: baseUser.providerId ?? null,
+      key_client,
+    };
+
+    setUser(userData);
+    Cookies.set("user_data", JSON.stringify(userData), { expires: 1 });
+    setIsAuthenticated(true);
+    setAccessToken(token);
+    setRefreshToken(newRefreshToken || null);
+  };
+
+  const updateTokens = (newAccessToken, newRefreshToken) => {
+    if (!newAccessToken) return;
+
+    Cookies.set("auth_token", newAccessToken, {
+      expires: 1,
+      secure: true,
+      sameSite: "strict",
+    });
+    if (newRefreshToken) {
+      Cookies.set("refresh_token", newRefreshToken, {
+        expires: 1,
+        secure: true,
+        sameSite: "strict",
+      });
+    }
+
+    applyTokensToState(newAccessToken, newRefreshToken);
+  };
+
+  useEffect(() => {
+    registerUpdateTokens(updateTokens);
+  }, []);
+
   const login = async (credentials) => {
     try {
       const response = await AuthService.login(credentials);
@@ -106,55 +188,22 @@ export const AuthProvider = ({ children }) => {
 
       if (authData && authData.accessToken) {
         const token = authData.accessToken;
+        const newRefreshToken = authData.refreshToken;
 
         Cookies.set("auth_token", token, {
           expires: 1,
           secure: true,
           sameSite: "strict",
         });
-
-        const payload = parseJwtPayload(token) || {};
-
-        const rawClientIdFromToken =
-          payload.clientId ?? payload.client_id ?? authData.clientId;
-        let clientId = null;
-        if (Array.isArray(rawClientIdFromToken)) {
-          clientId = rawClientIdFromToken;
-        } else if (typeof rawClientIdFromToken === "string") {
-          clientId = [rawClientIdFromToken];
-        } else if (authData.clientId) {
-          clientId = Array.isArray(authData.clientId)
-            ? authData.clientId
-            : [authData.clientId];
+        if (newRefreshToken) {
+          Cookies.set("refresh_token", newRefreshToken, {
+            expires: 1,
+            secure: true,
+            sameSite: "strict",
+          });
         }
 
-        // key_client puede venir como string o array en el token
-        const rawKeyClientFromToken =
-          payload.key_client ?? payload.keyClient ?? authData.key_client;
-        let key_client = null;
-        if (Array.isArray(rawKeyClientFromToken)) {
-          key_client = rawKeyClientFromToken;
-        } else if (typeof rawKeyClientFromToken === "string") {
-          key_client = [rawKeyClientFromToken];
-        }
-
-        const roleFromToken = Array.isArray(payload.role)
-          ? payload.role[0]
-          : payload.role;
-
-        const userData = {
-          id: authData.userId ?? payload.sub ?? null,
-          firstName: authData.firstName ?? payload.firstName ?? "",
-          lastName: authData.lastName ?? payload.lastName ?? "",
-          role: authData.roles?.[0] || roleFromToken || null,
-          clientId,
-          providerId: authData.providerId ?? null,
-          key_client,
-        };
-
-        setUser(userData);
-        Cookies.set("user_data", JSON.stringify(userData), { expires: 1 }); // Guardamos datos del usuario
-        setIsAuthenticated(true);
+        applyTokensToState(token, newRefreshToken, authData);
         return true;
       }
     } catch (error) {
@@ -175,6 +224,8 @@ export const AuthProvider = ({ children }) => {
       value={{
         user,
         isAuthenticated,
+        accessToken,
+        refreshToken,
         login,
         logout,
         loading,

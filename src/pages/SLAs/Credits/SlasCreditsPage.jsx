@@ -3,6 +3,7 @@ import HeaderActions from '../../../components/organisms/Navigation/HeaderAction
 import InteractiveTable from '../../../components/organisms/Tables/InteractiveTable';
 import Alerts from '../../../components/molecules/Alerts';
 import InfoTooltip from '../../../components/atoms/InfoToolTip';
+import Tabs from '../../../components/molecules/Tabs';
 import GenericAddModal from '../../../components/organisms/Forms/GenericAddModal';
 import GenericEditModal from '../../../components/organisms/Forms/GenericEditModal';
 import ConfirmActionModal from '../../../components/organisms/Forms/ConfirmActionModal';
@@ -15,6 +16,11 @@ import MeasurementService from '../../../services/Slas/Measurement/measurement.s
 import { SLACREDIT_CONFIG } from '../../../config/entities/slacredit.config';
 import { normalizeList } from '../../../utils/api-helpers';
 import { mapBackendToTable } from '../../../utils/entityMapper';
+
+const NAV_ITEMS = [
+  { key: 'monthly-tracking', label: 'Seguimiento mensual' },
+  { key: 'credits-register', label: 'Registro de penalidades' },
+];
 
 const SlasCreditsPage = ({ embedded = false }) => {
   const [credits, setCredits] = useState([]);
@@ -31,6 +37,7 @@ const SlasCreditsPage = ({ embedded = false }) => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [activeTab, setActiveTab] = useState('credits-register');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -212,77 +219,100 @@ const SlasCreditsPage = ({ embedded = false }) => {
         </div>
       </div>
 
+      {/* Tabs de diseño heredado: Seguimiento mensual / Registro de penalidades */}
+      <Tabs activeKey={activeTab} items={NAV_ITEMS} onChange={setActiveTab} />
+
       <div className="space-y-6">
-        <Alerts
-          open={alert.open}
-          setOpen={(val) => setAlert({ ...alert, open: val })}
-          message={alert.message}
-          type={alert.type}
-        />
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          {loading ? (
-            <div className="p-10 text-center text-gray-500 italic">Cargando créditos...</div>
-          ) : (
-            <InteractiveTable
-              data={credits}
-              columnMapping={columnMapping}
-              selectColumns={selectColumns}
-              nonEditableColumns={nonEditableColumns}
-              onEdit={handleEdit}
-              onSubmit={handleInlineEdit}
-              onDelete={handleDeleteReq}
-              onAdd={() => setIsAddOpen(true)}
-              path="/contract/sla/credits/"
-              rowsPerPage={10}
-              headerButtons={
-                <HeaderActions
-                  AddComponent={
-                    <button
-                      onClick={() => setIsAddOpen(true)}
-                      className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">add</span>
-                      <span>Registrar crédito</span>
-                    </button>
-                  }
-                  showExport={true}
-                  onRefresh={fetchData}
-                />
-              }
+        {/* Contenido principal: registro de penalidades */}
+        {activeTab === 'credits-register' && (
+          <>
+            <Alerts
+              open={alert.open}
+              setOpen={(val) => setAlert({ ...alert, open: val })}
+              message={alert.message}
+              type={alert.type}
             />
-          )}
-        </div>
 
-        {/* MODALES */}
-        <GenericAddModal
-          isOpen={isAddOpen}
-          setIsOpen={setIsAddOpen}
-          service={SlasCreditService}
-          config={dynamicConfig}
-          onSuccess={fetchData}
-          initialValues={{
-            credit_date: new Date().toISOString().split('T')[0],
-          }}
-        />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              {loading ? (
+                <div className="p-10 text-center text-gray-500 italic">Cargando créditos...</div>
+              ) : (
+                <InteractiveTable
+                  data={credits}
+                  columnMapping={columnMapping}
+                  selectColumns={selectColumns}
+                  nonEditableColumns={nonEditableColumns}
+                  onEdit={handleEdit}
+                  onSubmit={handleInlineEdit}
+                  onDelete={handleDeleteReq}
+                  onAdd={() => setIsAddOpen(true)}
+                  path="/contract/sla/credits/"
+                  rowsPerPage={10}
+                  headerButtons={
+                    <HeaderActions
+                      AddComponent={
+                        <button
+                          onClick={() => setIsAddOpen(true)}
+                          className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">add</span>
+                          <span>Registrar crédito</span>
+                        </button>
+                      }
+                      showExport={true}
+                      onRefresh={fetchData}
+                    />
+                  }
+                />
+              )}
+            </div>
 
-        <GenericEditModal
-          isOpen={isEditOpen}
-          setIsOpen={setIsEditOpen}
-          entityId={selectedId}
-          service={SlasCreditService}
-          config={dynamicConfig}
-          onSuccess={fetchData}
-        />
+            {/* MODALES */}
+            <GenericAddModal
+              isOpen={isAddOpen}
+              setIsOpen={setIsAddOpen}
+              service={SlasCreditService}
+              config={dynamicConfig}
+              onSuccess={fetchData}
+              initialValues={{
+                credit_date: new Date().toISOString().split('T')[0],
+              }}
+            />
 
-        <ConfirmActionModal
-          isOpen={isDeleteOpen}
-          setIsOpen={setIsDeleteOpen}
-          data={selectedRow}
-          onConfirm={handleConfirmDelete}
-          loading={deletingLoading}
-          entityName={SLACREDIT_CONFIG.name}
-        />
+            <GenericEditModal
+              isOpen={isEditOpen}
+              setIsOpen={setIsEditOpen}
+              entityId={selectedId}
+              service={SlasCreditService}
+              config={dynamicConfig}
+              onSuccess={fetchData}
+            />
+
+            <ConfirmActionModal
+              isOpen={isDeleteOpen}
+              setIsOpen={setIsDeleteOpen}
+              data={selectedRow}
+              onConfirm={handleConfirmDelete}
+              loading={deletingLoading}
+              entityName={SLACREDIT_CONFIG.name}
+            />
+          </>
+        )}
+
+        {/* Seguimiento mensual (diseño heredado, pendiente de lógica avanzada) */}
+        {activeTab === 'monthly-tracking' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-sm text-gray-600">
+            <p className="font-semibold mb-2">Seguimiento mensual de créditos SLA</p>
+            <p>
+              Aquí podrás ver, en una vista resumida por meses, el comportamiento de los créditos
+              asociados a cada SLA (CSL / KPI), similar al diseño de la versión anterior.
+            </p>
+            <p className="mt-2 italic">
+              Esta vista aún no está conectada a la lógica avanzada de penalidades mensuales, pero
+              el diseño ya está preparado para integrarla cuando el backend esté listo.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
@@ -7,6 +8,7 @@ import GenericEditModal from '../../components/organisms/Forms/GenericEditModal'
 import GenericAddModal from '../../components/organisms/Forms/GenericAddModal';
 import Alerts from '../../components/molecules/Alerts';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
+import Tabs from '../../components/molecules/Tabs';
 import ProviderService from '../../services/Providers/provider.service';
 import { useAuth } from "../../context/AuthContext";
 import { useSelectedClient } from "../../context/ClientSelectionContext";
@@ -14,6 +16,12 @@ import { PROVIDER_CONFIG } from '../../config/entities/provider.config';
 import { mapBackendToTable } from '../../utils/entityMapper';
 import { normalizeList } from '../../utils/api-helpers';
 import { getText } from '../../utils/text';
+import SupplierContactPage from './Contacts/SuppliersContactPage';
+
+const NAV_ITEMS = [
+  { key: 'suppliers', label: 'Proveedores' },
+  { key: 'contacts', label: 'Contactos' },
+];
 
 const SuppliersPage = () => {
   const [providers, setProviders] = useState([]);
@@ -30,9 +38,13 @@ const SuppliersPage = () => {
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
 
-  const hasInitialized = useRef(false);
-  const { user, isGlobalAdmin } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { selectedClient } = useSelectedClient();
+
+  const isContactsRoute = location.pathname.startsWith('/suppliers/contacts');
+  const activeTab = isContactsRoute ? 'contacts' : 'suppliers';
 
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
@@ -76,11 +88,12 @@ const SuppliersPage = () => {
   };
 
   useEffect(() => {
-    if (!hasInitialized.current) {
-      hasInitialized.current = true;
+    // Cargamos proveedores solo cuando estamos en la pestaña principal
+    if (!isContactsRoute) {
       fetchData();
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isContactsRoute]);
 
   // Acciones de Tabla
   const openEditModal = (row) => {
@@ -133,99 +146,116 @@ const SuppliersPage = () => {
     if (col.backendKey) columnMapping[col.header] = col.backendKey;
   });
 
+  const handleTabChange = (key) => {
+    if (key === 'contacts') {
+      navigate('/suppliers/contacts');
+    } else if (key === 'suppliers') {
+      navigate('/suppliers');
+    }
+  };
+
   return (
     <div className="p-4 space-y-4">
       {/* Breadcrumb sobre el fondo gris general */}
       <div className="space-y-1">
+        <Tabs items={NAV_ITEMS} activeKey={activeTab} onChange={handleTabChange} />
         <BreadCrumb paths={breadcrumbPaths} />
 
-        {/* Solo el bloque del título tiene fondo blanco horizontal */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-              <div className="flex gap-2 items-center">
-                <InfoTooltip size="sm" message={getText("intros.providers")} sticky={true}>
-                  <span className="material-symbols-outlined text-gray-400">info</span>
-                </InfoTooltip>
-                <h1 className="text-2xl font-bold text-gray-800">Gestión de {PROVIDER_CONFIG.name}es</h1>
+        {/* Solo el bloque del título tiene fondo blanco horizontal en la pestaña de proveedores */}
+        {activeTab === 'suppliers' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <div>
+                <div className="flex gap-2 items-center">
+                  <InfoTooltip size="sm" message={getText("intros.providers")} sticky={true}>
+                    <span className="material-symbols-outlined text-gray-400">info</span>
+                  </InfoTooltip>
+                  <h1 className="text-2xl font-bold text-gray-800">Gestión de {PROVIDER_CONFIG.name}es</h1>
+                </div>
+                <p className="text-gray-500 text-sm">Administra la base de datos de tus aliados estratégicos.</p>
               </div>
-              <p className="text-gray-500 text-sm">Administra la base de datos de tus aliados estratégicos.</p>
             </div>
           </div>
-        </div>
-      </div>
-      
-      <Alerts 
-        open={alert.open} 
-        setOpen={(val) => setAlert(prev => ({ ...prev, open: val }))} 
-        message={alert.message} 
-        type={alert.type} 
-      />
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {loading ? (
-          <div className="p-10 text-center text-gray-500">
-            <span className="material-symbols-outlined animate-spin text-4xl text-blue-600">progress_activity</span>
-            <p className="mt-2">Cargando proveedores...</p>
-          </div>
-        ) : (
-          <InteractiveTable 
-            data={providers}
-            config={PROVIDER_CONFIG}
-            columnMapping={columnMapping}
-            onEdit={openEditModal}
-            onSubmit={handleInlineEdit}
-            onDelete={handleDeleteRequest}
-            onAdd={() => setIsAddModalOpen(true)}
-            path="/suppliers/"
-            rowsPerPage={10}
-            nonEditableColumns={["Estado"]}
-            headerButtons={
-              <HeaderActions
-                AddComponent={
-                  <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">add</span>
-                    <span>Nuevo {PROVIDER_CONFIG.name}</span>
-                  </button>
-                }
-                showExport={true}
-                onRefresh={fetchData}
-              />
-            }
-          />
         )}
       </div>
+      
+      {activeTab === 'suppliers' ? (
+        <>
+          <Alerts 
+            open={alert.open} 
+            setOpen={(val) => setAlert(prev => ({ ...prev, open: val }))} 
+            message={alert.message} 
+            type={alert.type} 
+          />
 
-      {/* MODALES GENÉRICOS */}
-      <GenericAddModal 
-        isOpen={isAddModalOpen}
-        setIsOpen={setIsAddModalOpen}
-        service={ProviderService}
-        config={PROVIDER_CONFIG}
-        onSuccess={fetchData}
-        getExtraPayload={() => ({ risk_level: "medium" })}
-      />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            {loading ? (
+              <div className="p-10 text-center text-gray-500">
+                <span className="material-symbols-outlined animate-spin text-4xl text-blue-600">progress_activity</span>
+                <p className="mt-2">Cargando proveedores...</p>
+              </div>
+            ) : (
+              <InteractiveTable 
+                data={providers}
+                config={PROVIDER_CONFIG}
+                columnMapping={columnMapping}
+                onEdit={openEditModal}
+                onSubmit={handleInlineEdit}
+                onDelete={handleDeleteRequest}
+                onAdd={() => setIsAddModalOpen(true)}
+                path="/suppliers/"
+                rowsPerPage={10}
+                nonEditableColumns={["Estado"]}
+                headerButtons={
+                  <HeaderActions
+                    AddComponent={
+                      <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="btn btn-primary flex items-center gap-2 px-4 h-[38px] shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">add</span>
+                        <span>Nuevo {PROVIDER_CONFIG.name}</span>
+                      </button>
+                    }
+                    showExport={true}
+                    onRefresh={fetchData}
+                  />
+                }
+              />
+            )}
+          </div>
 
-      <GenericEditModal 
-        isOpen={isEditModalOpen}
-        setIsOpen={setIsEditModalOpen}
-        entityId={editProviderId}
-        service={ProviderService}
-        config={PROVIDER_CONFIG}
-        onSuccess={fetchData}
-      />
+          {/* MODALES GENÉRICOS */}
+          <GenericAddModal 
+            isOpen={isAddModalOpen}
+            setIsOpen={setIsAddModalOpen}
+            service={ProviderService}
+            config={PROVIDER_CONFIG}
+            onSuccess={fetchData}
+            getExtraPayload={() => ({ risk_level: "medium" })}
+          />
 
-      <ConfirmActionModal 
-        isOpen={isDeleteModalOpen}
-        setIsOpen={setIsDeleteModalOpen}
-        data={selectedProvider}
-        onConfirm={handleConfirmDelete}
-        loading={deletingLoading}
-        entityName={PROVIDER_CONFIG.name}
-      />
+          <GenericEditModal 
+            isOpen={isEditModalOpen}
+            setIsOpen={setIsEditModalOpen}
+            entityId={editProviderId}
+            service={ProviderService}
+            config={PROVIDER_CONFIG}
+            onSuccess={fetchData}
+          />
+
+          <ConfirmActionModal 
+            isOpen={isDeleteModalOpen}
+            setIsOpen={setIsDeleteModalOpen}
+            data={selectedProvider}
+            onConfirm={handleConfirmDelete}
+            loading={deletingLoading}
+            entityName={PROVIDER_CONFIG.name}
+          />
+        </>
+      ) : (
+        <SupplierContactPage embedded />
+      )}
     </div>
   );
 };
