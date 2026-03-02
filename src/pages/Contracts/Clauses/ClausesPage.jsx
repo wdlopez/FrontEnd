@@ -150,7 +150,7 @@ const ClausesPage = ({ id_client, embedded = false }) => {
                 <InfoTooltip size="sm" message={getText("intros.clauses") || "Administre las cláusulas legales"} sticky={true}>
                   <span className="material-symbols-outlined text-gray-400">info</span>
                 </InfoTooltip>
-                <h1 className="text-2xl font-bold text-gray-800">Gestión de {CLAUSE_CONFIG.name}s</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Listado de {CLAUSE_CONFIG.name}s Contractuales</h1>
               </div>
               <p className="text-gray-500 text-sm">Control de obligaciones y estados críticos.</p>
             </div>

@@ -209,7 +209,7 @@ const DeliverablesPage = () => {
                   <InfoTooltip size="sm" message={getText("intros.deliverables")} sticky={true}>
                     <span className="material-symbols-outlined text-gray-400">info</span>
                   </InfoTooltip>
-                  <h1 className="text-2xl font-bold text-gray-800">Entregables (Deliverables)</h1>
+                  <h1 className="text-2xl font-bold text-gray-800">Gestion de Entregables & Obligaciones</h1>
                 </div>
                 <p className="text-gray-500 text-sm">Seguimiento de obligaciones, informes y fechas de cumplimiento.</p>
               </div>
