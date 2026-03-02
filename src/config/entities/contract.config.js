@@ -9,7 +9,7 @@ export const CONTRACT_CONFIG = {
       mapFrom: (item, index) => index + 1,
     },
     {
-      header: "Número de Contrato",
+      header: "Número de contrato",
       backendKey: "contract_number",
       editable: true,
       required: true,
@@ -18,8 +18,10 @@ export const CONTRACT_CONFIG = {
         "Formato inválido (máx 50 caracteres, alfanumérico y guiones)",
     },
     {
-      header: "Nombre Clave",
+      header: "Nombre clave",
       backendKey: "keyName",
+      type: "text",
+      placeholder: "Ej: Contrato de servicio",
       editable: true,
     },
     {
@@ -27,6 +29,7 @@ export const CONTRACT_CONFIG = {
       backendKey: "description",
       editable: true,
       type: "textarea",
+      placeholder: "Ej: Contrato de servicio",
       required: false,
     },
     {
@@ -44,21 +47,21 @@ export const CONTRACT_CONFIG = {
       required: true,
     },
     {
-      header: "Fecha Inicio",
+      header: "Fecha inicio",
       backendKey: "start_date",
       type: "date",
       editable: true,
       required: true,
     },
     {
-      header: "Fecha Fin",
+      header: "Fecha fin",
       backendKey: "end_date",
       type: "date",
       editable: true,
       required: true,
     },
     {
-      header: "Valor Total",
+      header: "Valor total",
       backendKey: "total_value",
       type: "number",
       editable: true,

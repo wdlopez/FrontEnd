@@ -99,6 +99,7 @@ const GenericEditModal = ({
         .filter(key => allowedKeys.includes(key))
         .reduce((obj, key) => {
           let value = formData[key];
+          const field = formFields.find(f => f.name === key);
 
           // Evitamos enviar strings vacíos en campos opcionales
           if (value === "") {
@@ -110,6 +111,14 @@ const GenericEditModal = ({
             const parsed = parseFloat(value);
             if (!Number.isNaN(parsed)) {
               obj[key] = parsed;
+            }
+            return obj;
+          }
+
+          // Normalizar multidate: array de fechas -> objeto { dates: [...] }
+          if (field?.type === "multidate") {
+            if (Array.isArray(value) && value.length > 0) {
+              obj[key] = { dates: value };
             }
             return obj;
           }

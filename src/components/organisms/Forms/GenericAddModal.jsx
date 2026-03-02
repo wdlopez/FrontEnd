@@ -32,6 +32,13 @@ const GenericAddModal = ({
           payload[key] = Number.isNaN(parsed) ? value : parsed;
           return;
         }
+        // Campos de selección múltiple de fechas (react-multi-date-picker)
+        if (field?.type === 'multidate') {
+          if (Array.isArray(value) && value.length > 0) {
+            payload[key] = { dates: value };
+          }
+          return;
+        }
         if (typeof value === 'string') {
           value = value.trim();
           if (value === 'true') value = true;

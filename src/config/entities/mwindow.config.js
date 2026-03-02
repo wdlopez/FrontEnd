@@ -20,6 +20,7 @@ export const MWINDOW_CONFIG = {
       ],
       editable: true,
       required: true,
+      placeholder: "Seleccione el tipo de ventana de medición",
     },
     {
       header: "Definición",
@@ -27,9 +28,10 @@ export const MWINDOW_CONFIG = {
       editable: true,
       required: true,
       type: "textarea",
+      placeholder: "Ej: Ventana de medición de 8 a 17 horas",
     },
     {
-      header: "Inicio",
+      header: "Fecha inicio",
       backendKey: "start_d",
       type: "datetime-local",
       editable: true,
@@ -46,7 +48,7 @@ export const MWINDOW_CONFIG = {
           : "",
     },
     {
-      header: "Fin",
+      header: "Fecha fin",
       backendKey: "end_d",
       type: "datetime-local",
       editable: true,
@@ -88,24 +90,32 @@ export const MWINDOW_CONFIG = {
       mapFrom: (item) => (item.active === 1 ? "Activa" : "Inactiva"),
     },
     {
-      header: "Exclusiones",
+      header: "Fechas de exclusión",
       backendKey: "exclusions",
-      type: "textarea",
+      type: "multidate",
       editable: true,
       required: false,
+      fullWidth: true,
       hiddenInTable: true,
+      placeholder: "Selecciona las fechas que se deben excluir de la ventana",
       mapFrom: (item) =>
-        item.exclusions ? JSON.stringify(item.exclusions, null, 2) : "",
+        Array.isArray(item.exclusions?.dates)
+          ? item.exclusions.dates.join(", ")
+          : "",
     },
     {
-      header: "Inclusiones",
+      header: "Fechas de inclusión",
       backendKey: "inclusions",
-      type: "textarea",
+      type: "multidate",
       editable: true,
       required: false,
+      fullWidth: true,
       hiddenInTable: true,
+      placeholder: "Selecciona fechas adicionales que sí se deben medir",
       mapFrom: (item) =>
-        item.inclusions ? JSON.stringify(item.inclusions, null, 2) : "",
+        Array.isArray(item.inclusions?.dates)
+          ? item.inclusions.dates.join(", ")
+          : "",
     },
   ],
 };

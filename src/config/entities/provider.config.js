@@ -10,7 +10,7 @@ export const PROVIDER_CONFIG = {
         mapFrom: (item, index) => index + 1,
       },
       {
-        header: "Razón Social",
+        header: "Razón social",
         backendKey: "legal_name", // Snake_case como el DTO
         type: "text",
         required: true,
@@ -23,7 +23,7 @@ export const PROVIDER_CONFIG = {
         }
       },
       {
-        header: "ID Tributario",
+        header: "NIT",
         backendKey: "tax_id",
         type: "text",
         required: true,
@@ -56,7 +56,8 @@ export const PROVIDER_CONFIG = {
           { value: "medium", label: "Medio" },
           { value: "high", label: "Alto" },
         ],
-        defaultValue: "medium"
+        defaultValue: "medium",
+        hideInForm: true, // No mostrar en crear/editar; por defecto se envía "medium"
       },
       {
         header: "Estado",
@@ -67,7 +68,8 @@ export const PROVIDER_CONFIG = {
           { value: 0, label: "Inactivo" },
         ],
         hideInForm: true, // Se suele manejar por defecto en creación
-        editable: true
+        editable: true,
+        mapFrom: (item) => (item.status === 1 || item.status === "1" || item.status === true ? "Activo" : "Inactivo"),
       }
     ]
   };

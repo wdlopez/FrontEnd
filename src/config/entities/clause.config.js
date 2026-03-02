@@ -60,7 +60,7 @@ export const CLAUSE_CONFIG = {
       mapFrom: (item) => (item.is_critical ? "Sí" : "No"),
     },
     {
-      header: "Estado Cumplimiento",
+      header: "Estado cumplimiento",
       backendKey: "compliance_status",
       type: "select",
       options: [

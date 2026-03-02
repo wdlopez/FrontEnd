@@ -9,23 +9,28 @@ export const DELIVERABLE_CONFIG = {
       mapFrom: (item, index) => index + 1,
     },
     {
-      header: "Código",
+      header: "Código entregable",
       backendKey: "deliverable_number",
+      type: "text",
+      placeholder: "Ej: DE-1234567890",
       editable: true,
       required: true,
       validation: /^[a-zA-Z0-9-]{1,50}$/,
-      validationMessage: "Máx 50 caracteres, alfanumérico y guiones",
+      validationMessage: "Máx 50 caracteres, alfanumérico y guiones", 
     },
     {
-      header: "Nombre",
+      header: "Nombre del entregable",
       backendKey: "name",
+      type: "text",
+      placeholder: "Ej: Entrega de servicio",
       editable: true,
       required: true,
       validation: /^.{1,100}$/,
       validationMessage: "Máx 100 caracteres",
     },
     {
-      header: "Descripción",
+      header: "Descripción del entregable",
+      placeholder: "Ej: Entrega de servicio",
       backendKey: "description",
       editable: true,
       type: "textarea",
@@ -39,27 +44,27 @@ export const DELIVERABLE_CONFIG = {
       required: false, // En frontend es opcional, pero backend exige string
     },
     {
-      header: "Tipo",
+      header: "Tipo del entregable",
       backendKey: "type",
       type: "select",
       options: [
-        { value: "report", label: "Informe (Report)" },
-        { value: "file", label: "Archivo (File)" },
-        { value: "presentation", label: "Presentación" },
-        { value: "software", label: "Software / Código" },
+        { value: "unico", label: "Único" },
+        { value: "recurrente", label: "Recurrente" },
       ],
       editable: true,
       required: true,
+      placeholder: "Seleccione el tipo de entregable",
     },
     {
       header: "Frecuencia",
       backendKey: "frequency",
       type: "select",
       options: [
-        { value: "one-off", label: "Única vez" },
+        { value: "daily", label: "Diario" },
         { value: "weekly", label: "Semanal" },
         { value: "monthly", label: "Mensual" },
         { value: "quarterly", label: "Trimestral" },
+        { value: "yearly", label: "Anual" },
       ],
       editable: true,
       required: true,
@@ -87,7 +92,7 @@ export const DELIVERABLE_CONFIG = {
       },
     },
     {
-      header: "Fecha Inicio",
+      header: "Fecha inicio",
       backendKey: "start_date",
       type: "date",
       editable: true,
@@ -96,7 +101,7 @@ export const DELIVERABLE_CONFIG = {
         item.start_date ? new Date(item.start_date).toLocaleDateString("es-CO") : "",
     },
     {
-      header: "Fecha Fin",
+      header: "Fecha fin",
       backendKey: "end_date",
       type: "date",
       editable: true,
@@ -105,7 +110,7 @@ export const DELIVERABLE_CONFIG = {
         item.end_date ? new Date(item.end_date).toLocaleDateString("es-CO") : "",
     },
     {
-      header: "Fecha Límite",
+      header: "Fecha límite",
       backendKey: "due_date",
       type: "date",
       editable: true,
@@ -147,7 +152,7 @@ export const DELIVERABLE_CONFIG = {
       required: true,
     },
     {
-      header: "Aplica Penalización",
+      header: "Aplica penalización",
       backendKey: "penalty",
       type: "select",
       options: [
@@ -159,11 +164,12 @@ export const DELIVERABLE_CONFIG = {
       mapFrom: (item) => (item.penalty ? "Sí" : "No"),
     },
     {
-      header: "Valor Penalización",
+      header: "Monto de penalización",
       backendKey: "value_penalty",
       type: "number",
       editable: true,
       required: true,
+      placeholder: "Ej: 100000",
       mapFrom: (item) =>
         new Intl.NumberFormat("en-US", {
           style: "currency",

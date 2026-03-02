@@ -29,11 +29,20 @@ function Form(props, ref) {
 
   // 1. Preparamos los valores iniciales igual que antes
   const initialFormState = fields.reduce((acc, field) => {
-    if (field.type === "file")
+    if (field.type === "file") {
       acc[field.name] = []; // File input en RHF suele ser array o FileList
-    else if (field.type === "checkbox") acc[field.name] = [];
-    else if (field.type === "multidate") acc[field.name] = [];
-    else {
+    } else if (field.type === "checkbox") {
+      acc[field.name] = [];
+    } else if (field.type === "multidate") {
+      const raw = initialValues[field.name];
+      if (Array.isArray(raw)) {
+        acc[field.name] = raw;
+      } else if (raw && typeof raw === "object" && Array.isArray(raw.dates)) {
+        acc[field.name] = raw.dates;
+      } else {
+        acc[field.name] = [];
+      }
+    } else {
       // Usamos Object.prototype.hasOwnProperty.call para evitar el error del linter
       acc[field.name] = Object.prototype.hasOwnProperty.call(
         initialValues,
@@ -194,7 +203,7 @@ function Form(props, ref) {
 
                   {/* LOGICA DE RENDERIZADO POR TIPO */}
                   {f.type === "multidate" ? (
-                    // Usamos Controller para librerías externas como DatePicker
+                    // Selector avanzado de múltiples fechas (ventanas de medición)
                     <Controller
                       control={control}
                       name={f.name}
@@ -203,31 +212,15 @@ function Form(props, ref) {
                         <DatePicker
                           multiple
                           value={value}
-                          open={!!openPickers[f.name]}
-                          onOpen={() =>
-                            setOpenPickers((p) => ({ ...p, [f.name]: true }))
-                          }
-                          onClose={() =>
-                            setOpenPickers((p) => ({ ...p, [f.name]: false }))
-                          }
-                          onClickOutside={() =>
-                            setOpenPickers((p) => ({ ...p, [f.name]: false }))
-                          }
                           onChange={(arr) =>
                             onChange(arr.map((d) => d.format("YYYY-MM-DD")))
-                          } // Adaptamos el valor para RHF
+                          } // Guardamos solo strings YYYY-MM-DD
                           format="YYYY-MM-DD"
+                          inputClass={inputClass(f.name)}
                           plugins={[
                             <DatePanel key="dp" />,
                             <Toolbar key="tb" position="top" />,
                           ]}
-                          render={
-                            <input
-                              type="date"
-                              className={inputClass(f.name)}
-                              placeholder={genPlaceholder(f)}
-                            />
-                          }
                         />
                       )}
                     />

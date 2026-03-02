@@ -179,6 +179,7 @@ const SuppliersPage = () => {
             onAdd={() => setIsAddModalOpen(true)}
             path="/suppliers/"
             rowsPerPage={10}
+            nonEditableColumns={["Estado"]}
             headerButtons={
               <HeaderActions
                 AddComponent={
@@ -205,6 +206,7 @@ const SuppliersPage = () => {
         service={ProviderService}
         config={PROVIDER_CONFIG}
         onSuccess={fetchData}
+        getExtraPayload={() => ({ risk_level: "medium" })}
       />
 
       <GenericEditModal 

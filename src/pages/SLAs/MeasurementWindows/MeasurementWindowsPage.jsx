@@ -170,8 +170,8 @@ const MeasurementWindowsPage = () => {
             active: 1,
             period: "daily",
             type_window: "standard",
-            exclusions: "{}",
-            inclusions: "{}"
+            exclusions: [],
+            inclusions: []
           }}
         />
 
