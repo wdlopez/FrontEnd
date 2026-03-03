@@ -6,6 +6,11 @@ const ProviderService = {
     return response.data; 
   },
 
+  getAllDeleted: async (params = {}) => {
+    const response = await apiProviders.get('/providers/deleted', { params });
+    return response.data;
+  },
+
   getById: async (providerId) => {
     const response = await apiProviders.get(`/providers/${providerId}`);
     return response.data;
@@ -33,6 +38,7 @@ const ProviderService = {
   },
 
   getAllProviders: (params) => ProviderService.getAll(params),
+  getAllDeletedProviders: (params) => ProviderService.getAllDeleted(params),
   getProviderById: (id) => ProviderService.getById(id),
   createProvider: (data) => ProviderService.create(data),
   updateProvider: (id, data) => ProviderService.update(id, data),

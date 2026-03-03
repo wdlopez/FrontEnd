@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
@@ -25,6 +25,7 @@ const NAV_ITEMS = [
 
 const SuppliersPage = () => {
   const [providers, setProviders] = useState([]);
+  const [rawProviders, setRawProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Estados de Modales
@@ -36,7 +37,9 @@ const SuppliersPage = () => {
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [editProviderId, setEditProviderId] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
+  const [selectedAction, setSelectedAction] = useState("delete"); // 'delete' | 'restore'
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [showInactive, setShowInactive] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -53,10 +56,12 @@ const SuppliersPage = () => {
   ];
 
   // Cargar datos
-  const fetchData = async () => {
+  const fetchData = async (showDeleted = showInactive) => {
     setLoading(true);
     try {
-      const response = await ProviderService.getAll();
+      const response = showDeleted
+        ? await ProviderService.getAllDeleted()
+        : await ProviderService.getAll();
       const dataList = normalizeList(response);
 
       const role = user?.role || null;
@@ -76,7 +81,7 @@ const SuppliersPage = () => {
         });
       }
 
-      // Usamos el mapper genérico con la configuración de proveedores
+      setRawProviders(filteredList);
       const formattedProviders = mapBackendToTable(filteredList, PROVIDER_CONFIG);
       setProviders(formattedProviders);
     } catch (error) {
@@ -90,10 +95,10 @@ const SuppliersPage = () => {
   useEffect(() => {
     // Cargamos proveedores solo cuando estamos en la pestaña principal
     if (!isContactsRoute) {
-      fetchData();
+      fetchData(showInactive);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isContactsRoute]);
+  }, [isContactsRoute, showInactive]);
 
   // Acciones de Tabla
   const openEditModal = (row) => {
@@ -114,27 +119,54 @@ const SuppliersPage = () => {
     }
   };
 
-  const handleDeleteRequest = (row) => {
+  const handleDeleteRequest = (row, { isDeleted } = {}) => {
     if (row?.id) {
+      const action = isDeleted ? "restore" : "delete";
+      setSelectedAction(action);
       setSelectedProvider({
         id: row.id,
-        name: row['Razón Social'] || row['legal_name'] || 'Proveedor',
-        state: true, // Indica que es para eliminar (dar de baja)
+        // Usamos el header exacto de la tabla ("Razón social") y caemos a otras variantes
+        name:
+          row["Razón social"] ||
+          row["Razón Social"] ||
+          row["legal_name"] ||
+          "Proveedor",
       });
       setIsDeleteModalOpen(true);
     }
   };
 
-  const handleConfirmDelete = async (data) => {
+  const handleConfirmAction = async () => {
+    if (!selectedProvider?.id) return;
     setDeletingLoading(true);
     try {
-      await ProviderService.delete(data.id);
-      setAlert({ open: true, message: 'Proveedor eliminado correctamente', type: 'success' });
-      fetchData(); // Recargar lista
+      if (selectedAction === "restore") {
+        await ProviderService.restore(selectedProvider.id);
+        setAlert({
+          open: true,
+          message: "Proveedor restaurado correctamente",
+          type: "success",
+        });
+      } else {
+        await ProviderService.delete(selectedProvider.id);
+        setAlert({
+          open: true,
+          message: "Proveedor desactivado correctamente",
+          type: "success",
+        });
+      }
+      await fetchData();
       setIsDeleteModalOpen(false);
     } catch (error) {
-      console.error("Error eliminando proveedor:", error);
-      setAlert({ open: true, message: 'No se pudo eliminar el proveedor', type: 'error' });
+      console.error("Error ejecutando acción sobre proveedor:", error);
+      setAlert({
+        open: true,
+        message:
+          selectedAction === "restore"
+            ? "No se pudo restaurar el proveedor"
+            : "No se pudo desactivar el proveedor",
+        type: "error",
+      });
     } finally {
       setDeletingLoading(false);
     }
@@ -197,6 +229,8 @@ const SuppliersPage = () => {
             ) : (
               <InteractiveTable 
                 data={providers}
+                originData={rawProviders}
+                parameterId="id"
                 config={PROVIDER_CONFIG}
                 columnMapping={columnMapping}
                 onEdit={openEditModal}
@@ -206,6 +240,26 @@ const SuppliersPage = () => {
                 path="/suppliers/"
                 rowsPerPage={10}
                 nonEditableColumns={["Estado"]}
+                hiddenColumns={showInactive ? ["Estado"] : []}
+                rowActionsRenderer={
+                  showInactive
+                    ? (row) => (
+                        <div className="flex items-center gap-1">
+                          {/* Restaurar (solo en vista de inactivos) */}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteRequest(row, { isDeleted: true })}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded transition-colors"
+                            title="Restaurar"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">
+                              settings_backup_restore
+                            </span>
+                          </button>
+                        </div>
+                      )
+                    : undefined
+                }
                 headerButtons={
                   <HeaderActions
                     AddComponent={
@@ -217,8 +271,10 @@ const SuppliersPage = () => {
                         <span>Nuevo {PROVIDER_CONFIG.name}</span>
                       </button>
                     }
+                    isActive={!showInactive}
+                    onToggle={() => setShowInactive((prev) => !prev)}
                     showExport={true}
-                    onRefresh={fetchData}
+                    onRefresh={() => fetchData(showInactive)}
                   />
                 }
               />
@@ -246,11 +302,21 @@ const SuppliersPage = () => {
 
           <ConfirmActionModal 
             isOpen={isDeleteModalOpen}
-            setIsOpen={setIsDeleteModalOpen}
-            data={selectedProvider}
-            onConfirm={handleConfirmDelete}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={handleConfirmAction}
+            title={
+              selectedAction === "restore"
+                ? "Confirmar restauración"
+                : "Confirmar desactivación"
+            }
+            message={
+              selectedAction === "restore"
+                ? `¿Estás seguro de que deseas restaurar el ${PROVIDER_CONFIG.name.toLowerCase()} "${selectedProvider?.name || "sin nombre"}"?`
+                : `¿Estás seguro de que deseas desactivar el ${PROVIDER_CONFIG.name.toLowerCase()} "${selectedProvider?.name || "sin nombre"}"?`
+            }
+            isDangerous={selectedAction !== "restore"}
+            confirmLabel={selectedAction === "restore" ? "Restaurar" : "Desactivar"}
             loading={deletingLoading}
-            entityName={PROVIDER_CONFIG.name}
           />
         </>
       ) : (

@@ -85,18 +85,18 @@ const ClientsPage = () => {
       setSelectedClient({
         id: row.id,
         name: row['NOMBRE'] || 'Sin nombre',
-        state: true,
       });
       setIsDeleteModalOpen(true);
     }
   };
 
-  const handleConfirmDelete = async (data) => {
+  const handleConfirmDelete = async () => {
+    if (!selectedClient?.id) return;
     setDeletingLoading(true);
     try {
-      await ClientService.delete(data.id);
+      await ClientService.delete(selectedClient.id);
       setAlert({ open: true, message: 'Cliente eliminado exitosamente', type: 'success' });
-      setClients(prev => prev.filter(c => c.id !== data.id));
+      setClients(prev => prev.filter(c => c.id !== selectedClient.id));
       setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Error eliminando:", error);
@@ -238,11 +238,17 @@ const ClientsPage = () => {
       {/* Modal Genérico de Confirmación */}
       <ConfirmActionModal 
         isOpen={isDeleteModalOpen}
-        setIsOpen={setIsDeleteModalOpen}
-        data={selectedClient}
+        onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
+        title="Confirmar eliminación"
+        message={
+          selectedClient
+            ? `¿Estás seguro de que deseas eliminar el ${CLIENT_CONFIG.name.toLowerCase()} "${selectedClient.name}"?`
+            : `¿Estás seguro de que deseas eliminar este ${CLIENT_CONFIG.name.toLowerCase()}?`
+        }
+        isDangerous={true}
+        confirmLabel="Eliminar"
         loading={deletingLoading}
-        entityName={CLIENT_CONFIG.name}
       />
     </div>
   );

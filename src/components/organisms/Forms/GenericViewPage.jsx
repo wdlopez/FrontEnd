@@ -4,6 +4,7 @@ import BreadCrumb from "../../molecules/BreadCrumb";
 import Alerts from "../../molecules/Alerts";
 import InfoTooltip from "../../atoms/InfoToolTip";
 import GenericEditModal from "./GenericEditModal";
+import ConfirmActionModal from "./ConfirmActionModal";
 
 const DetailField = ({ label, value, type, options, mapFrom }) => {
   let displayValue = value;
@@ -65,12 +66,17 @@ const GenericViewPage = ({
   titleKey = "name",
   useEntityNameAsTitle = false,
   showMetaDates = true,
+  // Etiqueta del botón de desactivación/eliminación (afecta textos del modal y toasts)
+  deleteButtonLabel = "Eliminar",
 }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [actionType, setActionType] = useState("delete"); // 'delete' | 'restore'
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [alert, setAlert] = useState({
     open: false,
     message: "",
@@ -106,6 +112,98 @@ const GenericViewPage = ({
   useEffect(() => {
     fetchData();
   }, [id]);
+
+  const isDeleted = (() => {
+    if (!data) return false;
+
+    if (data.deleted_at || data.deletedAt) return true;
+
+    const active =
+      data.isActive !== undefined
+        ? data.isActive
+        : data.active !== undefined
+        ? data.active
+        : undefined;
+
+    if (active !== undefined) {
+      return (
+        active === false ||
+        active === 0 ||
+        active === "0" ||
+        active === "inactive"
+      );
+    }
+
+    const status =
+      data.status !== undefined
+        ? data.status
+        : data.estado !== undefined
+        ? data.estado
+        : undefined;
+
+    if (status !== undefined) {
+      return (
+        status === false ||
+        status === 0 ||
+        status === "0" ||
+        status === "inactive"
+      );
+    }
+
+    return false;
+  })();
+
+  const canDelete = typeof service?.delete === "function";
+  const canRestore = typeof service?.restore === "function";
+
+  const deleteLabel = deleteButtonLabel || "Eliminar";
+  const deleteVerb = deleteLabel.toLowerCase();
+  const deleteVerbCapitalized =
+    deleteVerb.charAt(0).toUpperCase() + deleteVerb.slice(1);
+
+  const handleOpenConfirm = () => {
+    if (!canDelete && !canRestore) return;
+    const nextAction = isDeleted && canRestore ? "restore" : "delete";
+    setActionType(nextAction);
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!data?.id) return;
+    setIsProcessingAction(true);
+    try {
+      if (actionType === "restore" && canRestore) {
+        await service.restore(data.id);
+        setAlert({
+          open: true,
+          message: `Registro restaurado correctamente`,
+          type: "success",
+        });
+        await fetchData();
+      } else if (canDelete) {
+        await service.delete(data.id);
+        setAlert({
+          open: true,
+          message: `Registro ${deleteVerb} correctamente`,
+          type: "success",
+        });
+        navigate(basePath);
+      }
+      setIsConfirmModalOpen(false);
+    } catch (error) {
+      console.error("Error ejecutando acción sobre registro:", error);
+      setAlert({
+        open: true,
+        message:
+          actionType === "restore"
+            ? `No se pudo restaurar el ${entityName.toLowerCase()}`
+            : `No se pudo ${deleteVerb} el ${entityName.toLowerCase()}`,
+        type: "error",
+      });
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
 
   const visibleFields = config.columns.filter(
     (col) =>
@@ -236,6 +334,25 @@ const GenericViewPage = ({
                   <span className="material-symbols-outlined text-[20px]">edit</span>
                   Editar
                 </button>
+
+                {(canDelete || (isDeleted && canRestore)) && (
+                  <button
+                    onClick={handleOpenConfirm}
+                    className={`inline-flex items-center gap-2 px-6 py-2 rounded-lg text-white transition-colors font-medium ${
+                      isDeleted && canRestore
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : "bg-red-600 hover:bg-red-700"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      {isDeleted && canRestore
+                        ? "settings_backup_restore"
+                        : "delete"}
+                    </span>
+                    {isDeleted && canRestore ? "Restaurar" : deleteLabel}
+                  </button>
+                )}
+
                 <button
                   onClick={() => navigate(basePath)}
                   className="px-6 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors font-medium"
@@ -269,6 +386,26 @@ const GenericViewPage = ({
           setIsEditModalOpen(false);
           fetchData();
         }}
+      />
+
+      {/* Modal de Confirmación para Eliminar / Restaurar */}
+      <ConfirmActionModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={handleConfirmAction}
+        title={
+          actionType === "restore"
+            ? "Confirmar restauración"
+            : `Confirmar ${deleteVerbCapitalized}`
+        }
+        message={
+          actionType === "restore"
+            ? `¿Estás seguro de que deseas restaurar el ${entityName.toLowerCase()} "${data[titleKey] || entityName}"?`
+            : `¿Estás seguro de que deseas ${deleteVerb} el ${entityName.toLowerCase()} "${data[titleKey] || entityName}"?`
+        }
+        isDangerous={actionType !== "restore"}
+        confirmLabel={actionType === "restore" ? "Restaurar" : deleteLabel}
+        loading={isProcessingAction}
       />
     </div>
   );

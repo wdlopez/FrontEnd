@@ -323,18 +323,18 @@ const UsersPage = () => {
       setSelectedUser({
         id: row.id,
         name: row['NOMBRE'] || row['email'] || 'Usuario',
-        state: true,
       });
       setIsDeleteModalOpen(true);
     }
   };
 
-  const handleConfirmDelete = async (data) => {
+  const handleConfirmDelete = async () => {
+    if (!selectedUser?.id) return;
     setDeletingLoading(true);
     try {
-      await UserService.delete(data.id);
+      await UserService.delete(selectedUser.id);
       setAlert({ open: true, message: 'Usuario eliminado correctamente', type: 'success' });
-      setUsers(prev => prev.filter(u => u.id !== data.id));
+      setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
       setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Error eliminando usuario:", error);
@@ -492,11 +492,17 @@ const UsersPage = () => {
       {/* Modal de Eliminación */}
       <ConfirmActionModal 
         isOpen={isDeleteModalOpen}
-        setIsOpen={setIsDeleteModalOpen}
-        data={selectedUser}
+        onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
+        title="Confirmar eliminación"
+        message={
+          selectedUser
+            ? `¿Estás seguro de que deseas eliminar el ${dynamicConfig.name.toLowerCase()} "${selectedUser.name}"?`
+            : `¿Estás seguro de que deseas eliminar este ${dynamicConfig.name.toLowerCase()}?`
+        }
+        isDangerous={true}
+        confirmLabel="Eliminar"
         loading={deletingLoading}
-        entityName={dynamicConfig.name}
       />
     </div>
   );

@@ -70,6 +70,19 @@ export const PROVIDER_CONFIG = {
         hideInForm: true, // Se suele manejar por defecto en creación
         editable: true,
         mapFrom: (item) => (item.status === 1 || item.status === "1" || item.status === true ? "Activo" : "Inactivo"),
+      },
+      {
+        header: "Fecha de eliminación",
+        backendKey: "deleted_at",
+        type: "date",
+        hideInForm: true,
+        hideInTable: true,
+        hideInView: true,
+        editable: false,
+        mapFrom: (item) =>
+          item.deleted_at
+            ? new Date(item.deleted_at).toLocaleDateString()
+            : "N/A",
       }
     ]
   };

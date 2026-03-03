@@ -11,6 +11,7 @@ const ViewOneSupplier = () => {
       entityName="Proveedor"
       basePath="/suppliers/"
       titleKey="legal_name"
+      deleteButtonLabel="Desactivar"
     />
   );
 };

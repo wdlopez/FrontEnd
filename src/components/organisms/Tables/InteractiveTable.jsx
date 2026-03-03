@@ -32,6 +32,8 @@ function InteractiveTable({
   serverPage = 1,
   serverTotalPages = 1,
   onServerPageChange,
+  // Renderizador opcional de acciones por fila (sobrescribe menú compacto)
+  rowActionsRenderer,
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [selectedCell, setSelectedCell] = useState({ rowIndex: 0, colIndex: 0 });
@@ -214,6 +216,55 @@ function InteractiveTable({
   columnWidths.forEach(({ column, width }) => {
     widthMap.set(column, width);
   });
+
+  const getOriginalRow = (row) => {
+    if (!originData || !parameterId) return row;
+    const found = originData.find(
+      (item) => String(item[parameterId]) === String(row.id)
+    );
+    return found || row;
+  };
+
+  const getIsDeleted = (row) => {
+    if (!row) return false;
+    const original = getOriginalRow(row) || row;
+
+    if (original.deleted_at || original.deletedAt) return true;
+
+    const active =
+      original.isActive !== undefined
+        ? original.isActive
+        : original.active !== undefined
+        ? original.active
+        : undefined;
+
+    if (active !== undefined) {
+      return (
+        active === false ||
+        active === 0 ||
+        active === "0" ||
+        active === "inactive"
+      );
+    }
+
+    const status =
+      original.status !== undefined
+        ? original.status
+        : original.estado !== undefined
+        ? original.estado
+        : undefined;
+
+    if (status !== undefined) {
+      return (
+        status === false ||
+        status === 0 ||
+        status === "0" ||
+        status === "inactive"
+      );
+    }
+
+    return false;
+  };
 
 
   const filteredData = data.filter((row) =>
@@ -524,30 +575,34 @@ function InteractiveTable({
                       </td>
                     )}
 
-                    {/* Acciones: menú de tres líneas; al desplegar solo iconos, render en portal para no dañar tabla */}
-                    {(onDelete || onAdd || actionButton || path !== undefined) &&
+                    {/* Acciones: por defecto, menú compacto; si rowActionsRenderer existe, usa acciones inline */}
+                    {(onDelete || onAdd || actionButton || path !== undefined || rowActionsRenderer) &&
                       <td className={`px-1 py-3 border-r border-gray-200 dark:border-gray-700 w-12 min-w-[48px] sticky ${showActionColumn ? "left-[35px]" : "left-0"} z-20 bg-white group-odd:bg-gray-50 group-hover:bg-blue-50 dark:bg-dark3 dark:group-odd:bg-dark4 dark:group-hover:bg-gray-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] align-top`}>
                         <div className="relative flex items-center justify-center">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              if (openActionsRowIndex === rowIndex) {
-                                setOpenActionsRowIndex(null);
-                                setOpenActionsRow(null);
-                              } else {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                setRowMenuPosition({ left: rect.left, top: rect.bottom });
-                                setOpenActionsRowIndex(rowIndex);
-                                setOpenActionsRow(row);
-                                rowMenuTriggerRef.current = e.currentTarget;
-                              }
-                            }}
-                            disabled={isSaving}
-                            className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
-                            title="Acciones"
-                          >
-                            <span className="material-symbols-outlined text-[20px]">menu</span>
-                          </button>
+                          {rowActionsRenderer ? (
+                            rowActionsRenderer(row, { isDeleted: getIsDeleted(row) })
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                if (openActionsRowIndex === rowIndex) {
+                                  setOpenActionsRowIndex(null);
+                                  setOpenActionsRow(null);
+                                } else {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setRowMenuPosition({ left: rect.left, top: rect.bottom });
+                                  setOpenActionsRowIndex(rowIndex);
+                                  setOpenActionsRow(row);
+                                  rowMenuTriggerRef.current = e.currentTarget;
+                                }
+                              }}
+                              disabled={isSaving}
+                              className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded p-1 transition-colors disabled:opacity-50"
+                              title="Acciones"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">menu</span>
+                            </button>
+                          )}
                         </div>
                       </td>}
 
@@ -722,14 +777,15 @@ function InteractiveTable({
           </div>
         </div>
 
-        {/* Menú de acciones por fila: render en portal para no superponer la barra de herramientas; solo iconos */}
-        {openActionsRowIndex !== null && openActionsRow &&
+        {/* Menú de acciones por fila: solo cuando no se usa rowActionsRenderer */}
+        {openActionsRowIndex !== null && openActionsRow && !rowActionsRenderer &&
           createPortal(
             <div
               ref={rowActionsMenuRef}
               className="fixed z-[9999] py-1 px-1 flex flex-row items-center gap-1 bg-white dark:bg-dark3 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl"
               style={{ left: rowMenuPosition.left, top: rowMenuPosition.top + 4 }}
             >
+              {/* Editar */}
               {onEdit && (
                 <button
                   type="button"
@@ -741,6 +797,7 @@ function InteractiveTable({
                   <span className="material-symbols-outlined text-[20px]">edit</span>
                 </button>
               )}
+              {/* Crear */}
               {onAdd && (
                 <button
                   type="button"
@@ -751,15 +808,25 @@ function InteractiveTable({
                   <span className="material-symbols-outlined text-[20px]">add</span>
                 </button>
               )}
+              {/* Eliminar / Restaurar dinámico */}
               {onDelete && (
                 <button
                   type="button"
-                  onClick={() => { onDelete(openActionsRow); setOpenActionsRowIndex(null); setOpenActionsRow(null); }}
+                  onClick={() => {
+                    const isDeleted = getIsDeleted(openActionsRow);
+                    onDelete(openActionsRow, { isDeleted });
+                    setOpenActionsRowIndex(null);
+                    setOpenActionsRow(null);
+                  }}
                   disabled={isSaving}
-                  title="Eliminar"
+                  title={getIsDeleted(openActionsRow) ? "Restaurar" : "Desactivar"}
                   className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 disabled:opacity-50 rounded transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[20px]">delete</span>
+                  <span className="material-symbols-outlined text-[20px]">
+                    {getIsDeleted(openActionsRow)
+                      ? "settings_backup_restore"
+                      : "delete"}
+                  </span>
                 </button>
               )}
               {path && (
