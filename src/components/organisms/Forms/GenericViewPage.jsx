@@ -206,7 +206,7 @@ const GenericViewPage = ({
                   <DetailField
                     key={field.backendKey}
                     label={field.header}
-                    value={data[field.backendKey]}
+                    value={typeof field.viewValueFrom === "function" ? field.viewValueFrom(data) : data[field.backendKey]}
                     type={field.type || "text"}
                     options={field.options}
                   />

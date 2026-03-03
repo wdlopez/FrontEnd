@@ -80,6 +80,10 @@ export const generateFormFields = (config) => {
         disabled: col.disabled || false,
       };
 
+      if (col.phoneCountryCodes && col.phoneCountryCodes.length > 0) {
+        field.phoneCountryCodes = col.phoneCountryCodes;
+      }
+
       // Agregar handler onInput si hay caracteres permitidos (allowedChars)
       if (col.allowedChars) {
         field.onInput = (e) => {

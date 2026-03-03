@@ -30,6 +30,9 @@ const GenericEditModal = ({
         pattern: col.validation,
         patternMessage: col.validationMessage || `${col.header} tiene un formato inválido`
       };
+      if (col.phoneCountryCodes && col.phoneCountryCodes.length > 0) {
+        field.phoneCountryCodes = col.phoneCountryCodes;
+      }
 
       if (col.allowedChars) {
         field.onInput = (e) => {

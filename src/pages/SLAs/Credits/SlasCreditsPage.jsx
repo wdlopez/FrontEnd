@@ -16,6 +16,7 @@ import MeasurementService from '../../../services/Slas/Measurement/measurement.s
 import { SLACREDIT_CONFIG } from '../../../config/entities/slacredit.config';
 import { normalizeList } from '../../../utils/api-helpers';
 import { mapBackendToTable } from '../../../utils/entityMapper';
+import MonthlyLogPage from '../MonthlyLog/MonthlyLogPage';
 
 const NAV_ITEMS = [
   { key: 'monthly-tracking', label: 'Seguimiento mensual' },
@@ -299,20 +300,7 @@ const SlasCreditsPage = ({ embedded = false }) => {
           </>
         )}
 
-        {/* Seguimiento mensual (diseño heredado, pendiente de lógica avanzada) */}
-        {activeTab === 'monthly-tracking' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-sm text-gray-600">
-            <p className="font-semibold mb-2">Seguimiento mensual de créditos SLA</p>
-            <p>
-              Aquí podrás ver, en una vista resumida por meses, el comportamiento de los créditos
-              asociados a cada SLA (CSL / KPI), similar al diseño de la versión anterior.
-            </p>
-            <p className="mt-2 italic">
-              Esta vista aún no está conectada a la lógica avanzada de penalidades mensuales, pero
-              el diseño ya está preparado para integrarla cuando el backend esté listo.
-            </p>
-          </div>
-        )}
+        {activeTab === 'monthly-tracking' && <MonthlyLogPage embedded />}
       </div>
     </div>
   );

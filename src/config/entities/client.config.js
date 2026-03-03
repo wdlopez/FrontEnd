@@ -1,3 +1,5 @@
+import { PHONE_COUNTRY_CODES } from '../../constants/phoneCountryCodes';
+
 export const CLIENT_CONFIG = {
   name: 'Cliente',
   endpoint: 'client',
@@ -30,7 +32,7 @@ export const CLIENT_CONFIG = {
       allowedChars: /[a-zA-Z0-9\s\-_.]/ 
     },
     {
-      header: 'Nombre Contacto del cliente',
+      header: 'Contacto del cliente',
       backendKey: 'contact_person',
       possibleKeys: ['contact_person', 'contacto'],
       required: true,
@@ -41,7 +43,7 @@ export const CLIENT_CONFIG = {
       allowedChars: /[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/
     },
     {
-      header: 'Categoría de cliente',
+      header: 'Industria del cliente',
       backendKey: 'category',
       possibleKeys: ['category'],
       required: true,
@@ -77,11 +79,11 @@ export const CLIENT_CONFIG = {
       backendKey: 'phone',
       possibleKeys: ['phone'],
       required: true,
-      type: 'text',
-      placeholder: '+57 3001234567',
-      validation: /^[0-9\s+]*$/,
-      validationMessage: 'Solo se permiten números, espacios y signo +',
-      allowedChars: /[0-9\s+]/
+      type: 'phoneWithCode',
+      placeholder: '3001234567',
+      validation: /^\+?[0-9]{10,15}$/,
+      validationMessage: 'Teléfono inválido. Use el código de país y solo dígitos.',
+      phoneCountryCodes: PHONE_COUNTRY_CODES
     },
     {
       header: 'Dirección',

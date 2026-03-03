@@ -10,6 +10,37 @@ import "react-multi-date-picker/styles/colors/teal.css";
 import DatePanel from "react-multi-date-picker/plugins/date_panel";
 import Toolbar from "react-multi-date-picker/plugins/toolbar";
 
+/** Parsea "phone" completo (ej: +573014100483) en { code, number } usando la lista de códigos */
+function parsePhoneWithCode(fullPhone, countryCodes) {
+  if (!fullPhone || typeof fullPhone !== "string") {
+    const first = countryCodes?.[0];
+    return { code: first?.value ?? "+57", number: "" };
+  }
+  const trimmed = fullPhone.trim();
+  if (!trimmed) {
+    const first = countryCodes?.[0];
+    return { code: first?.value ?? "+57", number: "" };
+  }
+  const sorted = [...(countryCodes || [])].sort(
+    (a, b) => (b.value?.length || 0) - (a.value?.length || 0)
+  );
+  for (const opt of sorted) {
+    const code = opt.value || "";
+    if (code && trimmed.startsWith(code)) {
+      const number = trimmed.slice(code.length).replace(/\D/g, "");
+      return { code, number };
+    }
+  }
+  const first = countryCodes?.[0];
+  return { code: first?.value ?? "+57", number: trimmed.replace(/\D/g, "") };
+}
+
+/** Construye el valor final para el backend: +573014100483 */
+function buildFullPhone(code, number) {
+  const digits = (number || "").replace(/\D/g, "");
+  return (code || "") + digits;
+}
+
 function Form(props, ref) {
   const {
     fields = [],
@@ -335,6 +366,46 @@ function Form(props, ref) {
                       placeholder={genPlaceholder(f)}
                       {...register(f.name, validationRules)}
                       onInput={(e) => f.onInput && f.onInput(e)}
+                    />
+                  ) : f.type === "phoneWithCode" ? (
+                    // Código de país (desplegable) + número; se envía combinado al backend (ej: +573014100483)
+                    <Controller
+                      control={control}
+                      name={f.name}
+                      rules={validationRules}
+                      render={({ field: { value, onChange } }) => {
+                        const codes = f.phoneCountryCodes || [];
+                        const { code, number } = parsePhoneWithCode(value, codes);
+                        return (
+                          <div className="flex gap-2">
+                            <select
+                              value={code}
+                              onChange={(e) => {
+                                const newCode = e.target.value;
+                                onChange(buildFullPhone(newCode, number));
+                              }}
+                              className={`${selectClass(f.name)} flex-shrink-0 w-[180px] max-w-[45%]`}
+                            >
+                              {codes.map((opt, i) => (
+                                <option key={i} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              type="tel"
+                              value={number}
+                              onChange={(e) => {
+                                const newNumber = e.target.value.replace(/\D/g, "");
+                                onChange(buildFullPhone(code, newNumber));
+                              }}
+                              placeholder={f.placeholder || "3001234567"}
+                              className={`${inputClass(f.name)} flex-1`}
+                              inputMode="numeric"
+                            />
+                          </div>
+                        );
+                      }}
                     />
                   ) : (
                     // Inputs estándar (text, number, email, etc)
