@@ -21,6 +21,18 @@ const UserService = {
     return response.data;
   },
 
+  // Listado de usuarios eliminados (soft-delete) con paginación
+  getAllDeleted: async ({ page = 1, limit = 10, ...restParams } = {}) => {
+    const params = { page, limit, ...restParams };
+    if (import.meta.env.DEV) {
+      console.debug("[UserService.getAllDeleted] params:", params);
+    }
+    const response = await api.get("/users/deleted", {
+      params,
+    });
+    return response.data;
+  },
+
   create: async (userData) => {
   const payload = { ...userData };
 
@@ -66,11 +78,18 @@ update: async (id, userData) => {
     return response.data;
   },
 
+  restore: async (id) => {
+    const response = await api.patch(`/users/recovery/${id}`);
+    return response.data;
+  },
+
   getAllUsers: () => UserService.getAll(),
+  getAllDeletedUsers: () => UserService.getAllDeleted(),
   getUserById: (id) => UserService.getById(id),
   createUser: (data) => UserService.create(data),
   updateUser: (id, data) => UserService.update(id, data),
   deleteUser: (id) => UserService.delete(id),
+  restoreUser: (id) => UserService.restore(id),
 };
 
 export default UserService;

@@ -11,6 +11,7 @@ const ViewOneUser = () => {
       entityName="Usuario"
       basePath="/settings/userNroles"
       titleKey="firstName"
+      deleteButtonLabel="Desactivar"
     />
   );
 };

@@ -22,6 +22,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
+  const [rawUsers, setRawUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(USER_CONFIG);
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,6 +41,7 @@ const UsersPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
+  const [selectedAction, setSelectedAction] = useState("delete"); // 'delete' | 'restore'
   const [isAssignConfirmOpen, setIsAssignConfirmOpen] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
 
@@ -68,17 +70,20 @@ const UsersPage = () => {
 
   const hasInitialized = useRef(false);
   const hasHandledCreateAdmin = useRef(false);
+  const [showInactive, setShowInactive] = useState(false);
 
   // 1. Cargar datos
   const showAlert = (type, message, title = "") => {
     setAlert({ open: true, type, message, title });
   };
 
-  const fetchData = async (page = 1) => {
+  const fetchData = async (page = 1, showDeleted = showInactive) => {
     setLoading(true);
     try {
       const [usersRes, rolesRes, clientsRes, providersRes] = await Promise.allSettled([
-        UserService.getAll({ page, limit: 10 }),
+        showDeleted
+          ? UserService.getAllDeleted({ page, limit: 10 })
+          : UserService.getAll({ page, limit: 10 }),
         RoleService.getRoles(),
         ClientService.getAll(),
         ProviderService.getAll()
@@ -110,6 +115,7 @@ const UsersPage = () => {
         }
 
         const formattedUsers = mapBackendToTable(filteredList, USER_CONFIG);
+        setRawUsers(filteredList);
         setUsers(formattedUsers);
 
         const meta = usersResponse?.data || {};
@@ -181,9 +187,17 @@ const UsersPage = () => {
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
-      fetchData(1);
+      fetchData(1, showInactive);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (hasInitialized.current) {
+      fetchData(currentPage, showInactive);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showInactive]);
 
   // Efecto: flujo guiado desde la creación de Cliente -> creación de Usuario administrador
   useEffect(() => {
@@ -285,8 +299,10 @@ const UsersPage = () => {
     }
   };
 
-  const handleDeleteRequest = (row) => {
+  const handleDeleteRequest = (row, { isDeleted } = {}) => {
     if (row?.id) {
+      const action = isDeleted ? "restore" : "delete";
+      setSelectedAction(action);
       setSelectedUser({
         id: row.id,
         name: row['NOMBRE'] || row['email'] || 'Usuario',
@@ -295,17 +311,27 @@ const UsersPage = () => {
     }
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmAction = async () => {
     if (!selectedUser?.id) return;
     setDeletingLoading(true);
     try {
-      await UserService.delete(selectedUser.id);
-      showAlert('success', 'Usuario eliminado correctamente');
-      setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+      if (selectedAction === "restore") {
+        await UserService.restore(selectedUser.id);
+        showAlert('success', 'Usuario restaurado correctamente');
+      } else {
+        await UserService.delete(selectedUser.id);
+        showAlert('success', 'Usuario desactivado correctamente');
+      }
+      await fetchData(currentPage, showInactive);
       setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Error eliminando usuario:", error);
-      showAlert('error', 'No se pudo eliminar el usuario');
+      showAlert(
+        'error',
+        selectedAction === "restore"
+          ? 'No se pudo restaurar el usuario'
+          : 'No se pudo desactivar el usuario'
+      );
     } finally {
       setDeletingLoading(false);
     }
@@ -382,6 +408,8 @@ const UsersPage = () => {
         ) : (
           <InteractiveTable 
             data={users}
+            originData={rawUsers}
+            parameterId="id"
             config={dynamicConfig}
             columnMapping={columnMapping}
             selectColumns={selectColumns}
@@ -395,7 +423,26 @@ const UsersPage = () => {
             serverPagination={true}
             serverPage={currentPage}
             serverTotalPages={totalPages}
-            onServerPageChange={(page) => fetchData(page)}
+            hiddenColumns={showInactive ? ["Estado"] : []}
+            rowActionsRenderer={
+              showInactive
+                ? (row) => (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRequest(row, { isDeleted: true })}
+                        className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded transition-colors"
+                        title="Restaurar"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          settings_backup_restore
+                        </span>
+                      </button>
+                    </div>
+                  )
+                : undefined
+            }
+            onServerPageChange={(page) => fetchData(page, showInactive)}
             headerButtons={
               <HeaderActions
                 AddComponent={
@@ -407,8 +454,10 @@ const UsersPage = () => {
                     <span>Nuevo {dynamicConfig.name}</span>
                   </button>
                 }
+                isActive={!showInactive}
+                onToggle={() => setShowInactive((prev) => !prev)}
                 showExport={true}
-                onRefresh={() => fetchData(currentPage)}
+                onRefresh={() => fetchData(currentPage, showInactive)}
               />
             }
           />
@@ -464,15 +513,23 @@ const UsersPage = () => {
       <ConfirmActionModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Confirmar eliminación"
-        message={
-          selectedUser
-            ? `¿Estás seguro de que deseas eliminar el ${dynamicConfig.name.toLowerCase()} "${selectedUser.name}"?`
-            : `¿Estás seguro de que deseas eliminar este ${dynamicConfig.name.toLowerCase()}?`
+        onConfirm={handleConfirmAction}
+        title={
+          selectedAction === "restore"
+            ? "Confirmar restauración"
+            : "Confirmar desactivación"
         }
-        isDangerous={true}
-        confirmLabel="Eliminar"
+        message={
+          selectedAction === "restore"
+            ? selectedUser
+              ? `¿Estás seguro de que deseas restaurar el ${dynamicConfig.name.toLowerCase()} "${selectedUser.name}"?`
+              : `¿Estás seguro de que deseas restaurar este ${dynamicConfig.name.toLowerCase()}?`
+            : selectedUser
+              ? `¿Estás seguro de que deseas desactivar el ${dynamicConfig.name.toLowerCase()} "${selectedUser.name}"?`
+              : `¿Estás seguro de que deseas desactivar este ${dynamicConfig.name.toLowerCase()}?`
+        }
+        isDangerous={selectedAction !== "restore"}
+        confirmLabel={selectedAction === "restore" ? "Restaurar" : "Desactivar"}
         loading={deletingLoading}
       />
 
