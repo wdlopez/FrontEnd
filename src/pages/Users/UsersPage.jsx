@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
@@ -41,7 +40,8 @@ const UsersPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
-  const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [isAssignConfirmOpen, setIsAssignConfirmOpen] = useState(false);
+  const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
 
   // Estado para valores iniciales del formulario de creación (flujo guiado)
   const [addInitialValues, setAddInitialValues] = useState({});
@@ -70,6 +70,10 @@ const UsersPage = () => {
   const hasHandledCreateAdmin = useRef(false);
 
   // 1. Cargar datos
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, type, message, title });
+  };
+
   const fetchData = async (page = 1) => {
     setLoading(true);
     try {
@@ -87,31 +91,10 @@ const UsersPage = () => {
         // Aislamiento por cliente en frontend para roles client-scoped.
         // IMPORTANTE: solo filtramos si la respuesta realmente trae campos de cliente (clientId / entityId);
         // en muchos casos el backend ya está aislando por tenant (key_client) y no envía esos campos.
-        let filteredList = dataList;
-        const role = user?.role || null;
-        const isClientScoped =
-          role === "client_superadmin" || role === "client_contract_admin";
-
-        const hasClientFields = dataList.some(
-          (u) =>
-            u.clientId !== undefined ||
-            u.client_id !== undefined ||
-            u.entityId !== undefined ||
-            u.entity_id !== undefined,
-        );
-
-        if (!isGlobalAdmin && isClientScoped && currentClientId && hasClientFields) {
-          filteredList = dataList.filter((u) => {
-            const userClientId = u.clientId || u.client_id || null;
-            const userEntityId = u.entityId || u.entity_id || null;
-            const matchesClientId = userClientId === currentClientId;
-            const matchesEntityId =
-              typeof userEntityId === "string" &&
-              (userEntityId === `c_${currentClientId}` ||
-                userEntityId === currentClientId);
-            return matchesClientId || matchesEntityId;
-          });
-        }
+        // Por ahora NO filtramos por cliente en frontend.
+        // El backend ya aísla por tenant (key_client) y este filtro estaba dejando
+        // a client_superadmin / client_contract_admin sin ver usuarios.
+        const filteredList = dataList;
 
         if (import.meta.env.DEV) {
           console.debug(
@@ -119,8 +102,6 @@ const UsersPage = () => {
             role,
             "currentClientId:",
             currentClientId,
-            "hasClientFields:",
-            hasClientFields,
             "users total:",
             dataList.length,
             "users filtrados:",
@@ -191,7 +172,7 @@ const UsersPage = () => {
 
     } catch (error) {
       console.error("Error cargando datos de usuarios:", error);
-      setAlert({ open: true, message: "Error al cargar la información", type: "error" });
+      showAlert("error", "Error al cargar la información");
     } finally {
       setLoading(false);
     }
@@ -220,13 +201,13 @@ const UsersPage = () => {
 
       // Mensaje sutil para reforzar el contexto (opcional, sin bloquear)
       if (clientNameParam) {
-        Swal.fire({
-          title: 'Crear Administrador',
-          text: `Ahora crea el primer usuario administrador para el cliente "${clientNameParam}".`,
-          icon: 'info',
-          timer: 3500,
-          showConfirmButton: false,
-        });
+        showAlert(
+          "info",
+          clientNameParam
+            ? `Ahora crea el primer usuario administrador para el cliente "${clientNameParam}".`
+            : "Ahora crea el primer usuario administrador para este cliente.",
+          "Crear Administrador"
+        );
       }
     }
   }, [actionParam, clientIdParam, clientNameParam]);
@@ -261,21 +242,19 @@ const UsersPage = () => {
           isPrincipal: true,
         });
 
-        Swal.fire({
-          title: "¡Usuario creado y asignado!",
-          text: clientNameParam
+        showAlert(
+          "success",
+          clientNameParam
             ? `El usuario ha sido vinculado automáticamente al cliente "${clientNameParam}".`
             : "El usuario ha sido vinculado automáticamente al cliente.",
-          icon: "success",
-          timer: 3500,
-          showConfirmButton: false,
-        });
+          "¡Usuario creado y asignado!"
+        );
       } catch (error) {
         console.error("Error creando relación usuario-cliente:", error);
-        Swal.fire(
-          "Usuario creado",
+        showAlert(
+          "warning",
           "Se creó el usuario, pero no se pudo crear la relación con el cliente. Puedes asignarlo manualmente más tarde.",
-          "warning"
+          "Usuario creado"
         );
       }
 
@@ -283,20 +262,8 @@ const UsersPage = () => {
       return;
     }
 
-    // Flujo normal: seguimos usando el AssignClientModal opcional
-    Swal.fire({
-      title: "¡Usuario Creado!",
-      text: "¿Deseas asociar este usuario a un cliente ahora?",
-      icon: "success",
-      showCancelButton: true,
-      confirmButtonText: "Sí, asociar cliente",
-      cancelButtonText: "No, finalizar",
-      confirmButtonColor: "#2563EB",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setShowAssignModal(true);
-      }
-    });
+    // Flujo normal: mostramos un modal de confirmación para asociar cliente
+    setIsAssignConfirmOpen(true);
   };
 
   // Acciones de Tabla
@@ -333,12 +300,12 @@ const UsersPage = () => {
     setDeletingLoading(true);
     try {
       await UserService.delete(selectedUser.id);
-      setAlert({ open: true, message: 'Usuario eliminado correctamente', type: 'success' });
+      showAlert('success', 'Usuario eliminado correctamente');
       setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
       setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Error eliminando usuario:", error);
-      setAlert({ open: true, message: 'No se pudo eliminar el usuario', type: 'error' });
+      showAlert('error', 'No se pudo eliminar el usuario');
     } finally {
       setDeletingLoading(false);
     }
@@ -402,7 +369,8 @@ const UsersPage = () => {
         open={alert.open} 
         setOpen={(val) => setAlert(prev => ({ ...prev, open: val }))} 
         message={alert.message} 
-        type={alert.type} 
+        type={alert.type}
+        title={alert.title}
       />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -457,6 +425,7 @@ const UsersPage = () => {
         onSuccess={handleUserCreated} // <--- Aquí conectamos el flujo
         initialValues={addInitialValues}
         getExtraPayload={getUserExtraPayload}
+        onNotify={showAlert}
       />
 
       {/* Nuevo Modal de Asignación de Cliente */}
@@ -477,6 +446,7 @@ const UsersPage = () => {
         onSuccess={() => {
           console.log("Relación usuario-cliente creada");
         }}
+        onNotify={showAlert}
       />
 
       {/* Modal de Edición Genérico */}
@@ -487,6 +457,7 @@ const UsersPage = () => {
         service={UserService}
         config={dynamicConfig}
         onSuccess={fetchData}
+        onNotify={showAlert}
       />
 
       {/* Modal de Eliminación */}
@@ -503,6 +474,21 @@ const UsersPage = () => {
         isDangerous={true}
         confirmLabel="Eliminar"
         loading={deletingLoading}
+      />
+
+      {/* Modal de confirmación para asociar cliente al usuario recién creado */}
+      <ConfirmActionModal
+        isOpen={isAssignConfirmOpen}
+        onClose={() => setIsAssignConfirmOpen(false)}
+        onConfirm={() => {
+          setShowAssignModal(true);
+          setIsAssignConfirmOpen(false);
+        }}
+        title="¡Usuario Creado!"
+        message="¿Deseas asociar este usuario a un cliente ahora?"
+        isDangerous={false}
+        confirmLabel="Sí, asociar cliente"
+        cancelLabel="No, finalizar"
       />
     </div>
   );

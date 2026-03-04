@@ -40,6 +40,14 @@ const DashboardIndex = () => {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("info");
+  const [alertTitle, setAlertTitle] = useState("");
+
+  const showAlert = (type, message, title = "") => {
+    setAlertType(type);
+    setAlertMessage(message);
+    setAlertTitle(title);
+    setAlertOpen(true);
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -123,7 +131,8 @@ const DashboardIndex = () => {
           open={alertOpen} 
           setOpen={setAlertOpen} 
           message={alertMessage} 
-          type={alertType} 
+          type={alertType}
+          title={alertTitle}
         />
 
         {/* Dashboard Completo siempre visible */}
@@ -175,6 +184,7 @@ const DashboardIndex = () => {
           setOpen={setAlertOpen}
           message={alertMessage}
           type={alertType}
+          title={alertTitle}
         />
 
         {/* Dashboard DAC de contratos (antes en admin de contratos) */}

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import BreadCrumb from '../../components/molecules/BreadCrumb';
 import HeaderActions from '../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../components/organisms/Tables/InteractiveTable';
@@ -31,7 +30,7 @@ const ClientsPage = () => {
   
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [selectedAction, setSelectedAction] = useState("delete"); // 'delete' | 'restore'
-  const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
   const [showInactive, setShowInactive] = useState(false);
 
   const breadcrumbPaths = [
@@ -53,6 +52,11 @@ const ClientsPage = () => {
       setClients(formattedClients);
     } catch (error) {
       console.error("Error cargando clientes:", error);
+      // Si es 401, el interceptor ya habrá intentado refrescar token y, si falla, redirige al login.
+      // No mostramos alerta genérica para no confundir al usuario cuando la sesión ha expirado.
+      if (error?.response?.status === 401) {
+        return;
+      }
       setAlert({ open: true, message: "No se pudieron cargar los clientes.", type: "error" });
     } finally {
       setLoading(false);
@@ -83,16 +87,20 @@ const ClientsPage = () => {
     }
   };
 
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, type, message, title });
+  };
+
   const handleInlineEdit = async ({ row, column, realColumn, newValue }) => {
     try {
       await ClientService.update(row.id, { [realColumn]: newValue });
       setClients(prev => prev.map(c =>
         c.id === row.id ? { ...c, [column]: newValue } : c
       ));
-      setAlert({ open: true, message: 'Campo actualizado correctamente', type: 'success' });
+      showAlert('success', 'Campo actualizado correctamente');
     } catch (error) {
       console.error("Error actualizando campo:", error);
-      setAlert({ open: true, message: 'No se pudo actualizar el campo', type: 'error' });
+      showAlert('error', 'No se pudo actualizar el campo');
     }
   };
 
@@ -118,31 +126,21 @@ const ClientsPage = () => {
     try {
       if (selectedAction === "restore") {
         await ClientService.restore(selectedClient.id);
-        setAlert({
-          open: true,
-          message: "Cliente restaurado correctamente",
-          type: "success",
-        });
+        showAlert("success", "Cliente restaurado correctamente");
       } else {
         await ClientService.delete(selectedClient.id);
-        setAlert({
-          open: true,
-          message: "Cliente desactivado correctamente",
-          type: "success",
-        });
+        showAlert("success", "Cliente desactivado correctamente");
       }
       await fetchClients(showInactive);
       setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Error eliminando:", error);
-      setAlert({
-        open: true,
-        message:
-          selectedAction === "restore"
-            ? "No se pudo restaurar el cliente"
-            : "No se pudo desactivar el cliente",
-        type: "error",
-      });
+      showAlert(
+        "error",
+        selectedAction === "restore"
+          ? "No se pudo restaurar el cliente"
+          : "No se pudo desactivar el cliente"
+      );
     } finally {
       setDeletingLoading(false);
     }
@@ -175,16 +173,11 @@ const ClientsPage = () => {
     }
 
     if (clientId && clientName) {
-      // Toast guiado hacia la creación del administrador
-      Swal.fire({
-        title: "Client created! Now, let's assign an Administrator.",
-        icon: "success",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      });
+      showAlert(
+        "success",
+        "Client created! Now, let's assign an Administrator.",
+        "Success"
+      );
 
       const searchParams = new URLSearchParams({
         action: "create_admin",
@@ -225,7 +218,8 @@ const ClientsPage = () => {
         open={alert.open} 
         setOpen={(val) => setAlert(prev => ({ ...prev, open: val }))} 
         message={alert.message} 
-        type={alert.type} 
+        type={alert.type}
+        title={alert.title}
       />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -288,6 +282,7 @@ const ClientsPage = () => {
         service={ClientService}
         config={CLIENT_CONFIG}
         onSuccess={handleClientCreated}
+        onNotify={showAlert}
       />
 
       {/* Modal Genérico de Edición */}
@@ -298,6 +293,7 @@ const ClientsPage = () => {
         service={ClientService}
         config={CLIENT_CONFIG}
         onSuccess={fetchClients}
+        onNotify={showAlert}
       />
 
       {/* Modal Genérico de Confirmación */}

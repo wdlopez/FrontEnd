@@ -26,7 +26,11 @@ const MonthlyLogPage = ({ embedded = false }) => {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
-  const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
+
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, message, type, title });
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -67,11 +71,11 @@ const MonthlyLogPage = ({ embedded = false }) => {
       setDynamicConfig(newConfig);
     } catch (error) {
       console.error('Error cargando registros mensuales de SLA:', error);
-      setAlert({
-        open: true,
-        message: 'Error al cargar los registros mensuales de SLA.',
-        type: 'error',
-      });
+      showAlert(
+        'error',
+        'Error al cargar los registros mensuales de SLA.',
+        'Error'
+      );
     } finally {
       setLoading(false);
     }
@@ -107,7 +111,7 @@ const MonthlyLogPage = ({ embedded = false }) => {
       setAlert({ open: true, message: 'Campo actualizado correctamente', type: 'success' });
     } catch (error) {
       console.error('Error actualizando campo:', error);
-      setAlert({ open: true, message: 'No se pudo actualizar el campo', type: 'error' });
+      showAlert('error', 'No se pudo actualizar el campo', 'Error');
     }
   };
 
@@ -133,11 +137,11 @@ const MonthlyLogPage = ({ embedded = false }) => {
       setIsDeleteOpen(false);
     } catch (error) {
       console.error('Error eliminando registro mensual:', error);
-      setAlert({
-        open: true,
-        message: 'No se pudo eliminar el registro mensual',
-        type: 'error',
-      });
+      showAlert(
+        'error',
+        'No se pudo eliminar el registro mensual',
+        'Error'
+      );
     } finally {
       setDeletingLoading(false);
     }
@@ -176,6 +180,7 @@ const MonthlyLogPage = ({ embedded = false }) => {
           setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })}
           message={alert.message}
           type={alert.type}
+          title={alert.title}
         />
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -224,6 +229,7 @@ const MonthlyLogPage = ({ embedded = false }) => {
             month: currentMonth,
             percentage_value: 100,
           }}
+          onNotify={showAlert}
         />
 
         <GenericEditModal
@@ -233,6 +239,7 @@ const MonthlyLogPage = ({ embedded = false }) => {
           service={SlaMonthlyLogService}
           config={dynamicConfig}
           onSuccess={fetchData}
+          onNotify={showAlert}
         />
 
         <ConfirmActionModal

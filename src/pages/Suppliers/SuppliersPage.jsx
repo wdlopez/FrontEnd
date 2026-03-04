@@ -38,7 +38,7 @@ const SuppliersPage = () => {
   const [editProviderId, setEditProviderId] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [selectedAction, setSelectedAction] = useState("delete"); // 'delete' | 'restore'
-  const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
   const [showInactive, setShowInactive] = useState(false);
 
   const location = useLocation();
@@ -86,6 +86,11 @@ const SuppliersPage = () => {
       setProviders(formattedProviders);
     } catch (error) {
       console.error("Error cargando proveedores:", error);
+      // Si es 401, el interceptor ya habrá intentado refrescar token y, si falla, redirige al login.
+      // No mostramos alerta genérica para no confundir al usuario cuando la sesión ha expirado.
+      if (error?.response?.status === 401) {
+        return;
+      }
       setAlert({ open: true, message: "Error al cargar los proveedores", type: "error" });
     } finally {
       setLoading(false);
@@ -136,37 +141,32 @@ const SuppliersPage = () => {
     }
   };
 
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, message, type, title });
+  };
+
   const handleConfirmAction = async () => {
     if (!selectedProvider?.id) return;
     setDeletingLoading(true);
     try {
       if (selectedAction === "restore") {
         await ProviderService.restore(selectedProvider.id);
-        setAlert({
-          open: true,
-          message: "Proveedor restaurado correctamente",
-          type: "success",
-        });
+        showAlert("success", "Proveedor restaurado correctamente", "¡Actualizado!");
       } else {
         await ProviderService.delete(selectedProvider.id);
-        setAlert({
-          open: true,
-          message: "Proveedor desactivado correctamente",
-          type: "success",
-        });
+        showAlert("success", "Proveedor desactivado correctamente", "¡Actualizado!");
       }
       await fetchData();
       setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Error ejecutando acción sobre proveedor:", error);
-      setAlert({
-        open: true,
-        message:
-          selectedAction === "restore"
-            ? "No se pudo restaurar el proveedor"
-            : "No se pudo desactivar el proveedor",
-        type: "error",
-      });
+      showAlert(
+        "error",
+        selectedAction === "restore"
+          ? "No se pudo restaurar el proveedor"
+          : "No se pudo desactivar el proveedor",
+        "Error"
+      );
     } finally {
       setDeletingLoading(false);
     }
@@ -217,7 +217,8 @@ const SuppliersPage = () => {
             open={alert.open} 
             setOpen={(val) => setAlert(prev => ({ ...prev, open: val }))} 
             message={alert.message} 
-            type={alert.type} 
+            type={alert.type}
+            title={alert.title}
           />
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -287,8 +288,9 @@ const SuppliersPage = () => {
             setIsOpen={setIsAddModalOpen}
             service={ProviderService}
             config={PROVIDER_CONFIG}
-            onSuccess={fetchData}
+            onSuccess={() => fetchData(showInactive)}
             getExtraPayload={() => ({ risk_level: "medium" })}
+            onNotify={showAlert}
           />
 
           <GenericEditModal 
@@ -297,7 +299,8 @@ const SuppliersPage = () => {
             entityId={editProviderId}
             service={ProviderService}
             config={PROVIDER_CONFIG}
-            onSuccess={fetchData}
+            onSuccess={() => fetchData(showInactive)}
+            onNotify={showAlert}
           />
 
           <ConfirmActionModal 

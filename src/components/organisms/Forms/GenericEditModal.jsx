@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Modal from "../../molecules/Modal";
 import Form from "./Form";
-import Swal from "sweetalert2";
 import InfoTooltip from "../../atoms/InfoToolTip";
 import { getEntityFormInfo } from "../../../utils/text";
 
@@ -11,7 +10,8 @@ const GenericEditModal = ({
   entityId, 
   service,
   config,
-  onSuccess 
+  onSuccess,
+  onNotify,
 }) => {
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true); 
@@ -86,7 +86,9 @@ const GenericEditModal = ({
       setInitialData(data);
     } catch (error) {
       console.error("Error cargando datos:", error);
-      Swal.fire("Error", "No se pudieron cargar los datos", "error");
+      if (onNotify) {
+        onNotify("error", "No se pudieron cargar los datos", "Error");
+      }
       setIsOpen(false);
     } finally {
       setDataLoading(false);
@@ -134,16 +136,22 @@ const GenericEditModal = ({
           return obj;
         }, {});
 
-    await service.update(entityId, filteredData);
+      await service.update(entityId, filteredData);
 
-      Swal.fire("¡Actualizado!", `Exitoso`, "success");
+      if (onNotify) {
+        onNotify("success", "Exitoso", "¡Actualizado!");
+      }
+
       setIsOpen(false);
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error actualizando:", error);
       const msg = error.response?.data?.message;
       const errorDisplay = Array.isArray(msg) ? msg.join(", ") : msg || "Error al actualizar";
-      Swal.fire("Error", errorDisplay, "error");
+
+      if (onNotify) {
+        onNotify("error", errorDisplay, "Error");
+      }
     } finally {
       setLoading(false);
     }

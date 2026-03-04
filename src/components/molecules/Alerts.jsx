@@ -1,6 +1,15 @@
 import React, { useEffect } from "react";
+import MuiAlert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
 
-export default function Alert({ open, setOpen, message, type }) {
+const DEFAULT_TITLES = {
+    success: "Success",
+    info: "Info",
+    warning: "Warning",
+    error: "Error",
+};
+
+export default function Alert({ open, setOpen, message, type = "info", title }) {
     const handleClose = () => {
         setOpen(false);
     };
@@ -13,36 +22,33 @@ export default function Alert({ open, setOpen, message, type }) {
         return () => clearTimeout(timer); // Limpiar el timer al desmontar o al cambiar el estado
     }, [open, setOpen]);
 
-    const getAlertStyle = () => {
-        switch (type) {
-            case "success":
-                return "bg-blue-100 border-blue-500 text-blue-800";
-            case "error":
-                return "bg-yellow-100 border-yellow-500 text-yellow-800";
-            default:
-                return "bg-gray-100 border-gray-500 text-gray-800";
-        }
-    };
-
     if (!open) return null; // No renderizar nada si el modal no está abierto
+
+    const severity = ["success", "info", "warning", "error"].includes(type)
+        ? type
+        : "info";
+
+    const resolvedTitle = title || DEFAULT_TITLES[severity] || "Info";
 
     return (
         <div
-            style={{zIndex:100}}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-100"
+            style={{ zIndex: 100 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
             onClick={handleClose}
         >
             <div
-                className={`relative w-full max-w-md p-4 border rounded-lg shadow-lg ${getAlertStyle()}`}
+                className="relative w-full max-w-md px-4"
                 onClick={(e) => e.stopPropagation()} // Evitar que el evento cierre al hacer clic dentro del modal
             >
-                <button
-                    className="absolute top-2 right-2 text-xl text-gray-800 hover:text-gray-600"
-                    onClick={handleClose}
+                <MuiAlert
+                    severity={severity}
+                    variant="filled"
+                    onClose={handleClose}
+                    sx={{ alignItems: "flex-start" }}
                 >
-                    ✖
-                </button>
-                <p className="py-4">{message}</p>
+                    <AlertTitle>{resolvedTitle}</AlertTitle>
+                    {message}
+                </MuiAlert>
             </div>
         </div>
     );

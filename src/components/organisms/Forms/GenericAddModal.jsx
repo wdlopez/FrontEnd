@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import Modal from "../../molecules/Modal";
 import Form from "./Form";
-import Swal from "sweetalert2";
 import InfoTooltip from "../../atoms/InfoToolTip";
 import { getEntityFormInfo } from "../../../utils/text";
 import { generateFormFields } from "../../../utils/entityMapper";
@@ -15,6 +14,7 @@ const GenericAddModal = ({
   initialValues = {},
   getExtraPayload,
   fieldSpecialOption,
+  onNotify,
 }) => {
   const [loading, setLoading] = useState(false);
   const formFields = generateFormFields(config);
@@ -55,11 +55,11 @@ const GenericAddModal = ({
 
       const response = await service.create(payload);
 
-      Swal.fire(
-        "¡Creado!", 
-        `El ${config.name} ha sido registrado con éxito.`, 
-        "success"
-      );
+      const successMessage = `El ${config.name} ha sido registrado con éxito.`;
+
+      if (onNotify) {
+        onNotify("success", successMessage, "¡Creado!");
+      }
       
       setIsOpen(false);
       
@@ -69,7 +69,10 @@ const GenericAddModal = ({
       console.error(`Error creando ${config.name}:`, error);
       const msg = error.response?.data?.message;
       const errorDisplay = Array.isArray(msg) ? msg.join(", ") : msg || "Error al procesar la solicitud";
-      Swal.fire("Error", errorDisplay, "error");
+
+      if (onNotify) {
+        onNotify("error", errorDisplay, "Error");
+      }
     } finally {
       setLoading(false);
     }

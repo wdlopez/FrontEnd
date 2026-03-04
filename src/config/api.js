@@ -23,11 +23,14 @@ const logoutAndRedirect = () => {
   Cookies.remove('user_data');
   try {
     window.localStorage?.removeItem('selected_schema');
+    // Marcamos en localStorage que la sesión expiró para poder mostrar un mensaje en login si se desea
+    window.localStorage?.setItem('session_expired', '1');
   } catch {
     // Ignoramos errores de acceso a localStorage
   }
-  if (window.location.pathname !== '/login') {
-    window.location.href = '/login';
+  if (!window.location.pathname.startsWith('/login')) {
+    // Redirigimos con un parámetro que indique claramente que la sesión expiró
+    window.location.href = '/login?reason=session_expired';
   }
 };
 

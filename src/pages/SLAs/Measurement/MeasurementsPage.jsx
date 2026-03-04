@@ -28,7 +28,11 @@ const MeasurementPage = ({ embedded = false }) => {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
-  const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
+
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, message, type, title });
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -69,11 +73,7 @@ const MeasurementPage = ({ embedded = false }) => {
       setDynamicConfig(newConfig);
     } catch (error) {
       console.error('Error cargando mediciones:', error);
-      setAlert({
-        open: true,
-        message: 'Error al cargar las mediciones de SLA.',
-        type: 'error',
-      });
+      showAlert('error', 'Error al cargar las mediciones de SLA.', 'Error');
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ const MeasurementPage = ({ embedded = false }) => {
       setAlert({ open: true, message: 'Campo actualizado correctamente', type: 'success' });
     } catch (error) {
       console.error('Error actualizando campo:', error);
-      setAlert({ open: true, message: 'No se pudo actualizar el campo', type: 'error' });
+      showAlert('error', 'No se pudo actualizar el campo', 'Error');
     }
   };
 
@@ -134,11 +134,7 @@ const MeasurementPage = ({ embedded = false }) => {
       setIsDeleteOpen(false);
     } catch (error) {
       console.error('Error eliminando medición:', error);
-      setAlert({
-        open: true,
-        message: 'No se pudo eliminar la medición',
-        type: 'error',
-      });
+      showAlert('error', 'No se pudo eliminar la medición', 'Error');
     } finally {
       setDeletingLoading(false);
     }
@@ -177,6 +173,7 @@ const MeasurementPage = ({ embedded = false }) => {
           setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })}
           message={alert.message}
           type={alert.type}
+          title={alert.title}
         />
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -226,6 +223,7 @@ const MeasurementPage = ({ embedded = false }) => {
             is_compliant: true,
             measurement_date: new Date().toISOString().split('T')[0],
           }}
+          onNotify={showAlert}
         />
 
         <GenericEditModal
@@ -235,6 +233,7 @@ const MeasurementPage = ({ embedded = false }) => {
           service={MeasurementService}
           config={dynamicConfig}
           onSuccess={fetchData}
+          onNotify={showAlert}
         />
 
         <ConfirmActionModal

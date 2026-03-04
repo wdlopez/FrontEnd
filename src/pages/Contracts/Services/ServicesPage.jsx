@@ -29,7 +29,11 @@ const ServicesPage = ({ id_client, embedded = false }) => {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
-  const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
+
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, message, type, title });
+  };
 
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
@@ -82,11 +86,7 @@ const ServicesPage = ({ id_client, embedded = false }) => {
 
     } catch (error) {
       console.error("Error cargando servicios:", error);
-      setAlert({ 
-        open: true, 
-        message: "Error al cargar la lista de servicios.", 
-        type: "error" 
-      });
+      showAlert("error", "Error al cargar la lista de servicios.", "Error");
     } finally {
       setLoading(false);
     }
@@ -143,7 +143,7 @@ const ServicesPage = ({ id_client, embedded = false }) => {
       setIsDeleteOpen(false);
     } catch (e) {
       console.error("Error al eliminar servicio:", e);
-      setAlert({ open: true, message: "Error al eliminar el servicio", type: "error" });
+      showAlert("error", "Error al eliminar el servicio", "Error");
     } finally {
       setDeletingLoading(false);
     }
@@ -175,7 +175,8 @@ const ServicesPage = ({ id_client, embedded = false }) => {
           open={alert.open} 
           setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })} 
           message={alert.message} 
-          type={alert.type} 
+          type={alert.type}
+          title={alert.title}
         />
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -228,6 +229,7 @@ const ServicesPage = ({ id_client, embedded = false }) => {
             country: "Colombia"
           }}
           getExtraPayload={() => ({ active: true })}
+          onNotify={showAlert}
         />
 
         <GenericEditModal 
@@ -237,6 +239,7 @@ const ServicesPage = ({ id_client, embedded = false }) => {
           service={ServiceService} 
           config={dynamicConfig} 
           onSuccess={fetchData}
+          onNotify={showAlert}
         />
 
         <ConfirmActionModal 

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import Modal from "../../molecules/Modal"; // Tu componente base de Modal
 import ClientService from "../../../services/Clients/client.service";
 import UserClientService from "../../../services/Clients/user-clients.service";
-import Swal from "sweetalert2";
 import { normalizeList } from "../../../utils/api-helpers";
 
 const AssignClientModal = ({
@@ -13,6 +12,7 @@ const AssignClientModal = ({
   onSuccess,
   defaultClientId,
   lockClient = false,
+  onNotify,
 }) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -69,20 +69,24 @@ const AssignClientModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.clientId || !formData.userId) {
-      Swal.fire("Error", "Debes seleccionar un cliente", "warning");
+      onNotify?.("warning", "Debes seleccionar un cliente", "Error");
       return;
     }
 
     setLoading(true);
     try {
       await UserClientService.create(formData);
-      Swal.fire("¡Asignado!", "El usuario ha sido vinculado al cliente correctamente.", "success");
+      onNotify?.(
+        "success",
+        "El usuario ha sido vinculado al cliente correctamente.",
+        "¡Asignado!"
+      );
       setIsOpen(false);
       setFormData({ userId: "", clientId: "", isPrincipal: false });
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error(error);
-      Swal.fire("Error", "No se pudo crear la relación", "error");
+      onNotify?.("error", "No se pudo crear la relación", "Error");
     } finally {
       setLoading(false);
     }

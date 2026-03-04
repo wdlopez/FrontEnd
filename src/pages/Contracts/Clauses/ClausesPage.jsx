@@ -28,7 +28,11 @@ const ClausesPage = ({ id_client, embedded = false }) => {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
-  const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
+
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, message, type, title });
+  };
 
   const hasInitialized = useRef(false);
 
@@ -70,7 +74,7 @@ const ClausesPage = ({ id_client, embedded = false }) => {
 
     } catch (error) {
       console.error("Error cargando cláusulas:", error);
-      setAlert({ open: true, message: "Error al cargar las cláusulas.", type: "error" });
+      showAlert("error", "Error al cargar las cláusulas.", "Error");
     } finally {
       setLoading(false);
     }
@@ -128,7 +132,7 @@ const ClausesPage = ({ id_client, embedded = false }) => {
       setIsDeleteOpen(false);
     } catch (e) {
       console.error("Error al eliminar cláusula:", e);
-      setAlert({ open: true, message: "Error al eliminar", type: "error" });
+      showAlert("error", "Error al eliminar", "Error");
     } finally {
       setDeletingLoading(false);
     }
@@ -162,7 +166,8 @@ const ClausesPage = ({ id_client, embedded = false }) => {
         open={alert.open} 
         setOpen={(val) => setAlert({ ...alert, open: val })} 
         message={alert.message} 
-        type={alert.type} 
+        type={alert.type}
+        title={alert.title}
       />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -210,6 +215,7 @@ const ClausesPage = ({ id_client, embedded = false }) => {
         config={dynamicConfig}
         onSuccess={fetchData}
         getExtraPayload={() => ({ is_critical: false, compliance_status: "compliant" })}
+        onNotify={showAlert}
       />
 
       <GenericEditModal 
@@ -219,6 +225,7 @@ const ClausesPage = ({ id_client, embedded = false }) => {
         service={ClauseService} 
         config={dynamicConfig} 
         onSuccess={fetchData}
+        onNotify={showAlert}
       />
 
       <ConfirmActionModal 

@@ -47,7 +47,11 @@ const SlasPage = () => {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
-  const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
+
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, message, type, title });
+  };
 
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
@@ -147,7 +151,7 @@ const SlasPage = () => {
 
     } catch (error) {
       console.error("Error cargando SLAs:", error);
-      setAlert({ open: true, message: "Error al cargar los SLAs.", type: "error" });
+      showAlert("error", "Error al cargar los SLAs.", "Error");
     } finally {
       setLoading(false);
     }
@@ -184,7 +188,7 @@ const SlasPage = () => {
       setAlert({ open: true, message: 'Campo actualizado correctamente', type: 'success' });
     } catch (error) {
       console.error("Error actualizando campo:", error);
-      setAlert({ open: true, message: 'No se pudo actualizar el campo', type: 'error' });
+      showAlert("error", "No se pudo actualizar el campo", "Error");
     }
   };
 
@@ -206,7 +210,7 @@ const SlasPage = () => {
       setIsDeleteOpen(false);
     } catch (error) {
       console.error("Error eliminando SLA:", error);
-      setAlert({ open: true, message: 'No se pudo eliminar el SLA', type: 'error' });
+      showAlert("error", "No se pudo eliminar el SLA", "Error");
     } finally {
       setDeletingLoading(false);
     }
@@ -241,7 +245,8 @@ const SlasPage = () => {
         open={alert.open} 
         setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })} 
         message={alert.message} 
-        type={alert.type} 
+        type={alert.type}
+        title={alert.title}
       />
 
       {activeTab === 'slas' ? (
@@ -298,6 +303,7 @@ const SlasPage = () => {
           risk: 10,
           report_period: 30
         }}
+        onNotify={showAlert}
       />
 
       <GenericEditModal 
@@ -307,6 +313,7 @@ const SlasPage = () => {
         service={SlaService} 
         config={dynamicConfig} 
         onSuccess={fetchData}
+        onNotify={showAlert}
       />
 
       <ConfirmActionModal 

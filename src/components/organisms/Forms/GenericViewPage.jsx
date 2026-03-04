@@ -81,6 +81,7 @@ const GenericViewPage = ({
     open: false,
     message: "",
     type: "info",
+    title: "",
   });
 
   const breadcrumbPaths = [
@@ -89,6 +90,10 @@ const GenericViewPage = ({
     { name: `${entityName}s`, url: basePath },
     { name: `${entityName} #${id ? id.substring(0, 8) : ''}`, url: null },
   ];
+
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, message, type, title });
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -99,11 +104,11 @@ const GenericViewPage = ({
       setData(normalizedData);
     } catch (error) {
       console.error(`Error al cargar ${entityName}:`, error);
-      setAlert({
-        open: true,
-        message: `Error al cargar los datos del ${entityName.toLowerCase()}`,
-        type: "error",
-      });
+      showAlert(
+        "error",
+        `Error al cargar los datos del ${entityName.toLowerCase()}`,
+        "Error"
+      );
     } finally {
       setLoading(false);
     }
@@ -174,32 +179,24 @@ const GenericViewPage = ({
     try {
       if (actionType === "restore" && canRestore) {
         await service.restore(data.id);
-        setAlert({
-          open: true,
-          message: `Registro restaurado correctamente`,
-          type: "success",
-        });
+        showAlert("success", "Registro restaurado correctamente", "¡Actualizado!");
         await fetchData();
       } else if (canDelete) {
         await service.delete(data.id);
-        setAlert({
-          open: true,
-          message: `Registro ${deleteVerb} correctamente`,
-          type: "success",
-        });
-        navigate(basePath);
+        showAlert("success", `Registro ${deleteVerb} correctamente`, "¡Actualizado!");
+        // No navegamos inmediatamente para que el usuario vea el alert.
+        // Puede volver manualmente con los botones "Volver a ..." o "Cerrar".
       }
       setIsConfirmModalOpen(false);
     } catch (error) {
       console.error("Error ejecutando acción sobre registro:", error);
-      setAlert({
-        open: true,
-        message:
-          actionType === "restore"
-            ? `No se pudo restaurar el ${entityName.toLowerCase()}`
-            : `No se pudo ${deleteVerb} el ${entityName.toLowerCase()}`,
-        type: "error",
-      });
+      showAlert(
+        "error",
+        actionType === "restore"
+          ? `No se pudo restaurar el ${entityName.toLowerCase()}`
+          : `No se pudo ${deleteVerb} el ${entityName.toLowerCase()}`,
+        "Error"
+      );
     } finally {
       setIsProcessingAction(false);
     }
@@ -237,6 +234,7 @@ const GenericViewPage = ({
         setOpen={(isOpen) => setAlert({ ...alert, open: isOpen })}
         message={alert.message}
         type={alert.type}
+        title={alert.title}
       />
 
       <div className="flex items-center gap-2">
@@ -386,6 +384,7 @@ const GenericViewPage = ({
           setIsEditModalOpen(false);
           fetchData();
         }}
+        onNotify={showAlert}
       />
 
       {/* Modal de Confirmación para Eliminar / Restaurar */}

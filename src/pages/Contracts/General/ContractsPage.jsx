@@ -57,7 +57,11 @@ function ContractPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
-  const [alert, setAlert] = useState({ open: false, message: "", type: "info" });
+  const [alert, setAlert] = useState({ open: false, message: "", type: "info", title: "" });
+
+  const showAlert = (type, message, title = "") => {
+    setAlert({ open: true, message, type, title });
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -201,7 +205,7 @@ function ContractPage() {
       setDynamicConfig(newConfig);
     } catch (error) {
       console.error("Error al cargar contratos:", error);
-      setAlert({ open: true, message: "Error al cargar contratos", type: "error" });
+      showAlert("error", "Error al cargar contratos", "Error");
     } finally {
       setLoading(false);
     }
@@ -264,7 +268,7 @@ function ContractPage() {
       setIsDeleteOpen(false);
     } catch (e) {
       console.error("Error al eliminar contrato:", e);
-      setAlert({ open: true, message: "Error al eliminar", type: "error" });
+      showAlert("error", "Error al eliminar", "Error");
     } finally {
       setDeletingLoading(false);
     }
@@ -306,7 +310,8 @@ function ContractPage() {
         open={alert.open} 
         setOpen={(val) => setAlert({...alert, open: val})} 
         message={alert.message} 
-        type={alert.type} 
+        type={alert.type}
+        title={alert.title}
       />
 
       {activeTab === 'contract' && (
@@ -416,6 +421,7 @@ function ContractPage() {
           value: "__create_provider__",
           onTrigger: () => setIsAddProviderOpen(true),
         }}
+        onNotify={showAlert}
       />
 
       <GenericAddModal
@@ -427,6 +433,7 @@ function ContractPage() {
           fetchData();
           setIsAddProviderOpen(false);
         }}
+        onNotify={showAlert}
       />
 
       <GenericEditModal 
@@ -436,6 +443,7 @@ function ContractPage() {
         service={ContractService} 
         config={dynamicConfig} 
         onSuccess={fetchData}
+        onNotify={showAlert}
       />
 
       <ConfirmActionModal 
