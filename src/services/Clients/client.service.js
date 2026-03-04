@@ -10,6 +10,14 @@ const ClientService = {
     return response.data;
   },
 
+  getAllDeleted: async (params = {}) => {
+    if (import.meta.env.DEV) {
+      console.debug("[ClientService.getAllDeleted] params:", params);
+    }
+    const response = await api.get("/client/deleted", { params });
+    return response.data;
+  },
+
   getById: async (id) => {
     const response = await api.get(`/client/${id}`);
     return response.data;
@@ -30,12 +38,19 @@ const ClientService = {
     return response.data;
   },
 
+  restore: async (id) => {
+    const response = await api.patch(`/client/recovery/${id}`);
+    return response.data;
+  },
+
   // Mantener alias (Opcional)
   getAllClients: (params) => ClientService.getAll(params),
+  getAllDeletedClients: (params) => ClientService.getAllDeleted(params),
   getClientById: (id) => ClientService.getById(id),
   createClient: (data) => ClientService.create(data),
   updateClient: (id, data) => ClientService.update(id, data),
   deleteClient: (id) => ClientService.delete(id),
+  restoreClient: (id) => ClientService.restore(id),
 };
 
 export default ClientService;

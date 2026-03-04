@@ -19,6 +19,7 @@ const ClientsPage = () => {
   const navigate = useNavigate();
 
   const [clients, setClients] = useState([]);
+  const [rawClients, setRawClients] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -29,7 +30,9 @@ const ClientsPage = () => {
   const [editClientId, setEditClientId] = useState(null);
   
   const [deletingLoading, setDeletingLoading] = useState(false);
+  const [selectedAction, setSelectedAction] = useState("delete"); // 'delete' | 'restore'
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [showInactive, setShowInactive] = useState(false);
 
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
@@ -38,11 +41,14 @@ const ClientsPage = () => {
 
   const hasInitialized = useRef(false);
 
-  const fetchClients = async () => {
+  const fetchClients = async (showDeleted = showInactive) => {
     setLoading(true);
     try {
-      const response = await ClientService.getAll();
+      const response = showDeleted
+        ? await ClientService.getAllDeleted()
+        : await ClientService.getAll();
       const dataList = normalizeList(response);
+      setRawClients(dataList);
       const formattedClients = mapBackendToTable(dataList, CLIENT_CONFIG);
       setClients(formattedClients);
     } catch (error) {
@@ -53,12 +59,22 @@ const ClientsPage = () => {
     }
   };
 
+  // Cargar la primera vez
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
-      fetchClients();
+      fetchClients(showInactive);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refrescar cuando cambia el filtro de activos/inactivos
+  useEffect(() => {
+    if (hasInitialized.current) {
+      fetchClients(showInactive);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showInactive]);
 
   const openEditModal = (row) => {
     if (row?.id) {
@@ -80,27 +96,53 @@ const ClientsPage = () => {
     }
   };
 
-  const handleDeleteRequest = (row) => {
+  const handleDeleteRequest = (row, { isDeleted } = {}) => {
     if (row?.id) {
+      const action = isDeleted ? "restore" : "delete";
+      setSelectedAction(action);
       setSelectedClient({
         id: row.id,
-        name: row['NOMBRE'] || 'Sin nombre',
+        name:
+          row["Nombre del cliente"] ||
+          row["NOMBRE"] ||
+          row["name"] ||
+          "Sin nombre",
       });
       setIsDeleteModalOpen(true);
     }
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmAction = async () => {
     if (!selectedClient?.id) return;
     setDeletingLoading(true);
     try {
-      await ClientService.delete(selectedClient.id);
-      setAlert({ open: true, message: 'Cliente eliminado exitosamente', type: 'success' });
-      setClients(prev => prev.filter(c => c.id !== selectedClient.id));
+      if (selectedAction === "restore") {
+        await ClientService.restore(selectedClient.id);
+        setAlert({
+          open: true,
+          message: "Cliente restaurado correctamente",
+          type: "success",
+        });
+      } else {
+        await ClientService.delete(selectedClient.id);
+        setAlert({
+          open: true,
+          message: "Cliente desactivado correctamente",
+          type: "success",
+        });
+      }
+      await fetchClients(showInactive);
       setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Error eliminando:", error);
-      setAlert({ open: true, message: 'Error al eliminar', type: 'error' });
+      setAlert({
+        open: true,
+        message:
+          selectedAction === "restore"
+            ? "No se pudo restaurar el cliente"
+            : "No se pudo desactivar el cliente",
+        type: "error",
+      });
     } finally {
       setDeletingLoading(false);
     }
@@ -195,6 +237,8 @@ const ClientsPage = () => {
         ) : (
           <InteractiveTable 
             data={clients}
+            originData={rawClients}
+            parameterId="id"
             columnMapping={columnMapping}
             selectColumns={selectColumns}
             nonEditableColumns={nonEditableColumns}
@@ -204,12 +248,33 @@ const ClientsPage = () => {
             onAdd={() => setIsAddModalOpen(true)}
             path="/client/"
             rowsPerPage={10}
+            hiddenColumns={showInactive ? ["Estado"] : []}
+            rowActionsRenderer={
+              showInactive
+                ? (row) => (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRequest(row, { isDeleted: true })}
+                        className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded transition-colors"
+                        title="Restaurar"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          settings_backup_restore
+                        </span>
+                      </button>
+                    </div>
+                  )
+                : undefined
+            }
             headerButtons={
               <HeaderActions
                 onAdd={() => setIsAddModalOpen(true)}
                 addButtonLabel={`Nuevo ${CLIENT_CONFIG.name}`}
+                isActive={!showInactive}
+                onToggle={() => setShowInactive((prev) => !prev)}
                 showExport={true}
-                onRefresh={fetchClients}
+                onRefresh={() => fetchClients(showInactive)}
               />
             }
           />
@@ -239,15 +304,19 @@ const ClientsPage = () => {
       <ConfirmActionModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Confirmar eliminación"
-        message={
-          selectedClient
-            ? `¿Estás seguro de que deseas eliminar el ${CLIENT_CONFIG.name.toLowerCase()} "${selectedClient.name}"?`
-            : `¿Estás seguro de que deseas eliminar este ${CLIENT_CONFIG.name.toLowerCase()}?`
+        onConfirm={handleConfirmAction}
+        title={
+          selectedAction === "restore"
+            ? "Confirmar restauración"
+            : "Confirmar desactivación"
         }
-        isDangerous={true}
-        confirmLabel="Eliminar"
+        message={
+          selectedAction === "restore"
+            ? `¿Estás seguro de que deseas restaurar el ${CLIENT_CONFIG.name.toLowerCase()} "${selectedClient?.name || "sin nombre"}"?`
+            : `¿Estás seguro de que deseas desactivar el ${CLIENT_CONFIG.name.toLowerCase()} "${selectedClient?.name || "sin nombre"}"?`
+        }
+        isDangerous={selectedAction !== "restore"}
+        confirmLabel={selectedAction === "restore" ? "Restaurar" : "Desactivar"}
         loading={deletingLoading}
       />
     </div>

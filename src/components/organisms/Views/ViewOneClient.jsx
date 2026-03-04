@@ -11,6 +11,7 @@ const ViewOneClient = () => {
       entityName="Cliente"
       basePath="/client"
       titleKey="name" // El campo que quieres que salga en grande arriba
+      deleteButtonLabel="Desactivar"
     />
   );
 };
