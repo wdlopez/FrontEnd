@@ -18,6 +18,15 @@ export const CONTRACT_CONFIG = {
         "Formato inválido (máx 50 caracteres, alfanumérico y guiones)",
     },
     {
+      header: "Versión",
+      backendKey: "version",
+      type: "text",
+      editable: true,
+      required: false,
+      placeholder: "Ej: 1",
+      hideOnCreate: true,
+    },
+    {
       header: "Nombre clave",
       backendKey: "keyName",
       type: "text",
@@ -59,6 +68,13 @@ export const CONTRACT_CONFIG = {
       type: "date",
       editable: true,
       required: true,
+    },
+    {
+      header: "Fecha de renovación",
+      backendKey: "renewal_date",
+      type: "date",
+      editable: true,
+      required: false,
     },
     {
       header: "Valor total",

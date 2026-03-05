@@ -46,18 +46,44 @@ export const USER_CONFIG = {
       validation: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{8,128}$/,
       validationMessage: 'Mínimo 8 caracteres, incluyendo una mayúscula, una minúscula, un número y un símbolo (#$@!%&*?)',
       hideInTable: true,
-      hideInForm: true
+      hideInForm: true,
+      hideInView: true
     },
     {
       header: 'Rol',
       backendKey: 'roleId',
       type: 'select',
-      hideInTable: true,
+      hideInTable: false,
       required: false,
       options: [],
       placeholder: 'Selecciona un rol...',
-      mapFrom: (item) => item.role?.name || 'Sin Rol',
-      getValue: (item) => item.role?.name || 'Sin Rol'
+      mapFrom: (item) => {
+        if (Array.isArray(item.roles) && item.roles.length > 0) {
+          return item.roles.map(r => r.name).join(', ');
+        }
+        if (item.role?.name) {
+          return item.role.name;
+        }
+        return 'Sin Rol';
+      },
+      getValue: (item) => {
+        if (Array.isArray(item.roles) && item.roles.length > 0) {
+          return item.roles.map(r => r.name).join(', ');
+        }
+        if (item.role?.name) {
+          return item.role.name;
+        }
+        return 'Sin Rol';
+      },
+      viewValueFrom: (item) => {
+        if (Array.isArray(item.roles) && item.roles.length > 0) {
+          return item.roles.map(r => r.name).join(', ');
+        }
+        if (item.role?.name) {
+          return item.role.name;
+        }
+        return 'Sin Rol';
+      }
     },
     {
       header: 'Asociar a cliente',
@@ -67,7 +93,35 @@ export const USER_CONFIG = {
       options: [],
       placeholder: 'Seleccione un cliente (opcional)',
       hideInTable: true,
-      hideInForm: true
+      hideInForm: true,
+      hideInView: true
+    },
+    {
+      header: 'Cliente asignado',
+      backendKey: 'clientAssignedView',
+      editable: false,
+      hideInForm: true,
+      mapFrom: (item) => {
+        if (Array.isArray(item.clients) && item.clients.length > 0) {
+          const primary = item.clients.find(c => c.isPrimary) || item.clients[0];
+          return primary.clientName || 'Sin Cliente';
+        }
+        return 'Sin Cliente';
+      },
+      getValue: (item) => {
+        if (Array.isArray(item.clients) && item.clients.length > 0) {
+          const primary = item.clients.find(c => c.isPrimary) || item.clients[0];
+          return primary.clientName || 'Sin Cliente';
+        }
+        return 'Sin Cliente';
+      },
+      viewValueFrom: (item) => {
+        if (Array.isArray(item.clients) && item.clients.length > 0) {
+          const primary = item.clients.find(c => c.isPrimary) || item.clients[0];
+          return primary.clientName || 'Sin Cliente';
+        }
+        return 'Sin Cliente';
+      }
     },
     {
       header: 'Asociar a proveedor',
@@ -77,7 +131,8 @@ export const USER_CONFIG = {
       options: [],
       placeholder: 'Seleccione un proveedor (opcional)',
       hideInTable: true,
-      hideInForm: true
+      hideInForm: true,
+      hideInView: true
     },
     {
       header: 'Estado',

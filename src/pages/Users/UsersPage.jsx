@@ -10,7 +10,7 @@ import AssignClientModal from "../../components/organisms/Forms/AssignClientModa
 import Alerts from '../../components/molecules/Alerts';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import UserService from '../../services/User/user.service';
-import RoleService from '../../services/Role/role.service';
+import RoleService from '../../services/Settings/Roles/role.service';
 import ClientService from '../../services/Clients/client.service';
 import ProviderService from '../../services/Providers/provider.service';
 import UserClientService from '../../services/Clients/user-clients.service';

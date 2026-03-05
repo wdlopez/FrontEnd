@@ -78,6 +78,7 @@ export const generateFormFields = (config) => {
         pattern: col.validation,
         patternMessage: col.validationMessage || `${col.header} tiene un formato inválido`,
         disabled: col.disabled || false,
+        hideOnCreate: col.hideOnCreate || false,
       };
 
       if (col.phoneCountryCodes && col.phoneCountryCodes.length > 0) {

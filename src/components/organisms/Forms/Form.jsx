@@ -213,15 +213,32 @@ function Form(props, ref) {
               const span = isFull ? "col-span-full" : "";
 
               // Reglas de validación estándar para RHF
-              const validationRules = {
-                required: f.required ? "Este campo es obligatorio" : false,
-              };
+              const validationRules = {};
 
-              // Agregar patrón (regex) si existe
+              // 1) Requerido solo si el campo lo indica
+              if (f.required) {
+                validationRules.required = "Este campo es obligatorio";
+              }
+
+              // 2) Patrones (regex):
+              //    - Si el campo es opcional, permitimos vacío y solo validamos si hay valor.
+              //    - Si es requerido, combinamos requerido + patrón en una única validación.
               if (f.pattern) {
-                validationRules.pattern = {
-                  value: f.pattern,
-                  message: f.patternMessage || `${f.label} tiene un formato inválido`
+                validationRules.validate = (value) => {
+                  const hasValue = value !== undefined && value !== null && value !== "";
+
+                  if (!hasValue) {
+                    // Si no es requerido, campo vacío es válido.
+                    if (!f.required) return true;
+                    // Si es requerido, delegamos al mensaje estándar.
+                    return "Este campo es obligatorio";
+                  }
+
+                  // Si hay valor, debe cumplir el patrón.
+                  return f.pattern.test(value)
+                    ? true
+                    : (f.patternMessage ||
+                        `${f.label || f.name} tiene un formato inválido`);
                 };
               }
 

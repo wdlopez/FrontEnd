@@ -17,7 +17,7 @@ const GenericAddModal = ({
   onNotify,
 }) => {
   const [loading, setLoading] = useState(false);
-  const formFields = generateFormFields(config);
+  const formFields = generateFormFields(config).filter(f => !f.hideOnCreate);
 
   const handleCreate = async (formData) => {
     setLoading(true);
