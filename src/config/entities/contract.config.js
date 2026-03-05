@@ -101,18 +101,6 @@ export const CONTRACT_CONFIG = {
         { value: "pt", label: "Portugués" },
       ],
       editable: true,
-    },
-    {
-      header: "Estado",
-      backendKey: "status",
-      type: "select",
-      options: [
-        { label: "Borrador", value: "draft" },
-        { label: "Activo", value: "active" },
-        { label: "Terminado", value: "terminated" },
-      ],
-      editable: true,
-      hideInForm: true, // No mostrar en modal crear/editar; por defecto se envía "draft" al crear
-    },
+    }
   ],
 };

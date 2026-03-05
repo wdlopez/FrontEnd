@@ -10,7 +10,7 @@ import Alerts from '../../components/molecules/Alerts';
 import InfoTooltip from '../../components/atoms/InfoToolTip';
 import Tabs from '../../components/molecules/Tabs';
 import ProviderService from '../../services/Providers/provider.service';
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, isGlobalAdminRole } from "../../context/AuthContext";
 import { useSelectedClient } from "../../context/ClientSelectionContext";
 import { PROVIDER_CONFIG } from '../../config/entities/provider.config';
 import { mapBackendToTable } from '../../utils/entityMapper';
@@ -65,8 +65,7 @@ const SuppliersPage = () => {
       const dataList = normalizeList(response);
 
       const role = user?.role || null;
-      const isSuperAdmin =
-        role === "super_admin" || role === 1 || role === "1";
+      const isSuperAdmin = isGlobalAdminRole(role);
 
       let filteredList = dataList;
       if (isSuperAdmin && selectedClient?.id) {

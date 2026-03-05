@@ -2,6 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import AuthService from '../services/auth/auth.service';
 import { notifyTokensUpdated } from '../context/authTokensBridge';
+import { parseJwtPayload } from '../utils/jwt';
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -48,8 +49,42 @@ const createApiInstance = (baseURL) => {
   instance.interceptors.request.use(
     (config) => {
       const token = Cookies.get('auth_token');
+
+      config.headers = config.headers || {};
+
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+
+        // Decodificamos el JWT para obtener el contexto de tenant.
+        const payload = parseJwtPayload(token) || {};
+
+        const rawClientId = payload.clientId ?? payload.client_id;
+        let clientIdHeader = undefined;
+        if (Array.isArray(rawClientId)) {
+          clientIdHeader = rawClientId[0];
+        } else if (typeof rawClientId === 'string') {
+          clientIdHeader = rawClientId;
+        }
+
+        const rawKeyClient = payload.key_client ?? payload.keyClient;
+        let clientKeyHeader = undefined;
+        if (Array.isArray(rawKeyClient)) {
+          clientKeyHeader = rawKeyClient[0];
+        } else if (typeof rawKeyClient === 'string') {
+          clientKeyHeader = rawKeyClient;
+        }
+
+        const tenantContextHeader = payload.tenantContext || 'client';
+
+        if (clientIdHeader) {
+          config.headers['X-Client-Id'] = clientIdHeader;
+        }
+        if (clientKeyHeader) {
+          config.headers['X-Client-Key'] = clientKeyHeader;
+        }
+        if (tenantContextHeader) {
+          config.headers['X-Tenant-Context'] = tenantContextHeader;
+        }
       }
 
       // Si el usuario es super_admin y hay un esquema seleccionado,

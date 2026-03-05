@@ -10,7 +10,7 @@ import ClientService from "services/Clients/client.service";
 import Toolbar from "./toolBar";
 import DarkModeToggle from "../../atoms/darckModeBtn";
 import useUnreadNotifications from "../../../hooks/useUnreadNotifications";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth, hasClientScopeRole, isGlobalAdminRole } from "../../../context/AuthContext";
 import { useSelectedClient } from "../../../context/ClientSelectionContext";
 //import { listContract } from "../../../pages/Deliverables/delLists";
 
@@ -30,11 +30,9 @@ function TopBar({ darkMode, setDarkMode }) {
   const { selectedClient, setSelectedClient, clearSelection } =
     useSelectedClient();
   const userRol = user?.role;
-  const isSuperAdmin =
-    userRol === "super_admin" || userRol === 1 || userRol === "1";
+  const isSuperAdmin = isGlobalAdminRole(userRol);
 
-  const isClientScopedRole =
-    typeof userRol === "string" && userRol.startsWith("client_");
+  const isClientScopedRole = hasClientScopeRole(userRol);
 
   // Normaliza el nombre del esquema para alinearlo con la convención del backend.
   // Ejemplos:
@@ -266,7 +264,7 @@ function TopBar({ darkMode, setDarkMode }) {
           <div className="flex flex-col justify-center">
             <p className="text-xs opacity-70">Cliente:</p>
             <b className="text-sm">
-              {currentKeyClient || selectedClient || "Asociado por token"}
+              {currentKeyClient || selectedClient?.name || "Asociado por token"}
             </b>
           </div>
         ) : (

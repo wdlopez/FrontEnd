@@ -18,7 +18,7 @@ import { USER_CONFIG } from '../../config/entities/user.config';
 import { mapBackendToTable } from '../../utils/entityMapper';
 import { normalizeList } from '../../utils/api-helpers';
 import { getText } from '../../utils/text';
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, hasClientScopeRole } from "../../context/AuthContext";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -51,8 +51,7 @@ const UsersPage = () => {
   // Auth: aislamiento por cliente
   const { user, currentClientId, isGlobalAdmin } = useAuth();
   const role = user?.role || null;
-  const isClientScopedRole =
-    role === "client_superadmin" || role === "client_contract_admin";
+  const isClientScopedRole = hasClientScopeRole(role);
 
   // Router: leer parámetros de la URL para el flujo guiado
   const location = useLocation();
@@ -140,8 +139,7 @@ const UsersPage = () => {
           let clients = normalizeList(clientsRes.value);
 
           const role = user?.role || null;
-          const isClientScoped =
-            role === "client_superadmin" || role === "client_contract_admin";
+          const isClientScoped = hasClientScopeRole(role);
 
           // Si el usuario está acotado a un cliente, solo mostramos su cliente
           if (!isGlobalAdmin && isClientScoped && currentClientId) {
