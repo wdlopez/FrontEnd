@@ -117,6 +117,17 @@ export const CONTRACT_CONFIG = {
         { value: "pt", label: "Portugués" },
       ],
       editable: true,
-    }
+    },
+    {
+      header: "Fecha de eliminación",
+      backendKey: "deleted_at",
+      type: "date",
+      hideInForm: true,
+      hideInTable: true,
+      hideInView: true,
+      editable: false,
+      mapFrom: (item) =>
+        item.deleted_at ? new Date(item.deleted_at).toLocaleDateString("es-CO") : "",
+    },
   ],
 };

@@ -82,12 +82,14 @@ function ContractPage() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: "", type: "info", title: "" });
+  const [showInactive, setShowInactive] = useState(false);
+  const [selectedAction, setSelectedAction] = useState("delete"); // 'delete' | 'restore'
 
   const showAlert = (type, message, title = "") => {
     setAlert({ open: true, message, type, title });
   };
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (showDeleted = showInactive) => {
     setLoading(true);
     try {
       // IMPORTANTE:
@@ -97,7 +99,7 @@ function ContractPage() {
       const params = {};
 
       const [contractsRes, clientsRes, providersRes] = await Promise.allSettled([
-        ContractService.getAll(params),
+        showDeleted ? ContractService.getAllDeleted(params) : ContractService.getAll(params),
         ClientService.getAll({ page: 1, limit: 100 }),
         ProviderService.getAll({ page: 1, limit: 100 }),
       ]);
@@ -144,8 +146,13 @@ function ContractPage() {
           // Mapeo para mostrar nombre en la tabla
           clientCol.mapFrom = (item) => {
             const itemClientId = item?.client_id ?? item?.clientId ?? null;
-            const client = clients.find((c) => String(getClientId(c)) === String(itemClientId));
-            return client ? getClientName(client) : itemClientId;
+            const sourceList =
+              (clientsForSelect && clientsForSelect.length > 0 ? clientsForSelect : clients) || [];
+            const client = sourceList.find(
+              (c) => String(getClientId(c)) === String(itemClientId),
+            );
+            const name = client ? getClientName(client) : null;
+            return name || itemClientId || "";
           };
         }
       }
@@ -216,7 +223,9 @@ function ContractPage() {
             "contratos totales:",
             dataList.length,
             "contratos filtrados:",
-            filteredList.length
+            filteredList.length,
+            "showInactive:",
+            showDeleted
           );
         }
 
@@ -233,14 +242,14 @@ function ContractPage() {
     } finally {
       setLoading(false);
     }
-  }, [id_client, defaultClientId, role, selectedClient?.name]);
+  }, [id_client, defaultClientId, role, selectedClient?.name, showInactive]);
 
   // Carga inicial y recarga al cambiar cliente/tab
   useEffect(() => {
     if (activeTab === "contract") {
-      fetchData();
+      fetchData(showInactive);
     }
-  }, [activeTab, fetchData]);
+  }, [activeTab, fetchData, showInactive]);
 
   // Lógica de Mapeo para la InteractiveTable (Igual que en Clientes)
   const columnMapping = {};
@@ -269,25 +278,38 @@ function ContractPage() {
     }
   };
 
-  const handleDeleteReq = (row) => {
+  const handleDeleteReq = (row, { isDeleted } = {}) => {
+    const action = isDeleted ? "restore" : "delete";
+    setSelectedAction(action);
     setSelectedRow({ 
         id: row.id, 
-        name: row["Número de Contrato"] || row["#"] || "Contrato", 
-        state: true 
+        name: row["Número de contrato"] || row["Número de Contrato"] || row["#"] || "Contrato"
     });
     setIsDeleteOpen(true);
   };
 
-  const handleConfirmDelete = async (data) => {
+  const handleConfirmDelete = async () => {
+    if (!selectedRow?.id) return;
     setDeletingLoading(true);
     try {
-      await ContractService.delete(data.id);
-      setAlert({ open: true, message: "Contrato eliminado", type: "success" });
-      setOriginContracts(prev => prev.filter(c => c.id !== data.id));
+      if (selectedAction === "restore") {
+        await ContractService.restore(selectedRow.id);
+        setAlert({ open: true, message: "Contrato restaurado correctamente", type: "success" });
+      } else {
+        await ContractService.delete(selectedRow.id);
+        setAlert({ open: true, message: "Contrato desactivado correctamente", type: "success" });
+      }
+      await fetchData(showInactive);
       setIsDeleteOpen(false);
     } catch (e) {
-      console.error("Error al eliminar contrato:", e);
-      showAlert("error", "Error al eliminar", "Error");
+      console.error("Error al procesar contrato:", e);
+      showAlert(
+        "error",
+        selectedAction === "restore"
+          ? "Error al restaurar el contrato"
+          : "Error al desactivar el contrato",
+        "Error"
+      );
     } finally {
       setDeletingLoading(false);
     }
@@ -377,6 +399,8 @@ function ContractPage() {
             ) : (
               <InteractiveTable
                 data={contractsToShow}
+                originData={originContracts}
+                parameterId="id"
                 columnMapping={columnMapping}
                 selectColumns={selectColumns}
                 nonEditableColumns={nonEditableColumns}
@@ -386,6 +410,24 @@ function ContractPage() {
                 onAdd={() => setIsAddOpen(true)}
                 path="/contract/general/"
                 rowsPerPage={10}
+                rowActionsRenderer={
+                  showInactive
+                    ? (row) => (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReq(row, { isDeleted: true })}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded transition-colors"
+                            title="Restaurar"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">
+                              settings_backup_restore
+                            </span>
+                          </button>
+                        </div>
+                      )
+                    : undefined
+                }
                 headerButtons={
                   <HeaderActions
                     AddComponent={
@@ -397,7 +439,9 @@ function ContractPage() {
                         <span>Nuevo {dynamicConfig.name}</span>
                       </button>
                     }
-                    onRefresh={fetchData}
+                    isActive={!showInactive}
+                    onToggle={() => setShowInactive((prev) => !prev)}
+                    onRefresh={() => fetchData(showInactive)}
                     showExport={true}
                   />
                 }
@@ -417,7 +461,7 @@ function ContractPage() {
         setIsOpen={setIsAddOpen} 
         service={ContractService}
         config={dynamicConfig}
-        onSuccess={fetchData}
+        onSuccess={() => fetchData(showInactive)}
         initialValues={{
           // Cliente: selectedClient (TopNavbar/JWT) > id_client (ruta) > effectiveClientId
           ...(defaultClientId ? { client_id: String(defaultClientId) } : {}),
@@ -446,7 +490,7 @@ function ContractPage() {
         service={ProviderService}
         config={PROVIDER_CONFIG}
         onSuccess={() => {
-          fetchData();
+          fetchData(showInactive);
           setIsAddProviderOpen(false);
         }}
         onNotify={showAlert}
@@ -464,11 +508,25 @@ function ContractPage() {
 
       <ConfirmActionModal 
         isOpen={isDeleteOpen} 
-        setIsOpen={setIsDeleteOpen} 
-        data={selectedRow} 
+        onClose={() => setIsDeleteOpen(false)} 
         onConfirm={handleConfirmDelete}
         loading={deletingLoading}
-        entityName={CONTRACT_CONFIG.name}
+        title={
+          selectedAction === "restore"
+            ? "Confirmar restauración"
+            : "Confirmar desactivación"
+        }
+        message={
+          selectedAction === "restore"
+            ? `¿Estás seguro de que deseas restaurar el ${CONTRACT_CONFIG.name.toLowerCase()} "${
+                selectedRow?.name || "sin nombre"
+              }"?`
+            : `¿Estás seguro de que deseas desactivar el ${CONTRACT_CONFIG.name.toLowerCase()} "${
+                selectedRow?.name || "sin nombre"
+              }"?`
+        }
+        isDangerous={selectedAction !== "restore"}
+        confirmLabel={selectedAction === "restore" ? "Restaurar" : "Desactivar"}
       />
     </div>
   );

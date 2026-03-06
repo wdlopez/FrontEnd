@@ -15,12 +15,8 @@ export const PROVIDER_CONFIG = {
         type: "text",
         required: true,
         placeholder: "Ej: Tech Solutions S.A.S",
-        validation: {
-          pattern: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-_.]+$/,
-          message: "Solo letras, números, espacios, guiones y puntos",
-          minLength: 1,
-          maxLength: 200
-        }
+        validation: /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-_.]+$/,
+        validationMessage: "Solo letras, números, espacios, guiones y puntos",
       },
       {
         header: "NIT",
@@ -28,11 +24,8 @@ export const PROVIDER_CONFIG = {
         type: "text",
         required: true,
         placeholder: "Ej: 900123456-1",
-        validation: {
-          pattern: /^[a-zA-Z0-9\s\-_.]+$/,
-          message: "ID no válido (letras, números y guiones permitidos)",
-          maxLength: 50
-        }
+        validation: /^[a-zA-Z0-9\s\-_.]+$/,
+        validationMessage: "ID no válido (letras, números y guiones permitidos)",
       },
       {
         header: "Tipo",
@@ -40,11 +33,8 @@ export const PROVIDER_CONFIG = {
         type: "text",
         required: true,
         placeholder: "Ej: hardware",
-        validation: {
-          pattern: /^[a-zA-Z\s]+$/, // Como el DTO del backend
-          message: "Solo se permiten letras y espacios",
-          maxLength: 20
-        }
+        validation: /^[a-zA-Z\s]+$/, // Como el DTO del backend
+        validationMessage: "Solo se permiten letras y espacios",
       },
       {
         header: "Riesgo",
