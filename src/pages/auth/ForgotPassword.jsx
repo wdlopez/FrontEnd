@@ -77,15 +77,15 @@ function ForgotPassword() {
       confirmPassword: data.confirmPassword
     });
 
-    // ¡ESTA ES LA CLAVE! 
-    // Debes revisar si la propiedad success dentro de la data es true
-    if (response.success) { 
-      setAlertConfig({ type: "success", message: "Contraseña actualizada con éxito." });
+    // Si el backend devuelve 200, es éxito salvo que envíe success: false (algunos APIs no envían success y solo message)
+    const isSuccess = response?.success !== false;
+    if (isSuccess) {
+      setAlertConfig({ type: "success", message: response?.message || response?.data?.message || "Contraseña actualizada con éxito." });
       setOpenAlert(true);
+      setIsSubmitting(false);
       setTimeout(() => navigate("/login"), 3000);
     } else {
-      // Si el backend mandó un 200 pero success: false
-      setAlertConfig({ type: "error", message: response.message || "Token inválido" });
+      setAlertConfig({ type: "error", message: response?.message || response?.data?.message || "Token inválido" });
       setOpenAlert(true);
       setIsSubmitting(false);
     }
