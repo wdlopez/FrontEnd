@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import BreadCrumb from '../../../components/molecules/BreadCrumb';
 import HeaderActions from '../../../components/organisms/Navigation/HeaderActions';
 import InteractiveTable from '../../../components/organisms/Tables/InteractiveTable';
@@ -17,6 +17,7 @@ import { getText } from '../../../utils/text';
 
 const SupplierContactPage = ({ embedded = false }) => {
   const [contacts, setContacts] = useState([]);
+  const [rawContacts, setRawContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(PROVIDER_CONTACT_CONFIG);
 
@@ -30,16 +31,20 @@ const SupplierContactPage = ({ embedded = false }) => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info' });
+  const [showInactive, setShowInactive] = useState(false);
+  const [selectedAction, setSelectedAction] = useState("delete"); // 'delete' | 'restore'
 
   const breadcrumbPaths = [
     { name: "Inicio", url: "/dashboard" },
     { name: "Contactos", url: null }
   ];
 
-  const fetchData = useCallback(async () => {
+  const fetchData = async (showDeleted = showInactive) => {
     setLoading(true);
     try {
-      const contactsRes = await ProviderContactService.getAll();
+      const contactsRes = showDeleted
+        ? await ProviderContactService.getAllDeleted()
+        : await ProviderContactService.getAll();
       const [providersRes] = await Promise.allSettled([
         ProviderService.getAll(),
       ]);
@@ -73,6 +78,7 @@ const SupplierContactPage = ({ embedded = false }) => {
           };
         });
 
+        setRawContacts(enrichedList);
         setContacts(mapBackendToTable(enrichedList, newConfig));
       }
 
@@ -87,11 +93,12 @@ const SupplierContactPage = ({ embedded = false }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData(showInactive);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showInactive]);
 
   // Mapeo de columnas para InteractiveTable
   const columnMapping = {};
@@ -122,31 +129,45 @@ const SupplierContactPage = ({ embedded = false }) => {
     }
   };
 
-  const handleDeleteReq = (row) => {
+  const handleDeleteReq = (row, { isDeleted } = {}) => {
+    const action = isDeleted ? "restore" : "delete";
+    setSelectedAction(action);
     setSelectedRow({
       id: row.id,
       name: row["Nombre"] || "Contacto",
-      state: true,
     });
     setIsDeleteOpen(true);
   };
 
-  const handleConfirmDelete = async (data) => {
+  const handleConfirmDelete = async () => {
+    if (!selectedRow?.id) return;
     setDeletingLoading(true);
     try {
-      await ProviderContactService.delete(data.id);
-      setAlert({
-        open: true,
-        message: 'Contacto eliminado correctamente',
-        type: 'success',
-      });
-      setContacts((prev) => prev.filter((c) => c.id !== data.id));
+      if (selectedAction === "restore") {
+        await ProviderContactService.restore(selectedRow.id);
+        setAlert({
+          open: true,
+          message: 'Contacto restaurado correctamente',
+          type: 'success',
+        });
+      } else {
+        await ProviderContactService.delete(selectedRow.id);
+        setAlert({
+          open: true,
+          message: 'Contacto desactivado correctamente',
+          type: 'success',
+        });
+      }
+      await fetchData(showInactive);
       setIsDeleteOpen(false);
     } catch (error) {
       console.error('Error eliminando contacto:', error);
       setAlert({
         open: true,
-        message: 'No se pudo eliminar el contacto',
+        message:
+          selectedAction === "restore"
+            ? 'No se pudo restaurar el contacto'
+            : 'No se pudo desactivar el contacto',
         type: 'error',
       });
     } finally {
@@ -195,6 +216,8 @@ const SupplierContactPage = ({ embedded = false }) => {
         ) : (
           <InteractiveTable 
             data={contacts}
+            originData={rawContacts}
+            parameterId="id"
             columnMapping={columnMapping}
             selectColumns={selectColumns}
             nonEditableColumns={nonEditableColumns}
@@ -204,6 +227,24 @@ const SupplierContactPage = ({ embedded = false }) => {
             onAdd={() => setIsAddOpen(true)}
             path="/suppliers/contacts/"
             rowsPerPage={10}
+            rowActionsRenderer={
+              showInactive
+                ? (row) => (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteReq(row, { isDeleted: true })}
+                        className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded transition-colors"
+                        title="Restaurar"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          settings_backup_restore
+                        </span>
+                      </button>
+                    </div>
+                  )
+                : undefined
+            }
             headerButtons={
               <HeaderActions 
                 AddComponent={
@@ -215,8 +256,10 @@ const SupplierContactPage = ({ embedded = false }) => {
                     <span>Nuevo contacto</span>
                   </button>
                 }
+                isActive={!showInactive}
+                onToggle={() => setShowInactive(prev => !prev)}
                 showExport={true}
-                onRefresh={fetchData}
+                onRefresh={() => fetchData(showInactive)}
               />
             }
           />
@@ -246,11 +289,25 @@ const SupplierContactPage = ({ embedded = false }) => {
 
       <ConfirmActionModal 
         isOpen={isDeleteOpen} 
-        setIsOpen={setIsDeleteOpen} 
-        data={selectedRow} 
+        onClose={() => setIsDeleteOpen(false)} 
         onConfirm={handleConfirmDelete}
         loading={deletingLoading}
-        entityName={PROVIDER_CONTACT_CONFIG.name}
+        title={
+          selectedAction === "restore"
+            ? "Confirmar restauración"
+            : "Confirmar desactivación"
+        }
+        message={
+          selectedAction === "restore"
+            ? `¿Estás seguro de que deseas restaurar el ${PROVIDER_CONTACT_CONFIG.name.toLowerCase()} "${
+                selectedRow?.name || "sin nombre"
+              }"?`
+            : `¿Estás seguro de que deseas desactivar el ${PROVIDER_CONTACT_CONFIG.name.toLowerCase()} "${
+                selectedRow?.name || "sin nombre"
+              }"?`
+        }
+        isDangerous={selectedAction !== "restore"}
+        confirmLabel={selectedAction === "restore" ? "Restaurar" : "Desactivar"}
       />
     </div>
   );

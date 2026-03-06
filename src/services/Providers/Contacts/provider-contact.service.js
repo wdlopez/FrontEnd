@@ -36,6 +36,12 @@ const ProviderContactService = {
     return response.data;
   },
 
+  // Contactos eliminados (soft-delete)
+  getAllDeleted: async (params = {}) => {
+    const response = await apiProviders.get('/provider/contact/deleted', { params });
+    return response.data;
+  },
+
   getById: async (id) => {
     const response = await apiProviders.get(`/provider/contact/${id}`);
     return response.data;
@@ -58,12 +64,19 @@ const ProviderContactService = {
     return response.data;
   },
 
+  restore: async (id) => {
+    const response = await apiProviders.patch(`/provider/contact/${id}/restore`);
+    return response.data;
+  },
+
   // Alias para compatibilidad con código existente
   getAllProviders: (params) => ProviderContactService.getAll(params),
+  getAllDeletedProviders: (params) => ProviderContactService.getAllDeleted(params),
   getProviderContactById: (id) => ProviderContactService.getById(id),
   createProviderContact: (data) => ProviderContactService.create(data),
   updateProviderContact: (id, data) => ProviderContactService.update(id, data),
   deleteProviderContact: (id) => ProviderContactService.delete(id),
+  restoreProviderContact: (id) => ProviderContactService.restore(id),
 };
 
 export default ProviderContactService;
