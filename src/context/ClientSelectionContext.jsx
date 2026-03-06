@@ -12,34 +12,65 @@ const ClientSelectionContext = createContext(null);
  * }
  */
 export const ClientSelectionProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, currentClientId, currentKeyClient } = useAuth();
   const [selectedClient, setSelectedClient] = useState(null);
 
-  // Cargar selección previa desde storage (solo para super_admin)
-  useEffect(() => {
-    const role = user?.role;
-    const isSuperAdmin =
-      role === "super_admin" || role === 1 || role === "1";
+  // Normalizar role (el JWT puede enviarlo como array)
+  const rawRole = user?.role ?? null;
+  const role = Array.isArray(rawRole) ? rawRole[0] : rawRole;
+  const isSuperAdmin =
+    role === "super_admin" || role === 1 || role === "1";
+  const isClientScoped =
+    role === "client_superadmin" || role === "client_contract_admin";
 
-    if (!isSuperAdmin) {
-      // Para otros roles, no usamos selección global de cliente
+  useEffect(() => {
+    if (!user) {
       setSelectedClient(null);
       return;
     }
 
-    const storedId = sessionStorage.getItem("selected_client_id");
-    const storedName = sessionStorage.getItem("selected_client_name");
-    const storedSchema =
-      window.localStorage?.getItem("selected_schema") || null;
+    // Super_admin: usa selección desde storage (TopNavbar)
+    if (isSuperAdmin) {
+      const storedId = sessionStorage.getItem("selected_client_id");
+      const storedName = sessionStorage.getItem("selected_client_name");
+      const storedSchema =
+        window.localStorage?.getItem("selected_schema") || null;
 
-    if (storedId || storedName || storedSchema) {
-      setSelectedClient({
-        id: storedId ?? null,
-        name: storedName ?? null,
-        schema: storedSchema,
-      });
+      if (storedId || storedName || storedSchema) {
+        setSelectedClient({
+          id: storedId ?? null,
+          name: storedName ?? null,
+          schema: storedSchema,
+        });
+      }
+      return;
     }
-  }, [user]);
+
+    // client_superadmin / client_contract_admin: fijar cliente desde JWT
+    // (misma fuente que TopNavbar: currentKeyClient)
+    if (isClientScoped) {
+      const clientId = Array.isArray(currentClientId)
+        ? currentClientId[0]
+        : currentClientId;
+      const clientName = Array.isArray(currentKeyClient)
+        ? currentKeyClient[0]
+        : currentKeyClient;
+
+      if (clientId || clientName) {
+        setSelectedClient({
+          id: clientId ?? null,
+          name: clientName ?? null,
+          schema: null,
+        });
+      } else {
+        setSelectedClient(null);
+      }
+      return;
+    }
+
+    // Otros roles: sin selección global
+    setSelectedClient(null);
+  }, [user, currentClientId, currentKeyClient, isSuperAdmin, isClientScoped]);
 
   // Sincronizar cualquier cambio hacia storage
   useEffect(() => {

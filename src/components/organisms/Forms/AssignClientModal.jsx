@@ -4,6 +4,10 @@ import ClientService from "../../../services/Clients/client.service";
 import UserClientService from "../../../services/Clients/user-clients.service";
 import { normalizeList } from "../../../utils/api-helpers";
 
+// Extracción robusta de id/name por si el backend usa ClientEntity_id, etc.
+const getClientId = (c) => c?.id ?? c?.ClientEntity_id ?? c?.uuid ?? "";
+const getClientName = (c) => c?.name ?? c?.ClientEntity_name ?? "";
+
 const AssignClientModal = ({
   isOpen,
   setIsOpen,
@@ -11,6 +15,7 @@ const AssignClientModal = ({
   predefinedUserName,
   onSuccess,
   defaultClientId,
+  defaultClientName,
   lockClient = false,
   onNotify,
 }) => {
@@ -24,37 +29,51 @@ const AssignClientModal = ({
     isPrincipal: false
   });
 
-  // Cargar lista de clientes al abrir
+  // Resetear formulario al cerrar
   useEffect(() => {
-    if (isOpen) {
-      loadClients();
-      if (predefinedUserId) {
-        setFormData((prev) => ({ ...prev, userId: predefinedUserId }));
-      }
-      // Si se pasa un cliente por defecto, lo fijamos en el formulario
-      if (defaultClientId) {
-        setFormData((prev) => ({ ...prev, clientId: defaultClientId }));
-      }
+    if (!isOpen) {
+      setFormData({ userId: "", clientId: "", isPrincipal: false });
     }
-  }, [isOpen, predefinedUserId, defaultClientId]);
+  }, [isOpen]);
 
-  const loadClients = async () => {
-    try {
-      const response = await ClientService.getAll();
-      const normalizedData = normalizeList(response);
-      let list = Array.isArray(normalizedData) ? normalizedData : [];
+  // Cargar lista de clientes al abrir y preseleccionar cliente cuando aplica
+  useEffect(() => {
+    if (!isOpen) return;
 
-      // Si viene un cliente fijo (ej. desde token de client_superadmin),
-      // limitamos la lista a ese cliente.
-      if (defaultClientId && lockClient) {
-        list = list.filter((c) => c.id === defaultClientId);
+    const loadAndPreselect = async () => {
+      try {
+        const response = await ClientService.getAll();
+        const normalizedData = normalizeList(response);
+        let list = Array.isArray(normalizedData) ? normalizedData : [];
+
+        // Si viene un cliente fijo (ej. desde token de client_superadmin),
+        // limitamos la lista a ese cliente.
+        if (defaultClientId && lockClient && defaultClientId !== "*") {
+          const filtered = list.filter((c) => getClientId(c) === defaultClientId);
+          // Si el filtro no encuentra coincidencia (ej. API usa otra estructura),
+          // añadimos opción sintética con el nombre del JWT (key_client)
+          if (filtered.length === 0 && defaultClientName) {
+            list = [{ id: defaultClientId, name: defaultClientName }];
+          } else {
+            list = filtered;
+          }
+        }
+
+        setClients(list);
+
+        // Preseleccionar userId y clientId después de cargar (evita race condition)
+        setFormData((prev) => ({
+          ...prev,
+          userId: predefinedUserId || prev.userId,
+          clientId: defaultClientId && defaultClientId !== "*" ? defaultClientId : prev.clientId,
+        }));
+      } catch (error) {
+        console.error("Error cargando clientes", error);
       }
+    };
 
-      setClients(list);
-    } catch (error) {
-      console.error("Error cargando clientes", error);
-    }
-  };
+    loadAndPreselect();
+  }, [isOpen, predefinedUserId, defaultClientId, defaultClientName, lockClient]);
 
   const handleClientChange = (e) => {
     const selectedId = e.target.value;
@@ -112,11 +131,14 @@ const AssignClientModal = ({
               disabled={lockClient}
             >
               <option value="">Seleccione un cliente...</option>
-              {(clients || []).map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
+              {(clients || []).map((client) => {
+                const cId = getClientId(client);
+                return (
+                  <option key={cId} value={cId}>
+                    {getClientName(client) || cId}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Tabs from "../../../components/tabs";
 import BreadCrumb from "../../../components/molecules/BreadCrumb";
@@ -9,7 +9,8 @@ import InfoTooltip from "../../../components/atoms/InfoToolTip";
 import GenericAddModal from "../../../components/organisms/Forms/GenericAddModal";
 import GenericEditModal from "../../../components/organisms/Forms/GenericEditModal";
 import ConfirmActionModal from "../../../components/organisms/Forms/ConfirmActionModal";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth, hasClientScopeRole } from "../../../context/AuthContext";
+import { useSelectedClient } from "../../../context/ClientSelectionContext";
 import ContractService from "../../../services/Contracts/contract.service";
 import ClientService from "../../../services/Clients/client.service";
 import ProviderService from "../../../services/Providers/provider.service";
@@ -35,17 +36,40 @@ const NAV_ITEMS = [
   { key: "clauses", label: "Cláusulas" }
 ];
 
+const getClientId = (c) => c?.id ?? c?.ClientEntity_id ?? c?.uuid;
+const getClientName = (c) => c?.name ?? c?.ClientEntity_name;
+
 function ContractPage() {
   const { id_client } = useParams();
-  const { user, currentUserClientId, currentClientId, isGlobalAdmin } = useAuth();
+  const { user, currentClientId: rawCurrentClientId, isGlobalAdmin } = useAuth();
+  const { selectedClient } = useSelectedClient();
+
+  // El backend envía role y clientId como arrays, los normalizamos
+  const rawRole = user?.role ?? null;
+  const role = Array.isArray(rawRole) ? rawRole[0] : rawRole;
+  const isClientScoped = hasClientScopeRole(role);
+  const effectiveClientId = id_client
+    ? String(id_client)
+    : (Array.isArray(rawCurrentClientId) ? rawCurrentClientId?.[0] : rawCurrentClientId) ?? null;
+  // Usar selectedClient (TopNavbar / ClientSelectionContext) como fuente principal
+  const defaultClientId = selectedClient?.id ?? effectiveClientId ?? id_client;
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    // Debug: verificar de dónde sale el cliente por defecto
+    console.debug("[ContractsPage] selectedClient:", selectedClient);
+    console.debug("[ContractsPage] defaultClientId:", defaultClientId);
+    console.debug("[ContractsPage] effectiveClientId:", effectiveClientId);
+    console.debug("[ContractsPage] rawCurrentClientId:", rawCurrentClientId);
+    console.debug("[ContractsPage] role:", role, "isClientScoped:", isClientScoped, "isGlobalAdmin:", isGlobalAdmin);
+  }, [selectedClient, defaultClientId, effectiveClientId, rawCurrentClientId, role, isClientScoped, isGlobalAdmin]);
+
   const [activeTab, setActiveTab] = useState(NAV_ITEMS[0].key);
-  const [contracts, setContracts] = useState([]);
   const [originContracts, setOriginContracts] = useState([]); // lista raw para filtro por período
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(CONTRACT_CONFIG);
   const [selectedPeriod, setSelectedPeriod] = useState("ALL");
   const [selectedDateField, setSelectedDateField] = useState("end_date");
-  const hasInitialized = useRef(false);
 
   // Estados de Modales
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -93,20 +117,36 @@ function ContractPage() {
         clients = normalizeList(clientsRes.value);
         const clientCol = newConfig.columns.find((c) => c.backendKey === "client_id");
         if (clientCol) {
-          clientCol.options = (clients || []).map((c) => ({
-            value: c.id,
-            label: c.name,
-          }));
-          // Mapeo para mostrar nombre en la tabla
-          clientCol.mapFrom = (item) => {
-             const client = clients.find(c => c.id === item.client_id);
-             return client ? client.name : item.client_id;
-          };
+          // Si hay cliente por defecto (TopNavbar/JWT/ruta), solo mostramos ese cliente
+          let clientsForSelect = clients || [];
+          if (defaultClientId) {
+            clientsForSelect = clientsForSelect.filter(
+              (c) => String(getClientId(c)) === String(defaultClientId)
+            );
+          }
 
-          // Si hay cliente por defecto (ruta o token), el campo queda visible pero no editable
-          if (id_client || currentUserClientId) {
+          // Fallback: si el backend no devolvió el cliente pero lo tenemos por token/navbar,
+          // añadimos una opción sintética para que el select muestre el valor.
+          if (defaultClientId && clientsForSelect.length === 0) {
+            clientsForSelect = [
+              { id: String(defaultClientId), name: selectedClient?.name || "Cliente" },
+            ];
+          }
+
+          clientCol.options = clientsForSelect.map((c) => ({
+            value: getClientId(c),
+            label: getClientName(c) || getClientId(c),
+          }));
+
+          if (defaultClientId) {
             clientCol.disabled = true;
           }
+          // Mapeo para mostrar nombre en la tabla
+          clientCol.mapFrom = (item) => {
+            const itemClientId = item?.client_id ?? item?.clientId ?? null;
+            const client = clients.find((c) => String(getClientId(c)) === String(itemClientId));
+            return client ? getClientName(client) : itemClientId;
+          };
         }
       }
 
@@ -151,31 +191,17 @@ function ContractPage() {
         // 1) Si la ruta incluye :id_client, siempre filtramos por ese cliente.
         // 2) Si no hay id_client en la ruta, pero el usuario es client_*,
         //    filtramos por el cliente asociado al token (currentClientId).
-        const role = user?.role || null;
-        const isClientScoped =
-          role === "client_superadmin" || role === "client_contract_admin";
-
         let filteredList = dataList;
 
-        if (id_client) {
-          const routeClientId = String(id_client);
+        const filterClientId = id_client
+          ? String(id_client)
+          : (defaultClientId != null ? String(defaultClientId) : null);
+
+        if (filterClientId) {
           filteredList = dataList.filter((c) => {
             const contractClientId =
               c.client_id || c.clientId || c.client?.id || null;
-            return (
-              contractClientId != null &&
-              String(contractClientId) === routeClientId
-            );
-          });
-        } else if (!isGlobalAdmin && isClientScoped && currentClientId) {
-          const effectiveClientId = String(currentClientId);
-          filteredList = dataList.filter((c) => {
-            const contractClientId =
-              c.client_id || c.clientId || c.client?.id || null;
-            return (
-              contractClientId != null &&
-              String(contractClientId) === effectiveClientId
-            );
+            return contractClientId != null && String(contractClientId) === filterClientId;
           });
         }
 
@@ -183,8 +209,8 @@ function ContractPage() {
           console.debug(
             "[ContractsPage] role:",
             role,
-            "currentClientId:",
-            currentClientId,
+            "defaultClientId:",
+            defaultClientId,
             "id_client (ruta):",
             id_client,
             "contratos totales:",
@@ -195,11 +221,9 @@ function ContractPage() {
         }
 
         setOriginContracts(filteredList);
-        setContracts(mapBackendToTable(filteredList, newConfig));
       } else {
         // Si la llamada a contratos falla, limpiamos la tabla
         setOriginContracts([]);
-        setContracts([]);
       }
 
       setDynamicConfig(newConfig);
@@ -209,15 +233,14 @@ function ContractPage() {
     } finally {
       setLoading(false);
     }
-  }, [id_client]);
+  }, [id_client, defaultClientId, role, selectedClient?.name]);
 
+  // Carga inicial y recarga al cambiar cliente/tab
   useEffect(() => {
-    if (activeTab === "contract" && !hasInitialized.current) {
+    if (activeTab === "contract") {
       fetchData();
-      // Solo marcamos como inicializado si no hay id_client o si ya cargó una vez
-      if (!id_client) hasInitialized.current = true; 
     }
-  }, [activeTab, id_client, fetchData]);
+  }, [activeTab, fetchData]);
 
   // Lógica de Mapeo para la InteractiveTable (Igual que en Clientes)
   const columnMapping = {};
@@ -235,12 +258,9 @@ function ContractPage() {
     setIsEditOpen(true);
   };
 
-  const handleInlineEdit = async ({ row, column, realColumn, newValue }) => {
+  const handleInlineEdit = async ({ row, realColumn, newValue }) => {
     try {
       await ContractService.update(row.id, { [realColumn]: newValue });
-      setContracts(prev => prev.map(c =>
-        c.id === row.id ? { ...c, [column]: newValue } : c
-      ));
       setOriginContracts(prev => prev.map(c =>
         c.id === row.id ? { ...c, [realColumn]: newValue } : c
       ));
@@ -263,7 +283,6 @@ function ContractPage() {
     try {
       await ContractService.delete(data.id);
       setAlert({ open: true, message: "Contrato eliminado", type: "success" });
-      setContracts(prev => prev.filter(c => c.id !== data.id));
       setOriginContracts(prev => prev.filter(c => c.id !== data.id));
       setIsDeleteOpen(false);
     } catch (e) {
@@ -400,17 +419,14 @@ function ContractPage() {
         config={dynamicConfig}
         onSuccess={fetchData}
         initialValues={{
-          // Cliente por defecto: ruta (ej. super admin desde un cliente) o cliente del token (ej. admin de contratos / usuario con cliente asociado)
-          ...((id_client || currentUserClientId)
-            ? { client_id: id_client || currentUserClientId }
-            : {}),
+          // Cliente: selectedClient (TopNavbar/JWT) > id_client (ruta) > effectiveClientId
+          ...(defaultClientId ? { client_id: String(defaultClientId) } : {}),
           currency: "USD",
           language: "es",
           country: "Colombia",
         }}
         getExtraPayload={() => {
           const basePayload = { status: "draft", ...(user?.id ? { created_by: user.id } : {}) };
-          const defaultClientId = id_client || currentUserClientId;
           if (defaultClientId) {
             return { ...basePayload, client_id: defaultClientId };
           }

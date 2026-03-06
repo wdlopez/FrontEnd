@@ -49,9 +49,16 @@ const UsersPage = () => {
   const [addInitialValues, setAddInitialValues] = useState({});
 
   // Auth: aislamiento por cliente
-  const { user, currentClientId, isGlobalAdmin } = useAuth();
-  const role = user?.role || null;
+  const { user, currentClientId: rawCurrentClientId, currentKeyClient, isGlobalAdmin } = useAuth();
+
+  // El backend envía role y clientId como arrays, los normalizamos
+  const rawRole = user?.role || null;
+  const role = Array.isArray(rawRole) ? rawRole[0] : rawRole;
   const isClientScopedRole = hasClientScopeRole(role);
+
+  const currentClientId = Array.isArray(rawCurrentClientId)
+    ? rawCurrentClientId[0]
+    : rawCurrentClientId;
 
   // Router: leer parámetros de la URL para el flujo guiado
   const location = useLocation();
@@ -487,11 +494,12 @@ const UsersPage = () => {
             ? currentClientId
             : undefined
         }
+        defaultClientName={currentKeyClient}
         lockClient={
           !isGlobalAdmin && isClientScopedRole && currentClientId != null
         }
         onSuccess={() => {
-          console.log("Relación usuario-cliente creada");
+          fetchData(currentPage, showInactive);
         }}
         onNotify={showAlert}
       />

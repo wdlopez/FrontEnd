@@ -102,23 +102,24 @@ export const USER_CONFIG = {
       editable: false,
       hideInForm: true,
       mapFrom: (item) => {
+        // Soporta item.clients (nueva estructura) o item.clientId + lookup
         if (Array.isArray(item.clients) && item.clients.length > 0) {
-          const primary = item.clients.find(c => c.isPrimary) || item.clients[0];
-          return primary.clientName || 'Sin Cliente';
+          const primary = item.clients.find(c => c.isPrimary === true || c.isPrimary === 1) || item.clients[0];
+          return primary.clientName || primary.client_name || 'Sin Cliente';
         }
         return 'Sin Cliente';
       },
       getValue: (item) => {
         if (Array.isArray(item.clients) && item.clients.length > 0) {
-          const primary = item.clients.find(c => c.isPrimary) || item.clients[0];
-          return primary.clientName || 'Sin Cliente';
+          const primary = item.clients.find(c => c.isPrimary === true || c.isPrimary === 1) || item.clients[0];
+          return primary.clientName || primary.client_name || 'Sin Cliente';
         }
         return 'Sin Cliente';
       },
       viewValueFrom: (item) => {
         if (Array.isArray(item.clients) && item.clients.length > 0) {
-          const primary = item.clients.find(c => c.isPrimary) || item.clients[0];
-          return primary.clientName || 'Sin Cliente';
+          const primary = item.clients.find(c => c.isPrimary === true || c.isPrimary === 1) || item.clients[0];
+          return primary.clientName || primary.client_name || 'Sin Cliente';
         }
         return 'Sin Cliente';
       }
