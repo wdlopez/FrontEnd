@@ -19,6 +19,12 @@ const ServiceService = {
         return response.data;
     },
 
+    // Servicios eliminados (soft-delete)
+    getAllDeleted: async (params = {}) => {
+        const response = await apiContracts.get('/service-contract/deleted', { params });
+        return response.data;
+    },
+
     getById: async (id) => {
         const response = await apiContracts.get(`/service-contract/${id}`);
         return response.data;
@@ -39,7 +45,12 @@ const ServiceService = {
     delete: async (id) => {
         const response = await apiContracts.delete(`/service-contract/${id}`);
         return response.data;
-    }
+    },
+
+    restore: async (id) => {
+        const response = await apiContracts.patch(`/service-contract/${id}/restore`);
+        return response.data;
+    },
 };
 
 export default ServiceService;

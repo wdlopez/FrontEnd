@@ -272,7 +272,7 @@ const SupplierContactPage = ({ embedded = false }) => {
         setIsOpen={setIsAddOpen} 
         service={ProviderContactService}
         config={dynamicConfig}
-        onSuccess={fetchData}
+        onSuccess={() => fetchData(showInactive)}
         initialValues={{
           is_primary: false,
         }}
@@ -284,7 +284,7 @@ const SupplierContactPage = ({ embedded = false }) => {
         entityId={selectedId} 
         service={ProviderContactService} 
         config={dynamicConfig} 
-        onSuccess={fetchData}
+        onSuccess={() => fetchData(showInactive)}
       />
 
       <ConfirmActionModal 

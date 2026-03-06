@@ -43,6 +43,7 @@ const ViewOneProviderContact = () => {
       entityName="Contacto de proveedor"
       basePath="/suppliers/contacts"
       titleKey="first_name"
+      deleteButtonLabel="Desactivar"
     />
   );
 };

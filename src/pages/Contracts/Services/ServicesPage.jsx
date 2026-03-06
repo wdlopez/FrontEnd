@@ -19,6 +19,7 @@ const ServicesPage = ({ id_client, embedded = false }) => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(SERVICE_CONFIG);
+  const [showInactive, setShowInactive] = useState(false);
   
   // Estados de Modales
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -46,7 +47,10 @@ const ServicesPage = ({ id_client, embedded = false }) => {
       // 1. Cargar Servicios
       // Si hay id_client, idealmente filtraríamos por contratos de ese cliente, 
       // pero por ahora traemos todo o lo que permita el endpoint.
-      const servicesRes = await ServiceService.getAll();
+      const params = { page: 1, limit: 100 };
+      const servicesRes = showInactive
+        ? await ServiceService.getAllDeleted(params)
+        : await ServiceService.getAll(params);
       
       // 2. Cargar Contratos para el Select
       const contractsRes = await ContractService.getAll();
@@ -90,7 +94,7 @@ const ServicesPage = ({ id_client, embedded = false }) => {
     } finally {
       setLoading(false);
     }
-  }, [id_client]);
+  }, [id_client, showInactive]);
 
   useEffect(() => {
     fetchData();
@@ -126,9 +130,14 @@ const ServicesPage = ({ id_client, embedded = false }) => {
   };
 
   const handleDeleteReq = (row) => {
+    const towerLabel =
+      row["Torre de servicio"] || row["Torre"] || row.tower || "";
+    const groupLabel =
+      row["Categoría de servicio"] || row["Grupo"] || row.group || "";
+
     setSelectedRow({ 
         id: row.id, 
-        name: `${row["Torre"]} - ${row["Grupo"]}`, 
+        name: `${towerLabel || "Servicio"}${groupLabel ? ` - ${groupLabel}` : ""}`, 
         state: true 
     });
     setIsDeleteOpen(true);
@@ -137,13 +146,18 @@ const ServicesPage = ({ id_client, embedded = false }) => {
   const handleConfirmDelete = async (data) => {
     setDeletingLoading(true);
     try {
-      await ServiceService.delete(data.id);
-      setAlert({ open: true, message: "Servicio eliminado correctamente", type: "success" });
-      setServices(prev => prev.filter(s => s.id !== data.id));
+      if (showInactive) {
+        await ServiceService.restore(data.id);
+        setAlert({ open: true, message: "Servicio restaurado correctamente", type: "success", title: "Restaurado" });
+      } else {
+        await ServiceService.delete(data.id);
+        setAlert({ open: true, message: "Servicio desactivado correctamente", type: "success", title: "Desactivado" });
+      }
+      await fetchData();
       setIsDeleteOpen(false);
     } catch (e) {
       console.error("Error al eliminar servicio:", e);
-      showAlert("error", "Error al eliminar el servicio", "Error");
+      showAlert("error", showInactive ? "Error al restaurar el servicio" : "Error al desactivar el servicio", "Error");
     } finally {
       setDeletingLoading(false);
     }
@@ -191,12 +205,31 @@ const ServicesPage = ({ id_client, embedded = false }) => {
               columnMapping={columnMapping}
               selectColumns={selectColumns}
               nonEditableColumns={nonEditableColumns}
-              onEdit={handleEdit}
-              onSubmit={handleInlineEdit}
+              onEdit={showInactive ? undefined : handleEdit}
+              onSubmit={showInactive ? undefined : handleInlineEdit}
               onDelete={handleDeleteReq}
-              onAdd={() => setIsAddOpen(true)}
+              onAdd={showInactive ? undefined : () => setIsAddOpen(true)}
               path="/contract/services/"
               rowsPerPage={10}
+              hiddenColumns={showInactive ? ["Estado"] : []}
+              rowActionsRenderer={
+                showInactive
+                  ? (row) => (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteReq(row)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded transition-colors"
+                          title="Restaurar servicio"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">
+                            settings_backup_restore
+                          </span>
+                        </button>
+                      </div>
+                    )
+                  : undefined
+              }
               headerButtons={
                 <HeaderActions
                   AddComponent={
@@ -210,6 +243,8 @@ const ServicesPage = ({ id_client, embedded = false }) => {
                   }
                   showExport={true}
                   onRefresh={fetchData}
+                  isActive={!showInactive}
+                  onToggle={() => setShowInactive(prev => !prev)}
                 />
               }
             />
@@ -243,12 +278,28 @@ const ServicesPage = ({ id_client, embedded = false }) => {
         />
 
         <ConfirmActionModal 
-          isOpen={isDeleteOpen} 
-          setIsOpen={setIsDeleteOpen} 
-          data={selectedRow} 
-          onConfirm={handleConfirmDelete}
-          loading={deletingLoading}
-          entityName={SERVICE_CONFIG.name}
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        loading={deletingLoading}
+        data={selectedRow}
+        entityName={SERVICE_CONFIG.name}
+        title={
+          showInactive
+            ? "Confirmar restauración"
+            : "Confirmar desactivación"
+        }
+        message={
+          selectedRow
+            ? showInactive
+              ? `¿Estás seguro de que deseas restaurar el ${SERVICE_CONFIG.name.toLowerCase()} "${selectedRow.name}"?`
+              : `¿Estás seguro de que deseas desactivar el ${SERVICE_CONFIG.name.toLowerCase()} "${selectedRow.name}"?`
+            : showInactive
+              ? `¿Estás seguro de que deseas restaurar este ${SERVICE_CONFIG.name.toLowerCase()}?`
+              : `¿Estás seguro de que deseas desactivar este ${SERVICE_CONFIG.name.toLowerCase()}?`
+        }
+        isDangerous={!showInactive}
+        confirmLabel={showInactive ? "Restaurar" : "Desactivar"}
         />
       </div>
   );

@@ -60,6 +60,7 @@ const ViewOneContract = () => {
       entityName="Contrato"
       basePath="/contract/general/"
       titleKey="contract_number"
+      deleteButtonLabel="Desactivar"
     />
   );
 };

@@ -45,6 +45,7 @@ const ViewOneService = () => {
       entityName="Servicio"
       basePath="/contract/services/"
       titleKey="tower"
+      deleteButtonLabel="Desactivar"
     />
   );
 };

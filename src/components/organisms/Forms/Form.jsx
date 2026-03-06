@@ -92,6 +92,7 @@ function Form(props, ref) {
     control,
     reset,
     setValue,
+    watch,
     formState: { errors, isDirty, isValid },
   } = useForm({
     defaultValues: initialFormState,
@@ -116,6 +117,36 @@ function Form(props, ref) {
       reset(initialFormState);
   }
   }, [initialValues, reset, isDirty]);
+
+  // Cálculos derivados comunes
+  // 1) Servicios: sum_total = baseline * value (si existen los tres campos)
+  const hasAutoTotalService =
+    fields.some((f) => f.name === "baseline") &&
+    fields.some((f) => f.name === "value") &&
+    fields.some((f) => f.name === "sum_total");
+
+  const baselineWatch = watch("baseline");
+  const unitValueWatch = watch("value");
+
+  useEffect(() => {
+    if (!hasAutoTotalService) return;
+    const baseline = baselineWatch;
+    const unitValue = unitValueWatch;
+
+    const b = baseline !== undefined && baseline !== null && baseline !== ""
+      ? Number(baseline)
+      : NaN;
+    const v = unitValue !== undefined && unitValue !== null && unitValue !== ""
+      ? Number(unitValue)
+      : NaN;
+
+    if (!Number.isFinite(b) || !Number.isFinite(v)) return;
+
+    const total = b * v;
+    if (!Number.isFinite(total)) return;
+
+    setValue("sum_total", total, { shouldDirty: true, shouldValidate: true });
+  }, [hasAutoTotalService, baselineWatch, unitValueWatch, setValue]);
 
   // 3. Manejo Imperativo (desde el padre)
   useImperativeHandle(ref, () => ({
