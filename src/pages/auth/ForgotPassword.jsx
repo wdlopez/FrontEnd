@@ -80,7 +80,10 @@ function ForgotPassword() {
     // Si el backend devuelve 200, es éxito salvo que envíe success: false (algunos APIs no envían success y solo message)
     const isSuccess = response?.success !== false;
     if (isSuccess) {
-      setAlertConfig({ type: "success", message: response?.message || response?.data?.message || "Contraseña actualizada con éxito." });
+      setAlertConfig({
+        type: "success",
+        message: "Tu contraseña ha sido actualizada con éxito. Ahora puedes iniciar sesión."
+      });
       setOpenAlert(true);
       setIsSubmitting(false);
       setTimeout(() => navigate("/login"), 3000);

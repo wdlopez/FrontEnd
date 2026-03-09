@@ -163,12 +163,6 @@ const DashboardIndex = () => {
 
           <h2 className="text-xl font-bold text-gray-800">Acceso Rápido</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <WelcomeClient
-              setMsg={setAlertMessage}
-              setOpenAlert={setAlertOpen}
-              setAlert={setAlertType}
-              count={dashboardData.clientsCount}
-            />
             <WelcomeUser
               setMsg={setAlertMessage}
               setOpenAlert={setAlertOpen}
