@@ -1,3 +1,5 @@
+import { PHONE_COUNTRY_CODES } from '../../constants/phoneCountryCodes';
+
 export const PROVIDER_CONTACT_CONFIG = {
   name: "Contacto de proveedor",
   endpoint: "/provider/contact",
@@ -48,15 +50,15 @@ export const PROVIDER_CONTACT_CONFIG = {
       placeholder: "correo@ejemplo.com",
     },
     {
-      header: "Teléfono",
+      header: "Código país y teléfono",
       backendKey: "phone",
-      type: "text",
+      type: "phoneWithCode",
       editable: true,
       required: true,
-      placeholder: "Ej: +57 3001234567",
-      validation: /^[0-9\s+]+$/,
-      validationMessage:
-        "El teléfono solo puede contener dígitos, espacios y el signo más (+)",
+      placeholder: "3001234567",
+      validation: /^\+?[0-9]{10,15}$/,
+      validationMessage: "Teléfono inválido. Use el código de país y solo dígitos.",
+      phoneCountryCodes: PHONE_COUNTRY_CODES,
     },
     {
       header: "Cargo",
