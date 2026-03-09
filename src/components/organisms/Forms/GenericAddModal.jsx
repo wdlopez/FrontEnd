@@ -18,6 +18,7 @@ const GenericAddModal = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const formFields = generateFormFields(config).filter(f => !f.hideOnCreate);
+  const isFeminine = config.gender === 'f';
 
   const handleCreate = async (formData) => {
     setLoading(true);
@@ -55,7 +56,9 @@ const GenericAddModal = ({
 
       const response = await service.create(payload);
 
-      const successMessage = `El ${config.name} ha sido registrado con éxito.`;
+      const successMessage = isFeminine
+        ? `La ${config.name} ha sido registrada con éxito.`
+        : `El ${config.name} ha sido registrado con éxito.`;
 
       if (onNotify) {
         onNotify("success", successMessage, "¡Creado!");
@@ -84,13 +87,13 @@ const GenericAddModal = ({
         <div className="flex gap-2 items-center mb-6">
           <InfoTooltip 
             size="sm" 
-            message={getEntityFormInfo(config.name, `Complete los campos para registrar un nuevo ${config.name?.toLowerCase() || ""}`)} 
+            message={getEntityFormInfo(config.name, `Complete los campos para registrar ${isFeminine ? 'una nueva' : 'un nuevo'} ${config.name?.toLowerCase() || ""}`)} 
             sticky={true}
           >
             <span className="material-symbols-outlined text-gray-400">info</span>
           </InfoTooltip>
           <h2 className="text-xl font-bold text-gray-800">
-            Agregar Nuevo {config.name}
+            Agregar {isFeminine ? 'Nueva' : 'Nuevo'} {config.name}
           </h2>
         </div>
 

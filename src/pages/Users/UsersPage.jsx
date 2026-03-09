@@ -310,7 +310,7 @@ const UsersPage = () => {
       setSelectedAction(action);
       setSelectedUser({
         id: row.id,
-        name: row['NOMBRE'] || row['email'] || 'Usuario',
+        name: `${row['Nombre'] || ''} ${row['Apellido'] || ''}`.trim() || row['Correo electrónico'] || 'Usuario',
       });
       setIsDeleteModalOpen(true);
     }

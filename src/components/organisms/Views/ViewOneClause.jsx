@@ -11,6 +11,7 @@ const ViewOneSupplier = () => {
       entityName="Cláusula"
       basePath="/contract/clauses/"
       titleKey="clause_number"
+      deleteButtonLabel="Desactivar"
     />
   );
 };

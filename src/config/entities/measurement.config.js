@@ -1,5 +1,6 @@
 export const MEASUREMENT_CONFIG = {
   name: "Medición SLA",
+  gender: "f",
   endpoint: "/sla-measurement",
   columns: [
     {

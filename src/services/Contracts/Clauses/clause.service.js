@@ -6,6 +6,11 @@ const ClauseService = {
     return response.data; 
   },
 
+  getAllDeleted: async (params = {}) => {
+    const response = await apiContracts.get('/clause/deleted', { params });
+    return response.data;
+  },
+
   getById: async (id) => {
     const response = await apiContracts.get(`/clause/${id}`);
     return response.data;
@@ -26,12 +31,18 @@ const ClauseService = {
     return response.data;
   },
 
-  // Alias para mantener consistencia si se usa en otros lados
+  restore: async (id) => {
+    const response = await apiContracts.patch(`/clause/${id}/restore`);
+    return response.data;
+  },
+
   getAllClauses: (params) => ClauseService.getAll(params),
+  getAllDeletedClauses: (params) => ClauseService.getAllDeleted(params),
   getClauseById: (id) => ClauseService.getById(id),
   createClause: (data) => ClauseService.create(data),
   updateClause: (id, data) => ClauseService.update(id, data),
   deleteClause: (id) => ClauseService.delete(id),
+  restoreClause: (id) => ClauseService.restore(id),
 };
 
 export default ClauseService;

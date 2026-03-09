@@ -16,6 +16,7 @@ import { getText } from '../../../utils/text';
 
 const ClausesPage = ({ id_client, embedded = false }) => {
   const [clauses, setClauses] = useState([]);
+  const [rawClauses, setRawClauses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dynamicConfig, setDynamicConfig] = useState(CLAUSE_CONFIG);
   
@@ -29,6 +30,8 @@ const ClausesPage = ({ id_client, embedded = false }) => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', type: 'info', title: '' });
+  const [showInactive, setShowInactive] = useState(false);
+  const [selectedAction, setSelectedAction] = useState("delete");
 
   const showAlert = (type, message, title = "") => {
     setAlert({ open: true, message, type, title });
@@ -36,26 +39,24 @@ const ClausesPage = ({ id_client, embedded = false }) => {
 
   const hasInitialized = useRef(false);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (showDeleted = showInactive) => {
     setLoading(true);
     try {
       const params = { page: 1, limit: 100 };
       
-      // Si tenemos id_client, podríamos filtrar contratos de ese cliente
-      // Pero para las cláusulas, necesitamos la lista de contratos para el select
       const contractsParams = id_client ? { client_id: id_client, limit: 100 } : { limit: 100 };
 
       const [clausesRes, contractsRes] = await Promise.allSettled([
-        ClauseService.getAll(params),
+        showDeleted ? ClauseService.getAllDeleted(params) : ClauseService.getAll(params),
         ContractService.getAll(contractsParams)
       ]);
 
       if (clausesRes.status === 'fulfilled') {
         const dataList = normalizeList(clausesRes.value);
+        setRawClauses(dataList);
         setClauses(mapBackendToTable(dataList, CLAUSE_CONFIG));
       }
 
-      // Configurar dinámicamente el select de contratos
       const newConfig = { ...CLAUSE_CONFIG };
       
       if (contractsRes.status === 'fulfilled') {
@@ -78,14 +79,21 @@ const ClausesPage = ({ id_client, embedded = false }) => {
     } finally {
       setLoading(false);
     }
-  }, [id_client]);
+  }, [id_client, showInactive]);
 
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
-      fetchData();
+      fetchData(showInactive);
     }
-  }, [fetchData]);
+  }, [fetchData, showInactive]);
+
+  useEffect(() => {
+    if (hasInitialized.current) {
+      fetchData(showInactive);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showInactive]);
 
   // Mapeo automático para InteractiveTable
   const columnMapping = {};
@@ -114,25 +122,38 @@ const ClausesPage = ({ id_client, embedded = false }) => {
     }
   };
 
-  const handleDeleteReq = (row) => {
+  const handleDeleteReq = (row, { isDeleted } = {}) => {
+    const action = isDeleted ? "restore" : "delete";
+    setSelectedAction(action);
     setSelectedRow({
       id: row.id,
-      name: row["Título"] || row["title"] || "Cláusula",
-      state: true
+      name: row["Título de la cláusula"] || row["Título"] || row["title"] || "Cláusula"
     });
     setIsDeleteOpen(true);
   };
 
-  const handleConfirmDelete = async (data) => {
+  const handleConfirmAction = async () => {
+    if (!selectedRow?.id) return;
     setDeletingLoading(true);
     try {
-      await ClauseService.delete(data.id);
-      setAlert({ open: true, message: "Cláusula eliminada", type: "success" });
-      setClauses(prev => prev.filter(c => c.id !== data.id));
+      if (selectedAction === "restore") {
+        await ClauseService.restore(selectedRow.id);
+        setAlert({ open: true, message: "Cláusula restaurada correctamente", type: "success" });
+      } else {
+        await ClauseService.delete(selectedRow.id);
+        setAlert({ open: true, message: "Cláusula desactivada correctamente", type: "success" });
+      }
+      await fetchData(showInactive);
       setIsDeleteOpen(false);
     } catch (e) {
-      console.error("Error al eliminar cláusula:", e);
-      showAlert("error", "Error al eliminar", "Error");
+      console.error("Error al procesar cláusula:", e);
+      showAlert(
+        "error",
+        selectedAction === "restore"
+          ? "Error al restaurar la cláusula"
+          : "Error al desactivar la cláusula",
+        "Error"
+      );
     } finally {
       setDeletingLoading(false);
     }
@@ -179,6 +200,8 @@ const ClausesPage = ({ id_client, embedded = false }) => {
         ) : (
           <InteractiveTable 
             data={clauses}
+            originData={rawClauses}
+            parameterId="id"
             columnMapping={columnMapping}
             selectColumns={selectColumns}
             nonEditableColumns={nonEditableColumns}
@@ -188,6 +211,24 @@ const ClausesPage = ({ id_client, embedded = false }) => {
             onAdd={() => setIsAddOpen(true)}
             path="/contract/clauses/"
             rowsPerPage={10}
+            rowActionsRenderer={
+              showInactive
+                ? (row) => (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteReq(row, { isDeleted: true })}
+                        className="p-1.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700 rounded transition-colors"
+                        title="Restaurar"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          settings_backup_restore
+                        </span>
+                      </button>
+                    </div>
+                  )
+                : undefined
+            }
             headerButtons={
               <HeaderActions
                 AddComponent={
@@ -199,8 +240,10 @@ const ClausesPage = ({ id_client, embedded = false }) => {
                     <span>Nueva {CLAUSE_CONFIG.name}</span>
                   </button>
                 }
+                isActive={!showInactive}
+                onToggle={() => setShowInactive((prev) => !prev)}
                 showExport={true}
-                onRefresh={fetchData}
+                onRefresh={() => fetchData(showInactive)}
               />
             }
           />
@@ -213,7 +256,7 @@ const ClausesPage = ({ id_client, embedded = false }) => {
         setIsOpen={setIsAddOpen}
         service={ClauseService}
         config={dynamicConfig}
-        onSuccess={fetchData}
+        onSuccess={() => fetchData(showInactive)}
         getExtraPayload={() => ({ is_critical: false, compliance_status: "compliant" })}
         onNotify={showAlert}
       />
@@ -224,17 +267,31 @@ const ClausesPage = ({ id_client, embedded = false }) => {
         entityId={selectedId} 
         service={ClauseService} 
         config={dynamicConfig} 
-        onSuccess={fetchData}
+        onSuccess={() => fetchData(showInactive)}
         onNotify={showAlert}
       />
 
       <ConfirmActionModal 
         isOpen={isDeleteOpen} 
-        setIsOpen={setIsDeleteOpen} 
-        data={selectedRow} 
-        onConfirm={handleConfirmDelete}
+        onClose={() => setIsDeleteOpen(false)} 
+        onConfirm={handleConfirmAction}
         loading={deletingLoading}
-        entityName={CLAUSE_CONFIG.name}
+        title={
+          selectedAction === "restore"
+            ? "Confirmar restauración"
+            : "Confirmar desactivación"
+        }
+        message={
+          selectedAction === "restore"
+            ? `¿Estás seguro de que deseas restaurar la ${CLAUSE_CONFIG.name.toLowerCase()} "${
+                selectedRow?.name || "sin nombre"
+              }"?`
+            : `¿Estás seguro de que deseas desactivar la ${CLAUSE_CONFIG.name.toLowerCase()} "${
+                selectedRow?.name || "sin nombre"
+              }"?`
+        }
+        isDangerous={selectedAction !== "restore"}
+        confirmLabel={selectedAction === "restore" ? "Restaurar" : "Desactivar"}
       />
     </div>
   );

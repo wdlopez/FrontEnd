@@ -3,9 +3,9 @@ import MuiAlert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 
 const DEFAULT_TITLES = {
-    success: "Success",
-    info: "Info",
-    warning: "Warning",
+    success: "Éxitoso",
+    info: "Información",
+    warning: "Advertencia",
     error: "Error",
 };
 

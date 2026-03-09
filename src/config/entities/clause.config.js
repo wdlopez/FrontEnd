@@ -1,5 +1,6 @@
 export const CLAUSE_CONFIG = {
   name: "Cláusula",
+  gender: "f",
   endpoint: "/clause",
   columns: [
     {
@@ -70,7 +71,18 @@ export const CLAUSE_CONFIG = {
       ],
       editable: true,
       required: false,
-      hideInForm: true, // No mostrar en modal crear/editar; por defecto "compliant" al crear
+      hideInForm: true,
+    },
+    {
+      header: "Fecha de eliminación",
+      backendKey: "deleted_at",
+      type: "date",
+      hideInForm: true,
+      hideInTable: true,
+      hideInView: true,
+      editable: false,
+      mapFrom: (item) =>
+        item.deleted_at ? new Date(item.deleted_at).toLocaleDateString("es-CO") : "",
     },
   ],
 };

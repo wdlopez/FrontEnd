@@ -1,5 +1,6 @@
 export const MWINDOW_CONFIG = {
   name: "Ventana de Medición",
+  gender: "f",
   endpoint: "/measurement-window",
   columns: [
     {

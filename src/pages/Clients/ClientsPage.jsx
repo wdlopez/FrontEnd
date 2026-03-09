@@ -175,8 +175,8 @@ const ClientsPage = () => {
     if (clientId && clientName) {
       showAlert(
         "success",
-        "Client created! Now, let's assign an Administrator.",
-        "Success"
+        "¡Cliente creado! Ahora, asignemos un Administrador.",
+        "¡Éxitoso!"
       );
 
       const searchParams = new URLSearchParams({
