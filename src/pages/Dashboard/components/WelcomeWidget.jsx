@@ -2,20 +2,22 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../../components/atoms/Button'; // Asegúrate de que esta ruta sea correcta
 
-const WelcomeWidget = ({ 
-  title, 
-  message, 
-  linkTo, 
-  buttonText, 
-  count = 0, 
-  icon = "info" // Valor por defecto si no se pasa icono
+const WelcomeWidget = ({
+  title,
+  message,
+  linkTo,
+  buttonText,
+  count = 0,
+  icon = "info", // Valor por defecto si no se pasa icono
+  variant = "auto", // 'auto' (por defecto) o 'summary' para forzar tarjeta horizontal
 }) => {
 
   // -----------------------------------------------------------------------
-  // CASO 1: YA HAY DATOS (Modo Resumen / KPI)
+  // CASO 1: TARJETA RESUMEN / KPI (horizontal)
   // -----------------------------------------------------------------------
-  // Se muestra una tarjeta horizontal elegante con el conteo
-  if (count > 0) {
+  // - Se usa si hay datos (count > 0)
+  // - O si el llamador fuerza variant="summary" (ej. accesos rápidos del dashboard)
+  if (variant === "summary" || count > 0) {
     return (
       <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center transition-all hover:shadow-md">
         <div className="flex items-center gap-4">
@@ -27,8 +29,11 @@ const WelcomeWidget = ({
                 <p className="text-sm text-gray-500 font-medium">{count} Registros activos</p>
             </div>
         </div>
-        <Link to={linkTo}>
-          <Button variant="secondary" size="sm">Ver detalle</Button>
+        <Link
+          to={linkTo}
+          className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 min-w-[110px] whitespace-normal text-center"
+        >
+          {buttonText || `Ir a ${title}`}
         </Link>
       </div>
     );

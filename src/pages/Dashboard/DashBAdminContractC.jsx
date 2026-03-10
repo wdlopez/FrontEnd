@@ -1,17 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
+import { Bar, Pie } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from "chart.js";
 import { chartColors } from "../../config/colorPalette";
-import { normalizeList } from "../../utils/api-helpers";
 import { useAuth } from "../../context/AuthContext";
 import { useSelectedClient } from "../../context/ClientSelectionContext";
-import ContractService from "../../services/Contracts/contract.service";
-import SlaService from "../../services/Slas/sla.service";
-import DeliverableService from "../../services/Deliverables/deliverable.service";
-import InvoiceService from "../../services/Invoices/invoice.service";
-import WorkOrderService from "../../services/Contracts/WorkOrders/orders.service";
-import DeliverablesChart from "../../components/organisms/Charts/DeliverablesChart";
-import SlaChart from "../../components/organisms/Charts/SlaChart";
-import KpiCard from "../../components/molecules/KpiCard";
-import WelcomeWidget from "./components/WelcomeWidget";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+);
+
+const calculateDays = (a, b) =>
+  Math.floor((b - a) / (1000 * 60 * 60 * 24));
 
 const formatMoney = (n) =>
   n.toLocaleString("es-CO", {
@@ -20,425 +34,294 @@ const formatMoney = (n) =>
     minimumFractionDigits: 0,
   });
 
-function DashBContratoAdmin({ user: userFromProps }) {
-  const { user: authUser, currentUserClientId, isGlobalAdmin } = useAuth();
+const classifySLA = (p, min, exp) => {
+  const pct = Number(p);
+  const m = Number(min);
+  const e = Number(exp);
+  if (Number.isNaN(pct) || Number.isNaN(m) || Number.isNaN(e)) return null;
+  if (pct < m) return "red";
+  if (pct < e) return "yellow";
+  return "green";
+};
+
+const statusOptions = [
+  { value: 1, label: "Activo" },
+  { value: 0, label: "Cancelado" },
+  { value: 2, label: "Vencido" },
+  { value: 3, label: "En Negociación" },
+];
+
+function DashBContratoAdmin({ contracts = [], slas = [] }) {
+  const { currentKeyClient } = useAuth();
   const { selectedClient } = useSelectedClient();
-  const effectiveUser = authUser || userFromProps;
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const primaryContract = contracts[0] || null;
+  const assignedClientFromContract =
+    primaryContract?.client?.client_name || "Sin cliente definido";
+  const assignedProvider =
+    primaryContract?.provider?.prov_name || "Sin proveedor definido";
 
-  const [contracts, setContracts] = useState([]);
-  const [slasRaw, setSlasRaw] = useState([]);
-  const [deliverablesRaw, setDeliverablesRaw] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [workOrders, setWorkOrders] = useState([]);
+  const clientDisplayName =
+    selectedClient?.name ||
+    (Array.isArray(currentKeyClient) ? currentKeyClient[0] : currentKeyClient) ||
+    assignedClientFromContract;
 
-  const [delStateList, setDelStateList] = useState([]);
-  const [delPriorityList, setDelPriorityList] = useState([]);
+  // SLAs por servicio (torre)
+  const portfolioData = useMemo(() => {
+    const counts = {};
 
-  // Secciones DAC: 1.1 Entregables, 1.2 SLAs, 1.3 Finanzas, 1.4 Gobierno
-  const [activeSection, setActiveSection] = useState("dac11");
+    slas.forEach((sl) => {
+      const tower =
+        sl.servicelevels?.services?.service_tower || "Desconocido";
+      counts[tower] = (counts[tower] || 0) + 1;
+    });
 
-  const clientId = currentUserClientId || selectedClient?.id || null;
+    const labels = Object.keys(counts);
+    const data = labels.map((label) => counts[label]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!clientId) {
-        setLoading(false);
-        setError(
-          "No se encontró un cliente asociado al usuario. Contacta al administrador."
-        );
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        // El backend del Administrador de Contratos obtiene el cliente del JWT;
-        // no enviar client_id en query (el API rechaza ese param por whitelist).
-        const query = {};
-
-        const [
-          contractsRes,
-          slasRes,
-          deliverablesRes,
-          invoicesRes,
-          workOrdersRes,
-        ] = await Promise.allSettled([
-          ContractService.getAll(query),
-          SlaService.getAll(query),
-          DeliverableService.getAll(query),
-          InvoiceService.getAllInvoices(query),
-          WorkOrderService.getAllOrders(query),
-        ]);
-
-        if (contractsRes.status === "fulfilled") {
-          const contractsList = normalizeList(contractsRes.value);
-
-          const role = effectiveUser?.role || null;
-          const isClientScoped =
-            role === "client_superadmin" || role === "client_contract_admin";
-
-          let filteredContracts = contractsList;
-          if (!isGlobalAdmin && isClientScoped && clientId) {
-            filteredContracts = contractsList.filter((c) => {
-              const contractClientId =
-                c.client_id || c.clientId || c.client?.id || null;
-              return contractClientId === clientId;
-            });
-          }
-
-          if (import.meta.env.DEV) {
-            console.debug(
-              "[DashBAdminContractC] role:",
-              role,
-              "currentClientId:",
-              clientId,
-              "contratos totales:",
-              contractsList.length,
-              "contratos filtrados:",
-              filteredContracts.length
-            );
-          }
-
-          setContracts(filteredContracts);
-        } else {
-          setContracts([]);
-        }
-
-        if (slasRes.status === "fulfilled") {
-          setSlasRaw(normalizeList(slasRes.value));
-        } else {
-          setSlasRaw([]);
-        }
-
-        if (deliverablesRes.status === "fulfilled") {
-          setDeliverablesRaw(normalizeList(deliverablesRes.value));
-        } else {
-          setDeliverablesRaw([]);
-        }
-
-        if (invoicesRes.status === "fulfilled") {
-          setInvoices(normalizeList(invoicesRes.value));
-        } else {
-          setInvoices([]);
-        }
-
-        if (workOrdersRes.status === "fulfilled") {
-          setWorkOrders(normalizeList(workOrdersRes.value));
-        } else {
-          setWorkOrders([]);
-        }
-      } catch (err) {
-        console.error("Error cargando dashboard de contratos:", err);
-        setError("No se pudo cargar el resumen del Administrador de Contratos.");
-      } finally {
-        setLoading(false);
-      }
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Número de SLAs por Servicio",
+          data,
+          backgroundColor: labels.map(
+            (_, idx) =>
+              chartColors.status[idx % chartColors.status.length],
+          ),
+        },
+      ],
     };
+  }, [slas]);
 
-    fetchData();
-  }, [clientId]);
+  // KPIs de contratos (cálculo directo; poco costoso para el tamaño esperado)
+  const now = new Date();
+  let totalValue = 0;
+  let totalAnnual = 0;
+  let expiredAnnual = 0;
+  let expired90Value = 0;
 
-  // Listas dinámicas de estados y prioridades de entregables (para DeliverablesChart)
-  useEffect(() => {
-    if (!Array.isArray(deliverablesRaw) || deliverablesRaw.length === 0) {
-      setDelStateList([]);
-      setDelPriorityList([]);
-      return;
-    }
+  contracts.forEach((c) => {
+    if (!c.start_date || !c.end_date) return;
 
-    const stateValues = new Set();
-    const priorityValues = new Set();
+    const start = new Date(c.start_date);
+    const end = new Date(c.end_date);
+    const value = Number(c.total_value) || 0;
 
-    deliverablesRaw.forEach((d) => {
-      if (d.del_state !== undefined && d.del_state !== null) {
-        stateValues.add(d.del_state);
+    const durationDays = calculateDays(start, end);
+    const durationYears = durationDays / 365;
+    const annualValue = durationYears > 0 ? value / durationYears : value;
+
+    totalValue += value;
+    totalAnnual += annualValue;
+
+    if (end < now) {
+      expiredAnnual += annualValue;
+      if (calculateDays(end, now) <= 90) {
+        expired90Value += value;
       }
-      if (d.del_priority !== undefined && d.del_priority !== null) {
-        priorityValues.add(d.del_priority);
+    }
+  });
+
+  const kpis = [
+    {
+      label: "Suma del Total del valor de los contratos",
+      value: formatMoney(totalValue),
+    },
+    {
+      label: "Suma del valor anual de los contratos",
+      value: formatMoney(totalAnnual),
+    },
+    {
+      label: "Valor anual de contratos expirados",
+      value: formatMoney(expiredAnnual),
+    },
+    {
+      label: "Valor de contratos expirados (últimos 90 días)",
+      value: formatMoney(expired90Value),
+    },
+  ];
+
+  // Gastos por proveedor
+  const supplierData = useMemo(() => {
+    const agg = contracts.reduce((acc, contract) => {
+      const name = contract.provider?.prov_name || "Desconocido";
+      const val = Number(contract.total_value) || 0;
+      acc[name] = (acc[name] || 0) + val;
+      return acc;
+    }, {});
+
+    const labels = Object.keys(agg);
+    const data = labels.map((name) => agg[name]);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Gastos por Proveedor",
+          data,
+          backgroundColor: labels.map(
+            (_, idx) =>
+              chartColors.status[idx % chartColors.status.length],
+          ),
+        },
+      ],
+    };
+  }, [contracts]);
+
+  // Cumplimiento contractual por estado
+  const complianceData = useMemo(() => {
+    const countByStatus = statusOptions.reduce((acc, opt) => {
+      acc[opt.value] = 0;
+      return acc;
+    }, {});
+
+    contracts.forEach((contract) => {
+      if (Object.prototype.hasOwnProperty.call(countByStatus, contract.status)) {
+        countByStatus[contract.status] += 1;
       }
     });
 
-    setDelStateList(
-      Array.from(stateValues).map((value) => ({
-        value,
-        label: String(value),
-      })),
+    const labels = statusOptions.map((opt) => opt.label);
+    const data = statusOptions.map((opt) => countByStatus[opt.value]);
+
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: chartColors.status.slice(0, labels.length),
+        },
+      ],
+    };
+  }, [contracts]);
+
+  // Clasificación SLA por proveedor
+  const slaData = useMemo(() => {
+    const tally = {};
+
+    const providerByContract = Object.fromEntries(
+      contracts.map((c) => [
+        Number(c.cont_id),
+        c.provider?.prov_name || "Desconocido",
+      ]),
     );
 
-    setDelPriorityList(
-      Array.from(priorityValues).map((value) => ({
-        value,
-        label: String(value),
-      })),
-    );
-  }, [deliverablesRaw]);
+    slas.forEach((sl) => {
+      const contId = Number(sl.servicelevels?.cont_id);
+      const prov = providerByContract[contId] || "Desconocido";
+      if (!tally[prov]) {
+        tally[prov] = { green: 0, yellow: 0, red: 0 };
+      }
 
-  if (loading) {
-    return (
-      <div className="p-6 text-center text-gray-500">
-        Cargando panel de Administrador de Contratos...
-      </div>
-    );
-  }
+      if (Array.isArray(sl.sla_credit_pachieve)) {
+        sl.sla_credit_pachieve.forEach((p) => {
+          const cat = classifySLA(
+            p,
+            sl.servicelevels?.sla_minimun_target,
+            sl.servicelevels?.sla_expect_target,
+          );
+          if (cat && tally[prov][cat] !== undefined) {
+            tally[prov][cat] += 1;
+          }
+        });
+      }
+    });
 
-  // Estado vacío: sin contratos aún -> CTA Crear primer contrato
-  if (!loading && contracts.length === 0) {
-    return (
-      <div className="p-6 space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold">
-            Bienvenido, {effectiveUser?.firstName || "Administrador"}
-          </h3>
-          <p className="text-gray-500 font-medium">
-            Aún no tienes contratos configurados para tu cliente.
-          </p>
-        </div>
+    const providers = Object.keys(tally);
 
-        <WelcomeWidget
-          title="Contratos"
-          message="Configura tu primer contrato para habilitar los dashboards ejecutivos, financieros y de gobierno del servicio."
-          linkTo="/contract/general?action=create_first"
-          buttonText="Comenzar: Crear mi primer contrato"
-          count={0}
-          icon="description"
-        />
-      </div>
-    );
-  }
+    return {
+      labels: providers,
+      datasets: [
+        {
+          label: "Supera Objetivo",
+          data: providers.map((p) => tally[p].green),
+          backgroundColor: chartColors.sla.green,
+        },
+        {
+          label: "Mínimo Requerido",
+          data: providers.map((p) => tally[p].yellow),
+          backgroundColor: chartColors.sla.yellow,
+        },
+        {
+          label: "Incumplido",
+          data: providers.map((p) => tally[p].red),
+          backgroundColor: chartColors.sla.red,
+        },
+      ],
+    };
+  }, [slas, contracts]);
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6">
       <div>
-        <h3 className="text-lg font-semibold">
-          Bienvenido, {effectiveUser?.firstName || "Administrador"}
-        </h3>
-        <p className="text-gray-500 font-medium">
-          {effectiveUser?.role === "client_superadmin"
-            ? "Administrador de Cliente – Vista DAC de contratos"
-            : "Administrador de Contratos – Vista DAC"}
+        <h3 className="text-lg font-semibold">Cliente / Proveedor asignado</h3>
+        <p className="text-gray-700 text-sm mt-1">
+          Cliente: <span className="font-medium">{clientDisplayName}</span>
+          {" · "}
+          Proveedor:{" "}
+          <span className="font-medium">{assignedProvider}</span>
         </p>
       </div>
 
-      {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      {/* Tabs DAC */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex flex-wrap gap-4 text-sm font-medium">
-          <button
-            type="button"
-            onClick={() => setActiveSection("dac11")}
-            className={`pb-2 border-b-2 ${
-              activeSection === "dac11"
-                ? "border-blue-600 text-blue-700"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpis.map((kpi) => (
+          <div
+            key={kpi.label}
+            className="bg-white shadow-sm hover:shadow-md transition-shadow rounded-xl p-5 border border-gray-100"
           >
-            DAC 1.1 Entregables
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSection("dac12")}
-            className={`pb-2 border-b-2 ${
-              activeSection === "dac12"
-                ? "border-blue-600 text-blue-700"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            DAC 1.2 SLAs
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSection("finanzas")}
-            className={`pb-2 border-b-2 ${
-              activeSection === "finanzas"
-                ? "border-blue-600 text-blue-700"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            DAC 1.3 Finanzas
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSection("gobierno")}
-            className={`pb-2 border-b-2 ${
-              activeSection === "gobierno"
-                ? "border-blue-600 text-blue-700"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            DAC 1.4 Gobierno
-          </button>
-        </nav>
+            <h4 className="text-xs font-semibold uppercase text-gray-400 tracking-wider mb-2">
+              {kpi.label}
+            </h4>
+            <p className="text-2xl font-bold text-gray-800">{kpi.value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* DAC 1.1 – Resumen de Entregables */}
-      {activeSection === "dac11" && (
-        <div className="space-y-6">
-          <p className="text-sm text-gray-600">
-            Vista ejecutiva de cumplimiento de Entregables (DAC 1.1) para el
-            cliente asignado.
-          </p>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <DeliverablesChart
-              deliverables={deliverablesRaw}
-              delStateList={delStateList}
-              delPriority={delPriorityList}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white shadow rounded-lg p-4 h-80">
+          <h4 className="text-lg mb-4">Número de SLAs por Servicio</h4>
+          <div className="h-64">
+            <Bar data={portfolioData} options={{ maintainAspectRatio: false }} />
+          </div>
+        </div>
+
+        <div className="bg-white shadow rounded-lg p-4 h-80">
+          <h4 className="text-lg mb-4">Gasto por Proveedor</h4>
+          <div className="h-64">
+            <Bar
+              data={supplierData}
+              options={{ maintainAspectRatio: false }}
             />
           </div>
         </div>
-      )}
 
-      {/* DAC 1.2 – Resumen de SLAs */}
-      {activeSection === "dac12" && (
-        <div className="space-y-6">
-          <p className="text-sm text-gray-600">
-            Vista ejecutiva del desempeño de los SLAs (DAC 1.2) para el cliente
-            asignado.
-          </p>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <SlaChart sla={slasRaw} />
+        <div className="bg-white shadow rounded-lg p-4 h-80">
+          <h4 className="text-lg mb-4">Rendimiento SLA</h4>
+          <div className="h-64">
+            <Bar
+              data={slaData}
+              options={{
+                indexAxis: "y",
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { position: "top" },
+                },
+              }}
+            />
           </div>
         </div>
-      )}
 
-      {/* Sección Finanzas */}
-      {activeSection === "finanzas" && (
-        <div className="space-y-6">
-          <p className="text-sm text-gray-600">
-            Resumen de facturación asociada a los contratos del cliente (DAC
-            1.3).
-          </p>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-              <h4 className="text-sm font-semibold text-gray-800">
-                Facturas recientes
-              </h4>
-              <span className="text-xs text-gray-500">
-                Muestra hasta 5 facturas filtradas por tu cliente
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              {invoices.length === 0 ? (
-                <p className="p-4 text-sm text-gray-500">
-                  No hay facturas registradas para este cliente.
-                </p>
-              ) : (
-                <table className="min-w-full text-sm text-left text-gray-600">
-                  <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-                    <tr>
-                      <th className="px-4 py-2">Factura</th>
-                      <th className="px-4 py-2">Monto</th>
-                      <th className="px-4 py-2">Emisión</th>
-                      <th className="px-4 py-2">Vencimiento</th>
-                      <th className="px-4 py-2">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoices.slice(0, 5).map((inv) => (
-                      <tr
-                        key={inv.id || inv.invoice_id}
-                        className="border-t border-gray-100 hover:bg-gray-50"
-                      >
-                        <td className="px-4 py-2">
-                          {inv.invoice_number || inv.code || "-"}
-                        </td>
-                        <td className="px-4 py-2">
-                          {formatMoney(Number(inv.amount) || 0)}
-                        </td>
-                        <td className="px-4 py-2">
-                          {inv.issue_date
-                            ? new Date(inv.issue_date).toLocaleDateString(
-                                "es-CO",
-                              )
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-2">
-                          {inv.due_date
-                            ? new Date(inv.due_date).toLocaleDateString("es-CO")
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-2 capitalize">
-                          {inv.status || "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+        <div className="bg-white shadow rounded-lg p-4 h-80">
+          <h4 className="text-lg mb-4">Cumplimiento Contractual</h4>
+          <div className="h-64">
+            <Pie
+              data={complianceData}
+              options={{ maintainAspectRatio: false }}
+            />
           </div>
         </div>
-      )}
-
-      {/* Sección Gobierno */}
-      {activeSection === "gobierno" && (
-        <div className="space-y-6">
-          <p className="text-sm text-gray-600">
-            Gobierno operativo de contratos: seguimiento de órdenes de trabajo
-            (Work Orders) asociadas (DAC 1.4).
-          </p>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-              <h4 className="text-sm font-semibold text-gray-800">
-                Work Orders pendientes
-              </h4>
-              <span className="text-xs text-gray-500">
-                Muestra hasta 5 órdenes abiertas o en progreso
-              </span>
-            </div>
-            <div>
-              {workOrders.length === 0 ? (
-                <p className="p-4 text-sm text-gray-500">
-                  No hay órdenes de trabajo registradas para este cliente.
-                </p>
-              ) : (
-                <ul className="divide-y divide-gray-100">
-                  {workOrders
-                    .filter(
-                      (wo) =>
-                        wo.status === "open" || wo.status === "in_progress",
-                    )
-                    .slice(0, 5)
-                    .map((wo) => (
-                      <li key={wo.id} className="px-4 py-3 flex justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">
-                            {wo.title || `Orden ${wo.id}`}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Vence:{" "}
-                            {wo.due_date
-                              ? new Date(wo.due_date).toLocaleDateString(
-                                  "es-CO",
-                                )
-                              : "Sin fecha definida"}
-                          </p>
-                        </div>
-                        <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 self-start">
-                          {wo.status === "open"
-                            ? "Abierta"
-                            : wo.status === "in_progress"
-                              ? "En progreso"
-                              : wo.status || "Estado"}
-                        </span>
-                      </li>
-                    ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

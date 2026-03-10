@@ -20,6 +20,7 @@ function WelcomeClient({ setMsg, setOpenAlert, setAlert, count = 0 }) {
             buttonText="Ir a Clientes"
             linkTo="/client"
             count={count}
+            variant="summary"
             icon="domain"
         />
     );

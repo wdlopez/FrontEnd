@@ -11,6 +11,7 @@ function WelcomeUser({ setMsg, setOpenAlert, setAlert,rol,client,provider, count
             buttonText="Ir a Usuarios"
             linkTo="/settings/userNroles"
             count={count}
+            variant="summary"
             icon="people"
         />
     );

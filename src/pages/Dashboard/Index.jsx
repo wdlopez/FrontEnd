@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import DashboardService from "../../services/dashboard.service";
-import WelcomeWidget from "./components/WelcomeWidget";
 import Alerts from "../../components/molecules/Alerts";
+import { getText } from "../../utils/text";
 
 // Importación de los Dashboards específicos
 import DashBSuperAdmin from "./DashBAdmin";
 import DashBContratoAdmin from "./DashBAdminContractC";
 import WelcomeClient from "./Clients";
 import WelcomeUser from "./Users";
+import WelcomeContract from "./Contracts";
+import WelcomeProv from "./Providers";
 import DashbRendimiento from "./DashBRendimiento";
 import DashbFinanzas from "./DashBFinanzas";
 import DashbReportes from "./DashBReportes";
@@ -40,14 +42,6 @@ const DashboardIndex = () => {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("info");
-  const [alertTitle, setAlertTitle] = useState("");
-
-  const showAlert = (type, message, title = "") => {
-    setAlertType(type);
-    setAlertMessage(message);
-    setAlertTitle(title);
-    setAlertOpen(true);
-  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -96,21 +90,25 @@ const DashboardIndex = () => {
 
   // CASO 1: SUPER ADMINISTRADOR GLOBAL
   if (user.role === ROLES.SUPER_ADMIN) {
+    const welcomeTitle = getText("welcome.superAdmin.title");
+    const welcomeDescription = getText("welcome.superAdmin.description");
+
     return (
       <div className="space-y-6">
-        {/* Sección de Bienvenida con botones de acceso rápido */}
-        <div className="p-6 space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Hola, {user.role}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Bienvenido a ContractX. Comienza gestionando clientes y usuarios.
-            </p>
-          </div>
+        {/* Bienvenida principal del SuperAdmin */}
+        <div className="px-6 pt-6">
+          <h1 className="text-2xl font-bold text-gray-800">
+            {welcomeTitle}
+          </h1>
+          <p className="text-gray-600 mt-2 max-w-4xl">
+            {welcomeDescription}
+          </p>
+        </div>
 
-          {/* Grid de botones de acceso rápido */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Acceso rápido a secciones clave (clientes, usuarios, etc.) */}
+        <div className="px-6 pb-4 space-y-4">
+          <h2 className="text-xl font-bold text-gray-800">Acceso rápido</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <WelcomeClient 
               setMsg={setAlertMessage} 
               setOpenAlert={setAlertOpen} 
@@ -123,16 +121,26 @@ const DashboardIndex = () => {
               setAlert={setAlertType} 
               count={dashboardData.usersCount}
             />
+            <WelcomeProv
+              setMsg={setAlertMessage}
+              setOpenAlert={setAlertOpen}
+              setAlert={setAlertType}
+            />
+            <WelcomeContract
+              setMsg={setAlertMessage}
+              setOpenAlert={setAlertOpen}
+              setAlert={setAlertType}
+              count={dashboardData.contracts?.length || 0}
+            />
           </div>
         </div>
 
         {/* Alertas Globales del Dashboard */}
-        <Alerts 
-          open={alertOpen} 
-          setOpen={setAlertOpen} 
-          message={alertMessage} 
+        <Alerts
+          open={alertOpen}
+          setOpen={setAlertOpen}
+          message={alertMessage}
           type={alertType}
-          title={alertTitle}
         />
 
         {/* Dashboard Completo siempre visible */}
@@ -178,7 +186,6 @@ const DashboardIndex = () => {
           setOpen={setAlertOpen}
           message={alertMessage}
           type={alertType}
-          title={alertTitle}
         />
 
         {/* Dashboard DAC de contratos (antes en admin de contratos) */}
